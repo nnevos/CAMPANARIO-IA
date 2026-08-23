@@ -23,6 +23,22 @@ class ModelChunk:
     done: bool = False
 
 
+class ModelProviderError(RuntimeError):
+    """Base error exposed by model-provider adapters to the Campanario core."""
+
+
+class ModelUnavailableError(ModelProviderError):
+    """The configured model runtime cannot currently be reached."""
+
+
+class ModelTimeoutError(ModelProviderError):
+    """The model runtime exceeded the configured timeout."""
+
+
+class ModelResponseError(ModelProviderError):
+    """The model runtime responded, but the response could not be accepted."""
+
+
 class ModelProvider(Protocol):
     async def health(self) -> bool: ...
     def stream(self, request: ModelRequest) -> AsyncIterator[ModelChunk]: ...

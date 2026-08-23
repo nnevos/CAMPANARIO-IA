@@ -1,7 +1,7 @@
 # Roadmap — Campanario
 
-- **Fase 0:** fundação arquitetural.
-- **Fase 1:** LLM local + chat + streaming + persistência.
+- **Fase 0:** fundação arquitetural — concluída.
+- **Fase 1:** LLM local + chat + streaming + persistência — em andamento; circuito implementado, validação com Ollama real pendente.
 - **Fase 2:** Context Manager.
 - **Fase 3:** memória auditável.
 - **Fase 4:** RAG/documentos.
@@ -12,4 +12,4 @@
 - **Fase 9:** learning + knowledge graph.
 - **Fase 10:** realtime/dispositivos.
 
-A descrição operacional mais atual fica em `PROJECT_STATE.md`.
+A descrição operacional mais atual e o próximo incremento ficam em `PROJECT_STATE.md`.

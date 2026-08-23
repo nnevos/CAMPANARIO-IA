@@ -1,33 +1,43 @@
 # Arquitetura — Campanario
 
 ## Escopo atual
-Fases 0 e preparação da Fase 1.
+Fase 0 concluída; Fase 1 em implementação.
 
 ```text
 Client
   |
-FastAPI
+FastAPI / SSE
   |
-ChatService (próximo incremento)
-  |
-ModelProvider ---------------- OllamaProvider
-  |
-Repositories ---------------- SQLite/SQLAlchemy
+ChatService
+  |---------------------------|
+  |                           |
+Repositories              ModelProvider
+  |                           |
+SQLite/SQLAlchemy          OllamaProvider
+                              |
+                           HTTPX
+                              |
+                           Ollama
 ```
 
 ## Direção de dependências
-A lógica de aplicação depende de contratos próprios, nunca de tipos do Ollama ou objetos ORM como contrato público.
+A lógica de aplicação depende de contratos próprios. Tipos específicos do Ollama e objetos ORM não são contratos públicos do Campanario.
 
-## Fronteiras
-- `api`: transporte HTTP.
-- `chat`: modelos e contratos do domínio de conversa.
-- `llm`: abstração e adapters de modelos.
-- `storage`: infraestrutura SQLite/SQLAlchemy.
-- `config`: configuração técnica.
-- `shared`: somente utilidades genuinamente compartilhadas; não virar pasta de despejo.
+## Fronteiras atuais
+- `api.py`: transporte HTTP/SSE.
+- `chat/`: modelos, contratos e serviço de conversa.
+- `llm/`: abstração e adapters de modelos.
+- `storage/`: infraestrutura SQLite/SQLAlchemy.
+- `config.py`: configuração técnica.
+- `bootstrap.py`: composição das implementações concretas.
 
-## Regras
+## Regras preservadas
 1. `ChatService` não importa SDK/tipos Ollama.
-2. Tipos ORM não devem virar o modelo público do domínio.
+2. Tipos ORM não viram modelos de domínio.
 3. Mensagens são histórico, não memória.
-4. Recursos futuros só ganham módulo quando houver implementação real.
+4. Ollama é primeiro adapter, não fundamento do domínio.
+5. O streaming interno usa tipos do Campanario (`ModelChunk`).
+6. Recursos futuros só ganham módulo quando houver implementação real.
+
+## Contexto da Fase 1
+Nesta fase, o histórico completo de mensagens concluídas é usado como contexto. Isso é propositalmente simples. Seleção, janela de tokens e sumarização pertencem à Fase 2 — Context Manager.

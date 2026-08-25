@@ -19,7 +19,7 @@ __all__ = [
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run Campanario behavioral E2E against the configured local Ollama model.")
-    parser.add_argument("--suite", choices=("standard", "full", "mega"), default="standard")
+    parser.add_argument("--suite", choices=("standard", "full", "mega", "agents", "agent_personality", "agent_mega"), default="standard")
     parser.add_argument("--seed", type=int, default=None, help="Scenario variation seed; omitted = current timestamp")
     parser.add_argument("--output", type=Path, default=Path("test_reports") / "behavioral_e2e")
     parser.add_argument("--no-open", action="store_true", help="Do not open the HTML report automatically")

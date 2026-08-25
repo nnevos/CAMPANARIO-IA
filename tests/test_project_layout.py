@@ -16,6 +16,7 @@ def test_root_is_intentionally_small_and_operational() -> None:
         "TESTAR_COMPORTAMENTO.bat",
         "TESTAR_COMPORTAMENTO_MEGA.bat",
         "TROCAR_MODELO.bat",
+        "TESTAR_AGENTES.bat",
     }
     assert not any((root / name).exists() for name in forbidden)
     assert (root / "CAMPANARIO.bat").exists()
@@ -43,3 +44,11 @@ def test_transient_artifacts_are_ignored_by_project_policy() -> None:
     ignored = (root / ".gitignore").read_text(encoding="utf-8")
     for marker in (".venv/", ".pytest_cache/", "test_reports/", ".env"):
         assert marker in ignored
+
+
+def test_presence_ui_boots_without_reopening_old_transcript():
+    html = Path('src/campanario/web/index.html').read_text(encoding='utf-8')
+    assert "await selectSession(ss[0])" not in html
+    assert "sessionId=null;$('conversation').innerHTML=''" in html
+    assert 'Memória de episódios' in html
+    assert 'viewingArchive=true' in html

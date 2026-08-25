@@ -1,40 +1,78 @@
-# PROJECT STATE — Foundation organizada / pre-agentes
+# PROJECT STATE — Safepoint pre-Personality Foundation
 
-## Status
+## Status atual
 
-A fundacao conversacional foi congelada apos o bakeoff de modelos e reorganizada para a fase de agentes. O codigo e a evidencia final do estado real.
+A foundation conversacional e a Presence UI estao estabilizadas com Gemma 3 12B. O projeto entrou oficialmente na fase **Agent Personality Foundation**. Voz/call e aprendizado persistente ainda nao devem ser implementados.
 
-## Modelo recomendado
+## O que ja foi concluido
 
-`gemma3:12b` e o baseline recomendado atual. Evidencia fornecida: standard 11/11 cenarios e 64/64 checks; mega 75 PASS / 3 FAIL. A arquitetura permanece model-portable.
+### Foundation
 
-## Estrutura canonica
+- runtime/model provider separado e model-portable;
+- Response Contract Pipeline;
+- pragmatica/continuation semantics;
+- context provenance e isolamento creative->factual;
+- E2E standard/mega e model bakeoff;
+- Gemma 3 12B escolhido como baseline recomendado apos superar Llama 3 nos testes;
+- reorganizacao estrutural pre-agents;
+- standard real pos-organizacao: 11/11 cenarios, 64/64 checks.
 
-- `campanario.chat`: contexto, pragmatica, turns, provenance, prompts e ChatService.
-- `campanario.response`: contratos, validacao, reparo e prompt safety.
-- `campanario.model`: protocolo/runtime/adapters.
-- `campanario.storage`: persistencia.
-- `campanario.e2e`: suites e comparacao de modelos.
-- `campanario.composition`: composition root.
-- `tools/windows`: operacao Windows.
-- `docs/current`: estado/arquitetura/roadmap atuais.
-- `docs/history`: evolucao historica; nao e documentacao operacional.
+### Sistema/agentes
 
-## Mudancas de cleanup
+- Campanario separado conceitualmente de agentes;
+- Morgana = default primary speaker;
+- Todd + Morgana = participantes persistentes;
+- `AgentRouter` para prioridade/endereco;
+- `ParticipationArbiter` para entrada secundaria conservadora;
+- `messages.agent_id` registra quem falou;
+- `chat_sessions.primary_agent_id` guarda prioridade, nao exclusividade;
+- multi-speaker SSE/API/UI.
 
-- `campanario.llm` removido apos migracao dos imports canonicos.
-- `chat/behavior.py` quebrado em modulos menores.
-- scripts `.bat` individuais removidos da raiz e acessados por `CAMPANARIO.bat`.
-- documentos versionados antigos arquivados.
-- `.env`, `.venv`, caches e relatorios nao pertencem ao pacote distribuido.
+### UI/UX
 
-## Bloqueado ate regressao final
+- Presence UI v1.3.0;
+- experiencia orientada a ambiente/call, nao chatbot convencional;
+- sem "Modo Morgana" / "Modo Todd" como UX principal;
+- agentes aparecem por participacao, nao por selecao obrigatoria;
+- estados conceituais PRESENTE / ATENTO / ENGAJADO preparados visualmente;
+- voz ainda e apenas arquitetura/UX preparada, nao funcionalidade simulada.
 
-Todd/Morgana ativos, RAG, web, tools, voz e memoria cognitiva.
+## Automacao de testes adicionada neste safepoint
+
+- `TESTAR_AGENTES.bat`: invariantes basicas de identidade/factualidade;
+- `TESTAR_PERSONALIDADES.bat`: mesmos prompts para Todd/Morgana no mesmo seed;
+- `TESTAR_PERSONALIDADES_MEGA.bat`: 8 lotes variados para evitar overfitting;
+- checks automaticos medem somente invariantes objetivas;
+- diferenca fina de personalidade continua exigindo revisao humana do transcript.
+
+## O que NAO esta pronto
+
+- personalidade profunda/estavel validada de Todd/Morgana;
+- aprendizado/evolucao persistente;
+- memoria relacional/experiencial de agente;
+- RAG/web/tools;
+- wake word;
+- STT/TTS;
+- vozes diferentes;
+- barge-in;
+- call persistente/background audio;
+- proactive layer.
 
 ## Gate atual unico
 
-1. manter suite offline verde;
-2. rodar standard E2E com `gemma3:12b` na estrutura organizada;
-3. se nao houver regressao arquitetural, congelar este checkpoint;
-4. iniciar **Agent Architecture v1** (Todd/Morgana), sem novo tuning da foundation por frase isolada.
+**Agent Personality Foundation.**
+
+Primeiro consolidar personalidade-core + testes. Depois implementar Experience/Learning Layer. Voz/call vem somente depois.
+
+## Modelo recomendado
+
+`gemma3:12b`. Continua sendo configuracao substituivel.
+
+
+## Continuous Presence update (v1.3.1)
+- Presence UI boots clean: no old transcript is rendered automatically.
+- A fresh technical episode is created lazily on the first new turn.
+- Previous sessions are secondary **episodic memory records** under Sistema and require deliberate access.
+- Sessions remain internal infrastructure; the user-facing concept is continuous coexistence/presence.
+- Cross-episode learned memory is **not yet claimed as implemented**; it remains part of the Experience/Learning gate before voice.
+- See `docs/adr/0039-continuous-presence-episodic-history.md`.

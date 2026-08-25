@@ -3,11 +3,34 @@ setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0\..\.."
 title Campanario IA
 
- echo.
- echo ========================================
- echo          CAMPANARIO IA - START
- echo ========================================
- echo.
+set "CAMPANARIO_PORT=8000"
+set "CAMPANARIO_BUILD=agent-architecture-v1.2.1"
+
+echo.
+echo ========================================
+echo          CAMPANARIO IA - START
+echo ========================================
+echo.
+
+rem 0) Never silently reuse an older Campanario process on port 8000.
+set "OLD_PID="
+for /f "tokens=5" %%P in ('netstat -ano 2^>nul ^| findstr /R /C:":%CAMPANARIO_PORT% .*LISTENING"') do (
+    if not defined OLD_PID set "OLD_PID=%%P"
+)
+if defined OLD_PID (
+    set "OLD_IS_CAMPANARIO=NO"
+    for /f "usebackq delims=" %%C in (`powershell -NoProfile -Command "$p=Get-CimInstance Win32_Process -Filter 'ProcessId=!OLD_PID!' -ErrorAction SilentlyContinue; if($p -and $p.CommandLine -match 'uvicorn' -and $p.CommandLine -match 'campanario\.main:app'){ 'YES' } else { 'NO' }"`) do set "OLD_IS_CAMPANARIO=%%C"
+    if /I "!OLD_IS_CAMPANARIO!"=="YES" (
+        echo [INFO] Encerrando instancia anterior do Campanario na porta %CAMPANARIO_PORT% ^(PID !OLD_PID!^)...
+        taskkill /PID !OLD_PID! /F >nul 2>&1
+        timeout /t 1 /nobreak >nul
+    ) else (
+        echo [ERRO] A porta %CAMPANARIO_PORT% ja esta ocupada pelo PID !OLD_PID!.
+        echo O processo nao parece ser uma instancia do Campanario iniciada pelo launcher.
+        echo Feche o processo ou libere a porta antes de iniciar.
+        goto :fail
+    )
+)
 
 rem 1) Check required commands.
 where uv >nul 2>&1
@@ -46,21 +69,18 @@ if errorlevel 1 (
 )
 
 :ollama_ready
- echo [OK] Ollama disponivel.
+echo [OK] Ollama disponivel.
 
-rem 4) If no model is configured in .env, use the first locally installed model.
+rem 4) Resolve configured model.
 set "CONFIGURED_MODEL="
 for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"CAMPANARIO_MODEL_NAME=" ".env" 2^>nul`) do set "CONFIGURED_MODEL=%%B"
 if not defined CONFIGURED_MODEL for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"CAMPANARIO_OLLAMA_MODEL=" ".env" 2^>nul`) do set "CONFIGURED_MODEL=%%B"
 
 if not defined CONFIGURED_MODEL (
     set "LOCAL_MODEL="
-    for /f "skip=1 tokens=1" %%M in ('ollama list 2^>nul') do (
-        if not defined LOCAL_MODEL set "LOCAL_MODEL=%%M"
-    )
+    for /f "skip=1 tokens=1" %%M in ('ollama list 2^>nul') do if not defined LOCAL_MODEL set "LOCAL_MODEL=%%M"
     if not defined LOCAL_MODEL (
         echo [ERRO] Nenhum modelo local foi encontrado no Ollama.
-        echo Instale um modelo, por exemplo: ollama pull llama3
         goto :fail
     )
     set "CAMPANARIO_MODEL_NAME=!LOCAL_MODEL!"
@@ -69,8 +89,7 @@ if not defined CONFIGURED_MODEL (
     ollama show "!CONFIGURED_MODEL!" >nul 2>&1
     if errorlevel 1 (
         echo [ERRO] O modelo configurado "!CONFIGURED_MODEL!" nao esta instalado no Ollama.
-        echo Instale com: ollama pull !CONFIGURED_MODEL!
-        echo Ou use CAMPANARIO.bat ^> Trocar modelo.
+        echo Use CAMPANARIO.bat ^> Trocar modelo.
         goto :fail
     )
     echo [OK] Modelo configurado: !CONFIGURED_MODEL!
@@ -85,18 +104,18 @@ echo [INFO] Aplicando migrations...
 uv run alembic upgrade head
 if errorlevel 1 goto :migration_fail
 
-rem 6) Start the API. Keep this window open while Campanario is running.
 echo.
 echo ========================================
 echo Campanario pronto para iniciar.
-echo Chat:   http://127.0.0.1:8000/
-echo API:    http://127.0.0.1:8000/docs
-echo Health: http://127.0.0.1:8000/health
+echo Build:  %CAMPANARIO_BUILD%
+echo Chat:   http://127.0.0.1:%CAMPANARIO_PORT%/
+echo API:    http://127.0.0.1:%CAMPANARIO_PORT%/docs
+echo Health: http://127.0.0.1:%CAMPANARIO_PORT%/health
 echo Para encerrar, pressione Ctrl+C.
 echo ========================================
 echo.
-start "" powershell -NoProfile -WindowStyle Hidden -Command "Start-Sleep -Seconds 2; Start-Process 'http://127.0.0.1:8000/'"
-uv run uvicorn campanario.main:app --host 127.0.0.1 --port 8000
+start "" powershell -NoProfile -WindowStyle Hidden -Command "Start-Sleep -Seconds 2; Start-Process 'http://127.0.0.1:%CAMPANARIO_PORT%/?build=%CAMPANARIO_BUILD%'"
+uv run uvicorn campanario.main:app --host 127.0.0.1 --port %CAMPANARIO_PORT%
 goto :end
 
 :uv_fail

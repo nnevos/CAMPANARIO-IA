@@ -12,9 +12,12 @@
 | Prompt leak guard | ATIVO | automatico |
 | Self-awareness | ATIVO | automatico |
 | Standard/Mega E2E | ATIVO | menu `CAMPANARIO.bat` |
+| E2E de agentes | ATIVO | menu `CAMPANARIO.bat` |
+| E2E de personalidade rapido/mega | ATIVO | mesmo prompt Todd/Morgana + multiplos seeds |
 | Model bakeoff | ATIVO | menu `CAMPANARIO.bat` |
 | Gemma 3 12B recomendado | ATIVO | configuracao, nao acoplamento |
-| Todd/Morgana | PROXIMO GATE | ainda desativados |
+| Morgana/Todd | ATIVO / personality foundation em validacao | participantes persistentes; Morgana fala primeiro por padrao |
+| Experience/Learning Layer | PROXIMA FASE APOS PERSONALIDADE | nao disponivel |
 | Memoria cognitiva | PLANEJADO | nao disponivel |
 | RAG/livros | PLANEJADO | nao disponivel |
 | Web/grounding | PLANEJADO | nao disponivel |

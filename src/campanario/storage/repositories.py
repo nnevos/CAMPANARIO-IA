@@ -17,6 +17,7 @@ def _session_from_row(row: ChatSessionRow) -> ChatSession:
         status=row.status,
         created_at=row.created_at,
         updated_at=row.updated_at,
+        primary_agent_id=row.primary_agent_id,
     )
 
 
@@ -29,6 +30,7 @@ def _message_from_row(row: MessageRow) -> Message:
         created_at=row.created_at,
         model=row.model,
         status=row.status,
+        agent_id=row.agent_id,
     )
 
 
@@ -43,6 +45,7 @@ class SqlAlchemyChatSessionRepository:
             status=session.status,
             created_at=session.created_at,
             updated_at=session.updated_at,
+            primary_agent_id=session.primary_agent_id,
         )
         with self._session_factory() as db:
             db.add(row)
@@ -61,6 +64,19 @@ class SqlAlchemyChatSessionRepository:
             ).all()
             return [_session_from_row(row) for row in rows]
 
+    def set_primary_agent(self, session_id: UUID, agent_id: str) -> ChatSession | None:
+        with self._session_factory() as db:
+            row = db.get(ChatSessionRow, str(session_id))
+            if row is None:
+                return None
+            row.primary_agent_id = agent_id
+            db.commit()
+            db.refresh(row)
+            return _session_from_row(row)
+
+    def set_agent(self, session_id: UUID, agent_id: str) -> ChatSession | None:
+        return self.set_primary_agent(session_id, agent_id)
+
 
 class SqlAlchemyMessageRepository:
     def __init__(self, session_factory: SessionFactory) -> None:
@@ -75,6 +91,7 @@ class SqlAlchemyMessageRepository:
             created_at=message.created_at,
             model=message.model,
             status=message.status,
+            agent_id=message.agent_id,
         )
         with self._session_factory() as db:
             db.add(row)

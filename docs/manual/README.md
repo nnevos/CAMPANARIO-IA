@@ -17,6 +17,11 @@ Este diretorio contem apenas a documentacao operacional atual. Historico de vers
 | resolver falhas | `09_SOLUCAO_DE_PROBLEMAS.md` |
 | entender arquitetura | `10_ARQUITETURA_PARA_USUARIO.md` |
 | ver funcoes ativas/planejadas | `11_FUNCOES_DO_SISTEMA.md` |
+| usar Todd/Morgana | `12_AGENTES.md` |
+| entender navegador vs desktop | `13_INTERFACE_WEB_E_DESKTOP.md` |
+| testar convivencia Todd/Morgana | `14_TESTE_MULTIAGENTE.md` |
+| confirmar build/UI e diagnosticar launcher | `15_LAUNCHER_UI_E_BUILD.md` |
+| testar personalidade/evolucao dos agentes | `16_PERSONALIDADE_E_EVOLUCAO_DOS_AGENTES.md` |
 
 ## Menu principal
 

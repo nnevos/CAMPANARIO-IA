@@ -20,7 +20,16 @@ _web_index = Path(__file__).with_name("web") / "index.html"
 
 @app.get("/", include_in_schema=False)
 def web_ui() -> FileResponse:
-    return FileResponse(_web_index)
+    # The UI is a single local file and changes between development releases.
+    # Force revalidation so an old browser cache cannot make a new backend look unchanged.
+    return FileResponse(
+        _web_index,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 @app.get("/health")

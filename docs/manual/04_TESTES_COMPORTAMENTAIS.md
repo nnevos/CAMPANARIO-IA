@@ -26,3 +26,8 @@ python -m compileall src tests
 ## Regra anti-overfitting
 
 Corrija classes de comportamento/arquitetura, nunca a frase exata que apareceu num relatorio.
+
+
+## Teste de agentes
+
+Use `CAMPANARIO.bat` -> **Testar agentes Todd/Morgana**. A suite usa o modelo configurado e verifica identidade, verdade compartilhada e amostras de estilo. Naturalidade/persona ainda exigem revisao humana do transcript.

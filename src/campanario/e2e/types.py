@@ -22,6 +22,7 @@ class ScenarioSpec:
     description: str
     turns: tuple[TurnSpec, ...]
     review_focus: str
+    agent_id: str | None = None
 
 
 @dataclass(slots=True)
@@ -35,6 +36,7 @@ class CheckResult:
 class TurnResult:
     user: str
     assistant: str = ""
+    speaker_id: str | None = None
     error: str | None = None
     duration_seconds: float = 0.0
     checks: list[CheckResult] = field(default_factory=list)

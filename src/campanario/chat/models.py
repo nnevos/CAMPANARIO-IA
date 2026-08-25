@@ -18,6 +18,12 @@ class ChatSession:
     updated_at: datetime
     status: str = "active"
     title: str | None = None
+    primary_agent_id: str = "morgana"
+
+    @property
+    def agent_id(self) -> str:
+        """v1.1 compatibility alias; means primary speaker, not exclusive agent."""
+        return self.primary_agent_id
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +35,7 @@ class Message:
     created_at: datetime
     model: str | None = None
     status: str = "completed"
+    agent_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

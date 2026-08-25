@@ -17,6 +17,11 @@ def test_manual_area_contains_only_current_operational_guides() -> None:
         "09_SOLUCAO_DE_PROBLEMAS.md",
         "10_ARQUITETURA_PARA_USUARIO.md",
         "11_FUNCOES_DO_SISTEMA.md",
+        "12_AGENTES.md",
+        "13_INTERFACE_WEB_E_DESKTOP.md",
+        "14_TESTE_MULTIAGENTE.md",
+        "15_LAUNCHER_UI_E_BUILD.md",
+        "16_PERSONALIDADE_E_EVOLUCAO_DOS_AGENTES.md",
     }
     actual = {path.name for path in manual.iterdir() if path.is_file()}
     assert actual == expected
@@ -31,8 +36,8 @@ def test_historical_behavior_manuals_are_archived_not_active() -> None:
     assert not (root / "docs" / "manual" / "20_RESPONSE_CONTRACT_PIPELINE.md").exists()
 
 
-def test_manual_marks_agents_as_next_gate_not_active() -> None:
+def test_manual_marks_agents_as_active() -> None:
     root = Path(__file__).resolve().parents[1]
     text = (root / "docs" / "manual" / "11_FUNCOES_DO_SISTEMA.md").read_text(encoding="utf-8")
-    assert "Todd/Morgana | PROXIMO GATE" in text
+    assert "Morgana/Todd | ATIVO / personality foundation em validacao" in text
     assert "Gemma 3 12B recomendado | ATIVO" in text

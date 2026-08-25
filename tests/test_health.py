@@ -14,5 +14,5 @@ def test_root_serves_web_chat() -> None:
     response = TestClient(app).get("/")
 
     assert response.status_code == 200
-    assert "Campanario IA" in response.text
+    assert "CAMPANÁRIO" in response.text
     assert "/api/sessions" in response.text

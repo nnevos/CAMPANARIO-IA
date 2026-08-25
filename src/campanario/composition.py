@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from campanario.agents.profiles import default_agent_registry
 from campanario.chat.behavior import BehaviorContextManager
 from campanario.chat.context import SummarizingContextManager
 from campanario.chat.service import ChatService
@@ -43,5 +44,7 @@ def build_chat_stack(settings: Settings, *, database_url: str | None = None, cre
             )
         ),
         default_model=runtime.model,
+        agent_registry=default_agent_registry(),
+        participation_provider=safe_provider,
     )
     return service, raw_provider

@@ -12,6 +12,7 @@ class ChatSessionRow(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
+    primary_agent_id: Mapped[str] = mapped_column(String(64), nullable=False, default="morgana")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -28,6 +29,7 @@ class MessageRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     model: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="completed")
+    agent_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 
 class ContextSummaryRow(Base):

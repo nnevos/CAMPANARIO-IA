@@ -1,59 +1,30 @@
-# Arquitetura atual — pre-agentes organizada
-
-## Fluxo canonico
+# Arquitetura atual — Persistent Participants v1.2
 
 ```text
-Interface/API
-  -> ChatService
-  -> Context + Pragmatics
-  -> Behavior Context Assembly
-  -> Response Contract Pipeline
-  -> ModelProvider
-  -> Adapter (Ollama hoje)
-  -> Modelo configurado
+Usuario / UI
+    |
+    v
+Campanario (sistema)
+    |- Chat/Context/Pragmatics
+    |- Shared memory/evidence boundary
+    |- AgentRouter -> prioridade de fala
+    |- ParticipationArbiter -> entrada secundaria opcional
+    |    |- Morgana (default primary)
+    |    `- Todd
+    |- Response Contract Pipeline
+    |- Model Runtime (Gemma 3 12B recomendado; substituivel)
+    `- SQLite persistence
 ```
 
-## Pacotes
+## Separacoes obrigatorias
 
-```text
-campanario.chat
-  behavior.py      composicao do contexto comportamental
-  prompts.py       prompts-base sem logica de classificacao
-  turns.py         TurnMode / ContinuationKind / interpretacao de turno
-  pragmatics.py    atos pragmaticos da entrada
-  provenance.py    autoridade de fontes e correcoes
-  audit.py         sinais observaveis para autoauditoria
-  context.py       selecao/resumo de contexto
-  service.py       caso de uso principal de chat
+- sistema != agente;
+- prioridade != exclusividade;
+- persona != verdade;
+- participant decision != conteudo da resposta;
+- modelo != comportamento do Campanario;
+- UI web != core (desktop futuro pode reutilizar ambos).
 
-campanario.response
-  types.py         tipos de contrato/violacao
-  contract.py      politica e enforcement
-  semantics.py     validadores semanticos
-  pipeline.py      generate -> validate -> repair -> enforce/fallback
-  prompt_safety.py isolamento/leak guard
-  guard.py         adapter da pipeline
+## Multi-speaker
 
-campanario.model
-  protocol.py      interface independente de fornecedor
-  runtime.py       configuracao/factory
-  adapters/ollama.py
-
-campanario.storage persistencia
-campanario.e2e     cenarios/evaluator/runner/reporting/bakeoff
-campanario.composition composition root unico
-```
-
-## Regra de dependencia
-
-`chat` e `response` nao podem depender de nomes de familia como Llama, Gemma ou Qwen. O modelo e uma dependencia substituivel atras de `ModelProvider`.
-
-## Agentes — proxima camada
-
-Todd/Morgana deverao entrar acima da interpretacao comum e abaixo da escolha final de estilo, sem criar bancos, pipelines ou memorias paralelas. Conceitualmente:
-
-```text
-entrada -> pragmatica/contexto comum -> agente/persona ativa -> response contract -> modelo
-```
-
-Agentes continuam desativados ate a regressao final desta refatoracao.
+Uma mensagem do usuario pode gerar uma ou duas falas. Cada fala passa pela mesma pipeline, e `messages.agent_id` registra o speaker real. O segundo agente entra apenas quando ha convite explicito ou valor conversacional distinto identificado de forma conservadora.

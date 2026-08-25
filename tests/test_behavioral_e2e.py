@@ -282,3 +282,47 @@ def test_v159_evaluator_requires_diagnostic_action_to_start_first_sentence() -> 
     reply = "Esse tipo de problema merece investigação; verifique logs e métricas logo em seguida."
     results = evaluate_response(reply, scenario.turns[1].checks, user_text=scenario.turns[1].user)
     assert any(result.status == "FAIL" and result.label == "primeiro diagnóstico priorizado" for result in results)
+
+def test_agent_suite_uses_both_personas_and_shared_factual_anchor() -> None:
+    from campanario.e2e.scenarios import build_scenarios
+    scenarios = build_scenarios(12345, "agents")
+    assert {scenario.agent_id for scenario in scenarios} == {"todd", "morgana"}
+    ids = {scenario.id for scenario in scenarios}
+    assert "agent_todd_identity" in ids
+    assert "agent_morgana_identity" in ids
+    assert "agent_todd_shared_truth" in ids
+    assert "agent_morgana_shared_truth" in ids
+
+
+def test_agent_report_turns_carry_expected_speaker_identity() -> None:
+    from campanario.e2e.types import TurnResult
+    todd = TurnResult(user="x", assistant="y", speaker_id="todd")
+    morgana = TurnResult(user="x", assistant="y", speaker_id="morgana")
+    assert todd.speaker_id == "todd"
+    assert morgana.speaker_id == "morgana"
+
+
+def test_standard_scenarios_do_not_model_campanario_as_agent() -> None:
+    scenarios = build_scenarios(12345, "standard")
+    assert all(scenario.agent_id is None for scenario in scenarios)
+
+
+
+def test_agent_personality_suite_pairs_same_prompts_across_agents() -> None:
+    scenarios = build_scenarios(20260824, "agent_personality")
+    assert {scenario.agent_id for scenario in scenarios} == {"todd", "morgana"}
+    assert len(scenarios) == 4
+    by_suffix: dict[str, dict[str, str]] = {}
+    for scenario in scenarios:
+        suffix = scenario.id.rsplit("_", 1)[-1]
+        by_suffix.setdefault(suffix, {})[scenario.agent_id or ""] = scenario.turns[0].user
+    assert by_suffix["decision"]["todd"] == by_suffix["decision"]["morgana"]
+    assert by_suffix["casual"]["todd"] == by_suffix["casual"]["morgana"]
+
+
+def test_agent_mega_varies_personality_prompts_without_hardcoding_one_dialogue() -> None:
+    scenarios = build_scenarios(20260824, "agent_mega")
+    assert len(scenarios) == 32
+    prompts = {scenario.turns[0].user for scenario in scenarios}
+    assert len(prompts) >= 6
+    assert {scenario.agent_id for scenario in scenarios} == {"todd", "morgana"}

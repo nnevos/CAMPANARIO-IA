@@ -104,3 +104,8 @@ rigoroso quando a precisao factual importa, sem parecer duas IAs desconectadas.
 
 Morgana, Todd e futuros agentes devem expressar o Campanario atraves de personalidades distintas, mas
 compartilhar a mesma base de memoria, capacidades e regras de evidencia do sistema.
+
+
+## Implementacao atual dos agentes
+
+Agent Architecture v1.1 materializa este conceito sem criar inteligencias paralelas. `Campanario` e somente o sistema e nunca um agente selecionavel. A sessao mantem uma ponte ativa (`Morgana` por padrao ou `Todd`); contexto, memoria, factualidade, provider e response pipeline permanecem compartilhados. Chamar Campanario e um wake/endereco do sistema, enquanto chamar Todd/Morgana roteia a ponte de resposta.

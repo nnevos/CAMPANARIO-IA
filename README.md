@@ -1,49 +1,48 @@
-# Campanario
+# Campanario IA
 
-Inteligencia pessoal local, persistente e modular.
+Sistema pessoal local, persistente e model-portable. A foundation conversacional esta validada com `gemma3:12b`.
 
-Este checkpoint e a **foundation organizada pre-agentes**. Gemma 3 12B e o modelo recomendado atual, mas o sistema continua independente de familia de modelo.
+## Conceito atual
 
-## Uso rapido no Windows
+- **Campanario** = sistema/ambiente, contexto, memoria-base, pipeline, modelos e capacidades.
+- **Morgana** = participante persistente e default primary speaker.
+- **Todd** = participante persistente.
+- Prioridade define quem normalmente fala primeiro; nunca desliga o outro.
+- O usuario expressa intencao; o Campanario coordena participacao e execucao.
 
-Execute:
+## Estado de desenvolvimento
 
-```text
-CAMPANARIO.bat
-```
+Estamos no **Agent Personality Foundation**. Antes de voz/call, devem ser fechados personalidade-core, testes rapidos/mega, continuidade e depois a Experience/Learning Layer.
 
-O menu centraliza iniciar o sistema, abrir manual, trocar modelo, rodar testes, comparar modelos e consultar relatorios.
-
-## Desenvolvimento
-
-Leia antes de alterar:
+Leia sempre:
 
 1. `RECOVER_FIRST.md`
 2. `PROJECT_STATE.md`
-3. `docs/current/`
+3. `SAFEPOINT.md`
 
-## Estrutura
+## Uso
 
-```text
-docs/          documentacao atual, manual, ADRs, referencias e historico
-migrations/    migrations do banco
-src/           codigo do Campanario
-tests/         testes offline
-tools/         launchers e manutencao
-```
+No Windows execute `CAMPANARIO.bat`.
 
-Arquitetura de runtime:
-
-```text
-API -> ChatService -> Context/Pragmatics -> Behavior -> Response Pipeline -> ModelProvider -> Adapter
-```
+Documentacao operacional: `docs/manual/README.md`.
 
 ## Modelo
 
-Default recomendado no `.env.example`: `gemma3:12b`.
+`gemma3:12b` e o baseline recomendado. A arquitetura continua preparada para Qwen/Gemma/outros adapters sem resetar o projeto.
 
-Trocar o modelo nao reinicia o projeto. Use `CAMPANARIO.bat` -> **Trocar modelo**.
+## Build deste safepoint
 
-## Estado dos agentes
+A UI/API deve informar:
 
-Todd e Morgana ainda nao estao ativos. O proximo gate apos a regressao desta reorganizacao e **Agent Architecture v1**.
+`Build: agent-personality-safepoint-v1.3.1`
+
+Esse identificador existe para impedir confusao com instalacoes antigas na porta 8000.
+
+
+## Continuous Presence update (v1.3.1)
+- Presence UI boots clean: no old transcript is rendered automatically.
+- A fresh technical episode is created lazily on the first new turn.
+- Previous sessions are secondary **episodic memory records** under Sistema and require deliberate access.
+- Sessions remain internal infrastructure; the user-facing concept is continuous coexistence/presence.
+- Cross-episode learned memory is **not yet claimed as implemented**; it remains part of the Experience/Learning gate before voice.
+- See `docs/adr/0039-continuous-presence-episodic-history.md`.

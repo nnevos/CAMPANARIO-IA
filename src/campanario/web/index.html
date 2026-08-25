@@ -1,210 +1,38 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Campanario IA</title>
-  <style>
-    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; background: #0b1020; color: #eef2ff; }
-    .app { min-height: 100vh; display: grid; grid-template-columns: 280px 1fr; }
-    aside { padding: 20px; border-right: 1px solid #27304a; background: #0f172a; }
-    h1 { margin: 0 0 6px; font-size: 21px; }
-    .muted { color: #94a3b8; font-size: 13px; }
-    button, textarea { font: inherit; }
-    button { border: 0; border-radius: 10px; cursor: pointer; }
-    .new-chat { width: 100%; margin: 18px 0; padding: 11px 14px; background: #6366f1; color: white; font-weight: 700; }
-    .sessions { display: grid; gap: 8px; }
-    .session { width: 100%; padding: 10px 12px; text-align: left; background: #172033; color: #dbeafe; }
-    .session.active { outline: 2px solid #6366f1; background: #202a44; }
-    main { min-width: 0; display: flex; flex-direction: column; height: 100vh; }
-    header { padding: 18px 24px; border-bottom: 1px solid #27304a; display: flex; justify-content: space-between; align-items: center; }
-    .status { font-size: 13px; color: #86efac; }
-    .messages { flex: 1; overflow-y: auto; padding: 28px max(24px, calc((100% - 900px) / 2)); display: flex; flex-direction: column; gap: 16px; }
-    .message { max-width: 80%; padding: 13px 16px; border-radius: 16px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .user { align-self: flex-end; background: #4f46e5; color: white; border-bottom-right-radius: 5px; }
-    .assistant { align-self: flex-start; background: #182238; color: #e2e8f0; border-bottom-left-radius: 5px; }
-    .error { align-self: center; background: #451a1a; color: #fecaca; }
-    .empty { margin: auto; text-align: center; color: #94a3b8; }
-    form { padding: 18px max(24px, calc((100% - 900px) / 2)) 24px; border-top: 1px solid #27304a; display: grid; grid-template-columns: 1fr auto; gap: 12px; }
-    textarea { resize: none; min-height: 52px; max-height: 180px; padding: 14px; border-radius: 14px; border: 1px solid #334155; background: #111827; color: #f8fafc; outline: none; }
-    textarea:focus { border-color: #818cf8; }
-    .send { padding: 0 22px; background: #6366f1; color: white; font-weight: 700; }
-    .send:disabled, textarea:disabled { opacity: .55; cursor: not-allowed; }
-    @media (max-width: 760px) {
-      .app { grid-template-columns: 1fr; }
-      aside { display: none; }
-      .message { max-width: 92%; }
-      header, .messages, form { padding-left: 16px; padding-right: 16px; }
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#080a0f" />
+<title>Campanário</title>
+<style>
+:root{color-scheme:dark;--bg:#07090d;--surface:#0c1017;--line:#1d2430;--text:#edf1f7;--muted:#778293;--soft:#aab3c0;--morgana:#a992e8;--todd:#d59a7e;--present:#78c99b;--accent:#8d9eea;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--text);background:radial-gradient(circle at 50% -15%,#141b29 0,#090c12 35%,var(--bg) 72%);overflow:hidden}button,textarea{font:inherit}.app{height:100vh;display:grid;grid-template-rows:64px minmax(0,1fr)}header{display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,3vw,38px);border-bottom:1px solid rgba(29,36,48,.75);background:rgba(7,9,13,.66);backdrop-filter:blur(18px)}.brand{display:flex;align-items:center;gap:11px}.sigil{width:26px;height:26px;border:1px solid #3b4659;border-radius:50%;position:relative;box-shadow:inset 0 0 16px rgba(141,158,234,.08)}.sigil:after{content:"";position:absolute;width:5px;height:5px;border-radius:50%;background:var(--present);top:9px;left:9px;box-shadow:0 0 10px rgba(120,201,155,.7)}.brand strong{font-size:13px;letter-spacing:.14em}.presence{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.13em}.presence i{width:6px;height:6px;border-radius:50%;background:var(--present);box-shadow:0 0 9px rgba(120,201,155,.65)}.system-link{border:0;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;padding:8px}.system-link:hover{color:var(--text)}main{min-height:0;position:relative}.presence-space{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto}.participants{display:flex;justify-content:center;gap:22px;padding:17px 18px 4px;color:var(--muted);font-size:10px;letter-spacing:.07em}.participant{display:flex;align-items:center;gap:7px}.participant i{width:6px;height:6px;border-radius:50%}.participant.morgana i{background:var(--morgana)}.participant.todd i{background:var(--todd)}.participant.primary{color:var(--soft)}.stage{min-height:0;overflow:auto;padding:24px max(20px,calc((100% - 760px)/2)) 170px;scroll-behavior:smooth}.ambient{min-height:65%;display:grid;place-items:center;text-align:center}.core-wrap{display:flex;flex-direction:column;align-items:center;gap:18px}.core{width:78px;height:78px;border-radius:50%;position:relative;border:1px solid #313b4b;background:radial-gradient(circle,#202a3d 0,#111722 42%,#090c12 72%);box-shadow:0 0 60px rgba(126,145,222,.10)}.core:before{content:"";position:absolute;inset:27px;border-radius:50%;background:#a9b5e8;box-shadow:0 0 18px rgba(169,181,232,.55)}.core:after{content:"";position:absolute;inset:-9px;border:1px solid rgba(96,111,145,.18);border-radius:50%}.core.attentive{animation:pulse 1.8s infinite}.core.attentive:after{inset:-18px;border-color:rgba(141,158,234,.35)}.core.processing:after{border-top-color:#91a2ed;animation:spin 1.2s linear infinite}.core.speaking:before{box-shadow:0 0 30px rgba(169,181,232,.9)}@keyframes pulse{50%{box-shadow:0 0 80px rgba(126,145,222,.24)}}@keyframes spin{to{transform:rotate(360deg)}}.state-title{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft)}.state-copy{font-size:13px;color:var(--muted);max-width:440px;line-height:1.55}.conversation{display:flex;flex-direction:column;gap:25px}.turn{max-width:620px}.turn.user{align-self:flex-end;text-align:right}.speaker{font-size:9px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:7px;color:var(--muted)}.turn.morgana .speaker{color:var(--morgana)}.turn.todd .speaker{color:var(--todd)}.utterance{font-size:16px;line-height:1.58;white-space:pre-wrap;overflow-wrap:anywhere;color:#dfe5ef}.turn.user .utterance{color:#aeb8c8}.error{margin:12px auto;color:#f3a7b1;font-size:12px}.dock{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);width:min(720px,calc(100% - 30px));z-index:5}.statusline{text-align:center;height:24px;font-size:10px;color:var(--muted);letter-spacing:.08em}.composer{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:end;gap:6px;padding:7px;border:1px solid #283140;border-radius:20px;background:rgba(13,17,24,.94);box-shadow:0 18px 55px rgba(0,0,0,.35);backdrop-filter:blur(18px)}textarea{border:0;outline:0;resize:none;background:transparent;color:var(--text);min-height:42px;max-height:120px;padding:11px 5px;line-height:1.45}textarea::placeholder{color:#626d7d}.round{width:42px;height:42px;border:0;border-radius:14px;background:transparent;color:#8793a5;cursor:pointer}.round:hover{background:#171d27;color:#dbe2ed}.send{background:#1d2638;color:#cbd5ef}.send:disabled,textarea:disabled{opacity:.45}.system-panel{position:absolute;inset:0 0 0 auto;width:min(430px,100%);background:#0b0f16;border-left:1px solid var(--line);z-index:20;padding:26px;transform:translateX(102%);transition:.22s ease;overflow:auto}.system-panel.open{transform:none}.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.panel-head h2{margin:0;font-size:15px}.close{background:transparent;border:0;color:var(--muted);font-size:20px;cursor:pointer}.section{padding:18px 0;border-top:1px solid var(--line)}.section h3{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:0 0 13px}.kv{display:flex;justify-content:space-between;gap:15px;margin:9px 0;font-size:12px}.kv span:first-child{color:var(--muted)}.session-list{display:flex;flex-direction:column;gap:5px}.session{border:0;background:transparent;color:#9aa5b5;text-align:left;padding:9px;border-radius:9px;cursor:pointer}.session:hover{background:#121823;color:white}.new-session{width:100%;padding:10px;border:1px solid #2a3342;background:#111722;color:#cbd3df;border-radius:10px;cursor:pointer;margin-bottom:8px}.future{color:#687383;font-size:11px;line-height:1.6}.tool-state{display:none;text-align:center;color:#91a0b7;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}.tool-state.visible{display:block}@media(max-width:640px){header{padding:0 15px}.brand strong{font-size:11px}.participants{justify-content:flex-start;padding-left:20px}.stage{padding:18px 18px 150px}.utterance{font-size:15px}.system-link{font-size:0}.system-link:after{content:"⋯";font-size:18px}.core{width:68px;height:68px}}
+</style>
 </head>
 <body>
-  <div class="app">
-    <aside>
-      <h1>Campanario IA</h1>
-      <div class="muted">IA local com Ollama</div>
-      <button class="new-chat" id="newChat">+ Nova conversa</button>
-      <div class="sessions" id="sessions"></div>
-    </aside>
-    <main>
-      <header>
-        <strong id="chatTitle">Campanario</strong>
-        <span class="status" id="status">Conectado</span>
-      </header>
-      <div class="messages" id="messages">
-        <div class="empty" id="empty">Crie ou selecione uma conversa e envie uma mensagem.</div>
-      </div>
-      <form id="chatForm">
-        <textarea id="prompt" placeholder="Digite sua mensagem..." rows="1"></textarea>
-        <button class="send" id="send" type="submit">Enviar</button>
-      </form>
-    </main>
-  </div>
+<div class="app">
+<header><div class="brand"><div class="sigil"></div><strong>CAMPANÁRIO</strong></div><div class="presence"><i></i><span id="topState">presente</span></div><button class="system-link" id="systemOpen">Sistema</button></header>
+<main>
+<section class="presence-space">
+<div class="participants" id="participants"></div>
+<div class="stage" id="stage"><div class="ambient" id="ambient"><div class="core-wrap"><div class="core" id="core"></div><div class="state-title" id="stateTitle">Presente</div><div class="state-copy" id="stateCopy">Morgana e Todd estão aqui. Fale quando quiser.</div></div></div><div class="conversation" id="conversation"></div></div>
+<div class="dock"><div class="tool-state" id="toolState"></div><div class="statusline" id="statusline">presença contínua</div><form class="composer" id="form"><button class="round" type="button" id="mic" title="Voz — estrutura preparada" aria-label="Voz">◉</button><textarea id="prompt" rows="1" placeholder="Fale com o Campanário..."></textarea><button class="round send" id="send" type="submit" aria-label="Enviar">↑</button></form></div>
+</section>
+<aside class="system-panel" id="systemPanel"><div class="panel-head"><h2>Sistema</h2><button class="close" id="systemClose">×</button></div><div class="section"><h3>Campanário</h3><div class="kv"><span>Estado</span><strong>Presente</strong></div><div class="kv"><span>Modelo</span><strong id="model">—</strong></div><div class="kv"><span>Build</span><strong id="build">—</strong></div></div><div class="section"><h3>Habitantes</h3><div id="agentDetails"></div></div><div class="section"><h3>Memória de episódios</h3><div class="future">O Campanário abre sempre no presente. Registros anteriores ficam aqui para consulta deliberada; não são despejados na tela principal ao iniciar.</div><div class="session-list" id="sessions"></div></div><div class="section"><h3>Capacidades</h3><div class="future">Memória · conhecimento · documentos · ferramentas · voz · wake word · diagnóstico.<br><br>Esta área é administrativa. Capacidades ainda não conectadas não são apresentadas como ativas.</div></div></aside>
+</main></div>
 <script>
-  const sessionsEl = document.getElementById('sessions');
-  const messagesEl = document.getElementById('messages');
-  const form = document.getElementById('chatForm');
-  const promptEl = document.getElementById('prompt');
-  const sendEl = document.getElementById('send');
-  const statusEl = document.getElementById('status');
-  const titleEl = document.getElementById('chatTitle');
-  let currentSessionId = null;
-  let busy = false;
-
-  function escapeText(value) { return String(value ?? ''); }
-
-  function setBusy(value) {
-    busy = value;
-    promptEl.disabled = value;
-    sendEl.disabled = value;
-    statusEl.textContent = value ? 'Pensando...' : 'Conectado';
-  }
-
-  function clearMessages() { messagesEl.innerHTML = ''; }
-
-  function addMessage(role, text) {
-    const el = document.createElement('div');
-    el.className = `message ${role}`;
-    el.textContent = escapeText(text);
-    messagesEl.appendChild(el);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-    return el;
-  }
-
-  async function api(path, options = {}) {
-    const response = await fetch(path, options);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
-  }
-
-  async function refreshSessions() {
-    const sessions = await api('/api/sessions');
-    sessionsEl.innerHTML = '';
-    for (const session of sessions) {
-      const button = document.createElement('button');
-      button.className = 'session' + (session.id === currentSessionId ? ' active' : '');
-      button.textContent = session.title || `Conversa ${session.id.slice(0, 8)}`;
-      button.onclick = () => selectSession(session.id, button.textContent);
-      sessionsEl.appendChild(button);
-    }
-    return sessions;
-  }
-
-  async function createSession() {
-    const session = await api('/api/sessions', {
-      method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'
-    });
-    await refreshSessions();
-    await selectSession(session.id, session.title || `Conversa ${session.id.slice(0, 8)}`);
-  }
-
-  async function selectSession(id, title) {
-    currentSessionId = id;
-    titleEl.textContent = title || 'Campanario';
-    const history = await api(`/api/sessions/${id}/messages`);
-    clearMessages();
-    if (!history.length) addMessage('assistant', 'Olá! Como posso ajudar?');
-    for (const message of history) addMessage(message.role, message.content);
-    await refreshSessions();
-    promptEl.focus();
-  }
-
-  async function streamMessage(text) {
-    const response = await fetch(`/api/sessions/${currentSessionId}/chat/stream`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({message: text})
-    });
-    if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
-
-    const assistant = addMessage('assistant', '');
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const {value, done} = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, {stream: true});
-      const events = buffer.split('\n\n');
-      buffer = events.pop() || '';
-      for (const event of events) {
-        const dataLine = event.split('\n').find(line => line.startsWith('data: '));
-        if (!dataLine) continue;
-        const payload = JSON.parse(dataLine.slice(6));
-        if (payload.type === 'token') {
-          assistant.textContent += payload.text;
-          messagesEl.scrollTop = messagesEl.scrollHeight;
-        } else if (payload.type === 'error') {
-          assistant.remove();
-          addMessage('error', `Erro: ${payload.error}`);
-        }
-      }
-    }
-  }
-
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const text = promptEl.value.trim();
-    if (!text || busy) return;
-    try {
-      setBusy(true);
-      if (!currentSessionId) await createSession();
-      addMessage('user', text);
-      promptEl.value = '';
-      await streamMessage(text);
-      await refreshSessions();
-    } catch (error) {
-      addMessage('error', `Falha ao conversar com o Campanario: ${error.message}`);
-    } finally {
-      setBusy(false);
-      promptEl.focus();
-    }
-  });
-
-  promptEl.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      form.requestSubmit();
-    }
-  });
-
-  document.getElementById('newChat').addEventListener('click', () => createSession().catch(err => addMessage('error', err.message)));
-
-  (async () => {
-    try {
-      const sessions = await refreshSessions();
-      if (sessions.length) {
-        const latest = sessions[sessions.length - 1];
-        await selectSession(latest.id, latest.title || `Conversa ${latest.id.slice(0, 8)}`);
-      }
-    } catch (error) {
-      statusEl.textContent = 'Erro de conexão';
-      addMessage('error', error.message);
-    }
-  })();
+const $=id=>document.getElementById(id);let sessionId=null,busy=false,agents=[],system={},primary='morgana',viewingArchive=false;
+function name(id){return agents.find(a=>a.id===id)?.name||(id==='todd'?'Todd':'Morgana')}function setState(state,copy=''){const map={present:['Presente','presente'],attentive:['Atento','atento'],processing:['Processando','engajado'],speaking:['Engajado','engajado']};$('core').className='core '+(state==='present'?'':state);$('stateTitle').textContent=map[state][0];$('topState').textContent=map[state][1];if(copy)$('stateCopy').textContent=copy;$('ambient').style.display=$('conversation').children.length?'none':'grid'}
+async function api(path,opt={}){const r=await fetch(path,opt);if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.json()}
+function renderParticipants(){ $('participants').innerHTML=agents.map(a=>`<span class="participant ${a.id} ${a.id===primary?'primary':''}"><i></i>${a.name}<span>${a.id===primary?' · voz principal':''}</span></span>`).join('') }
+function addTurn(role,text,agentId){$('ambient').style.display='none';const el=document.createElement('div');el.className=`turn ${role==='user'?'user':agentId||'morgana'}`;el.innerHTML=`<div class="speaker">${role==='user'?'você':name(agentId)}</div><div class="utterance"></div>`;el.querySelector('.utterance').textContent=text;$('conversation').appendChild(el);$('stage').scrollTop=$('stage').scrollHeight;return el.querySelector('.utterance')}
+function addError(text){const e=document.createElement('div');e.className='error';e.textContent=text;$('conversation').appendChild(e)}
+function setBusy(v){busy=v;$('prompt').disabled=v;$('send').disabled=v;$('statusline').textContent=v?'coordenando resposta…':'conversa aberta';if(v)setState('processing','Organizando o turno…')}
+async function boot(){system=await api('/api/system');agents=await api('/api/agents');primary=system.default_primary_agent_id||'morgana';$('model').textContent=system.model||'local';$('build').textContent=system.release_id||'—';$('agentDetails').innerHTML=agents.map(a=>`<div class="kv"><span>● ${a.name}</span><strong>${a.id===system.default_primary_agent_id?'voz principal · presente':'presente'}</strong></div>`).join('');renderParticipants();await refreshSessions();sessionId=null;$('conversation').innerHTML='';setState('present','Morgana e Todd estão aqui. O passado permanece na memória; este é o momento presente.');$('statusline').textContent='presença contínua'}
+async function refreshSessions(){const ss=await api('/api/sessions');$('sessions').innerHTML='';ss.filter(s=>s.id!==sessionId).forEach(s=>{const b=document.createElement('button');b.className='session';const when=new Date(s.updated_at).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});b.textContent=(s.title||'Episódio')+' · '+when;b.title='Consultar este registro anterior';b.onclick=()=>selectSession(s);$('sessions').appendChild(b)});return ss}
+async function selectSession(s){const h=await api(`/api/sessions/${s.id}/messages`);$('conversation').innerHTML='';h.forEach(m=>addTurn(m.role,m.content,m.agent_id));if(!h.length)setState('present','Este episódio não possui falas registradas.');else{$('ambient').style.display='none';$('statusline').textContent='consultando memória de episódio'}$('systemPanel').classList.remove('open');sessionId=null;viewingArchive=true;primary=system.default_primary_agent_id||'morgana';renderParticipants()}
+async function createSession(refresh=true){const s=await api('/api/sessions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});sessionId=s.id;primary=s.primary_agent_id;renderParticipants();if(refresh)await refreshSessions();return s}
+async function stream(text){const r=await fetch(`/api/sessions/${sessionId}/chat/stream`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});if(!r.ok||!r.body)throw new Error(`HTTP ${r.status}`);const rd=r.body.getReader(),dec=new TextDecoder();let buf='',bubble=null,speaker=null;while(true){const {value,done}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});const evs=buf.split('\n\n');buf=evs.pop()||'';for(const ev of evs){const line=ev.split('\n').find(x=>x.startsWith('data: '));if(!line)continue;const p=JSON.parse(line.slice(6));if(p.type==='speaker_start'){speaker=p.agent_id;setState('speaking',`${name(speaker)} está falando`);bubble=addTurn('assistant','',speaker)}if(p.type==='token'){if(!bubble||speaker!==p.agent_id){speaker=p.agent_id;bubble=addTurn('assistant','',speaker)}bubble.append(document.createTextNode(p.text||''));$('stage').scrollTop=$('stage').scrollHeight}if(p.type==='speaker_done'){bubble=null;speaker=null}if(p.type==='error')addError(`Erro: ${p.error}`)}}const ss=await refreshSessions(),s=ss.find(x=>x.id===sessionId);if(s){primary=s.primary_agent_id||primary;renderParticipants()}setState('attentive','Conversa aberta. Continue sem precisar chamar de novo.');$('statusline').textContent='conversa aberta'}
+$('form').addEventListener('submit',async e=>{e.preventDefault();const text=$('prompt').value.trim();if(!text||busy)return;try{setBusy(true);if(viewingArchive){$('conversation').innerHTML='';viewingArchive=false;setState('present','Morgana e Todd estão aqui.');}if(!sessionId)await createSession();addTurn('user',text);$('prompt').value='';await stream(text)}catch(err){addError(`Falha: ${err.message}`)}finally{setBusy(false);$('prompt').focus()}});$('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('form').requestSubmit()}});$('mic').onclick=()=>{setState('attentive','Estrutura de voz preparada; captura contínua/wake word ainda não está conectada.');$('statusline').textContent='voz ainda não conectada'};$('systemOpen').onclick=()=>$('systemPanel').classList.add('open');$('systemClose').onclick=()=>$('systemPanel').classList.remove('open');boot().catch(e=>{addError(e.message);$('topState').textContent='offline'});
 </script>
-</body>
-</html>
+</body></html>

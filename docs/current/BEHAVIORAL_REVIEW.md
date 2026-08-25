@@ -37,3 +37,7 @@ Conclusao: uma parte grande do problema anterior era capacidade/adequacao do mod
 ## Regra daqui para frente
 
 Nao adicionar patches comportamentais para uma pergunta isolada. Primeiro testar se a falha e modelo, pipeline, contexto, evaluator ou conhecimento faltante.
+
+## Agent Architecture v1.2
+
+A foundation comportamental nao foi retunada. A mudanca e de coordenacao: Todd/Morgana deixam de ser selecoes exclusivas e passam a participantes persistentes com prioridade de fala + arbitragem conservadora para participacao secundaria.

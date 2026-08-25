@@ -55,7 +55,7 @@ async def run_suite(seed: int, suite: str) -> RunReport:
         loop = asyncio.get_running_loop()
         for index, scenario in enumerate(scenarios, start=1):
             print(f"[{index:02d}/{len(scenarios):02d}] {scenario.id} ...", flush=True)
-            session = service.create_session(title=f"E2E {scenario.id}")
+            session = service.create_session(title=f"E2E {scenario.id}", agent_id=scenario.agent_id)
             scenario_result = ScenarioResult(
                 id=scenario.id,
                 category=scenario.category,
@@ -64,7 +64,7 @@ async def run_suite(seed: int, suite: str) -> RunReport:
             )
             for turn in scenario.turns:
                 started = loop.time()
-                turn_result = TurnResult(user=turn.user)
+                turn_result = TurnResult(user=turn.user, speaker_id=(scenario.agent_id if suite in {"agents", "agent_personality", "agent_mega"} else None))
                 try:
                     response = await _send(service, session.id, turn.user)
                     turn_result.assistant = response

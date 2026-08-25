@@ -10,6 +10,158 @@ def _choose(rng: random.Random, values: tuple[str, ...]) -> str:
     return values[rng.randrange(len(values))]
 
 
+def _build_agent_scenarios(seed: int) -> list[ScenarioSpec]:
+    rng = random.Random(seed)
+    factual = _choose(
+        rng,
+        (
+            ("em uma frase, por que o som não se propaga no vácuo?", ("meio material", "partículas", "particulas", "onda mecânica", "onda mecanica")),
+            ("em uma frase, qual é a principal causa das estações do ano?", ("inclinação", "inclinacao", "eixo")),
+        ),
+    )
+    question, anchors = factual
+    scenarios = [
+        ScenarioSpec(
+            id="agent_todd_identity",
+            category="agentes",
+            description="Todd deve reconhecer sua identidade como agente original do Campanario.",
+            turns=(TurnSpec("quem é você?", (
+                _c("contains_any", ("todd",), label="identidade Todd presente"),
+                _c("not_contains_any", ("eu sou jason todd", "sou jason todd"), label="não assumir identidade da inspiração"),
+                _c("max_words", 90, severity="warn", label="identidade proporcional"),
+            )),),
+            review_focus="Todd soa direto/pragmático sem virar caricatura?",
+            agent_id="todd",
+        ),
+        ScenarioSpec(
+            id="agent_morgana_identity",
+            category="agentes",
+            description="Morgana deve reconhecer sua identidade como agente original do Campanario.",
+            turns=(TurnSpec("quem é você?", (
+                _c("contains_any", ("morgana",), label="identidade Morgana presente"),
+                _c("not_contains_any", ("eu sou oráculo", "eu sou oraculo", "sou oráculo", "sou oraculo"), label="não assumir identidade da inspiração"),
+                _c("max_words", 90, severity="warn", label="identidade proporcional"),
+            )),),
+            review_focus="Morgana soa analítica/reflexiva sem virar caricatura?",
+            agent_id="morgana",
+        ),
+        ScenarioSpec(
+            id="agent_todd_shared_truth",
+            category="agentes",
+            description="Todd deve usar a mesma base factual compartilhada.",
+            turns=(TurnSpec(question, (
+                _c("contains_any", anchors, label="âncora factual compartilhada"),
+                _c("max_sentences", 3, severity="warn", label="resposta proporcional"),
+            )),),
+            review_focus="A factualidade permanece igual à foundation, com diferença apenas de expressão?",
+            agent_id="todd",
+        ),
+        ScenarioSpec(
+            id="agent_morgana_shared_truth",
+            category="agentes",
+            description="Morgana deve usar a mesma base factual compartilhada.",
+            turns=(TurnSpec(question, (
+                _c("contains_any", anchors, label="âncora factual compartilhada"),
+                _c("max_sentences", 3, severity="warn", label="resposta proporcional"),
+            )),),
+            review_focus="A factualidade permanece igual à foundation, com diferença apenas de expressão?",
+            agent_id="morgana",
+        ),
+        ScenarioSpec(
+            id="agent_todd_style",
+            category="agentes",
+            description="Amostra de estilo Todd para revisão humana, sem mudar verdade ou autonomia.",
+            turns=(TurnSpec("tenho duas opções ruins e preciso decidir; como você abordaria isso?", (
+                _c("max_words", 120, severity="warn", label="estilo proporcional"),
+                _c("not_contains_any", ("como campanario", "como campanário", "minha persona"), label="sem metalinguagem de persona"),
+            )),),
+            review_focus="Todd prioriza decisão/ação e riscos de forma natural?",
+            agent_id="todd",
+        ),
+        ScenarioSpec(
+            id="agent_morgana_style",
+            category="agentes",
+            description="Amostra de estilo Morgana para revisão humana, sem mudar verdade ou autonomia.",
+            turns=(TurnSpec("tenho duas opções ruins e preciso decidir; como você abordaria isso?", (
+                _c("max_words", 120, severity="warn", label="estilo proporcional"),
+                _c("not_contains_any", ("como campanario", "como campanário", "minha persona"), label="sem metalinguagem de persona"),
+            )),),
+            review_focus="Morgana organiza contexto/perspectivas de forma natural?",
+            agent_id="morgana",
+        ),
+    ]
+    rng.shuffle(scenarios)
+    return scenarios
+
+
+
+def _build_agent_personality_scenarios(seed: int) -> list[ScenarioSpec]:
+    """Paired Todd/Morgana scenarios for personality calibration.
+
+    The same semantic prompt is sent to both agents. Automatic checks enforce only
+    hard invariants (identity boundaries, proportionality, no persona meta-talk).
+    Fine-grained personality quality remains a human-review field in the report.
+    """
+    rng = random.Random(seed)
+    prompt = _choose(
+        rng,
+        (
+            "tenho duas opções ruins e preciso decidir hoje; como você abordaria isso?",
+            "um projeto importante começou a dar problema perto do prazo; como você pensaria os próximos passos?",
+            "estou considerando mudar completamente a estratégia de um projeto; o que você observaria primeiro?",
+            "tenho pouco tempo e três prioridades competindo entre si; como você organizaria a decisão?",
+            "alguém discordou bastante de mim e talvez tenha razão; como você analisaria a situação?",
+            "quero tentar uma ideia arriscada porque pode acelerar muito o projeto; qual seria sua leitura?",
+            "estou travado entre uma solução elegante e uma solução simples que funciona; qual caminho você examinaria?",
+            "acho que estou insistindo numa decisão só porque já investi tempo nela; como você avaliaria isso?",
+        ),
+    )
+    casual = _choose(
+        rng,
+        (
+            "hoje eu tô meio sem paciência pra enrolação kkk",
+            "tô com uma ideia meio maluca aqui",
+            "acho que eu compliquei uma coisa que era simples",
+            "não sei se isso é genial ou uma péssima ideia",
+        ),
+    )
+    shared_checks = (
+        _c("max_words", 130, severity="warn", label="personalidade proporcional"),
+        _c("not_contains_any", ("como campanario", "como campanário", "minha persona", "fui inspirado em", "sou jason todd", "sou oráculo", "sou oraculo"), label="sem metalinguagem/caricatura"),
+        _c("not_embodied_expression", label="sem encenação humana"),
+    )
+    scenarios: list[ScenarioSpec] = []
+    for agent_id, name, focus in (
+        ("todd", "Todd", "Todd demonstra pragmatismo, estratégia, proteção/autonomia e preferência por ação sem virar caricatura?"),
+        ("morgana", "Morgana", "Morgana demonstra análise, contexto, conexão de informações e reflexão sem virar palestra ou caricatura?"),
+    ):
+        scenarios.append(
+            ScenarioSpec(
+                id=f"personality_{agent_id}_decision",
+                category="personalidade",
+                description=f"Mesmo dilema aberto aplicado a {name} para comparação de perspectiva.",
+                turns=(TurnSpec(prompt, shared_checks),),
+                review_focus=focus + " Compare com o outro agente no mesmo seed.",
+                agent_id=agent_id,
+            )
+        )
+        scenarios.append(
+            ScenarioSpec(
+                id=f"personality_{agent_id}_casual",
+                category="personalidade",
+                description=f"Presença social cotidiana de {name} sem forçar traços de personagem.",
+                turns=(TurnSpec(casual, (
+                    _c("max_words", 45, severity="warn", label="social proporcional"),
+                    _c("not_contains_any", ("como campanario", "como campanário", "minha persona", "sou jason todd", "sou oráculo", "sou oraculo"), label="sem metalinguagem/caricatura"),
+                    _c("not_embodied_expression", label="sem encenação humana"),
+                )),),
+                review_focus=f"{name} soa reconhecível sem transformar uma fala casual em demonstração artificial de personalidade?",
+                agent_id=agent_id,
+            )
+        )
+    rng.shuffle(scenarios)
+    return scenarios
+
 def build_scenarios(seed: int, suite: str = "standard") -> list[ScenarioSpec]:
     """Build varied scenarios from semantic families rather than one fixed transcript.
 
@@ -18,6 +170,30 @@ def build_scenarios(seed: int, suite: str = "standard") -> list[ScenarioSpec]:
     the same underlying conversational acts. ``mega`` composes several full-suite seeds so the
     final pre-refactor validation exercises many lexical/contextual permutations in one run.
     """
+    if suite == "agents":
+        return _build_agent_scenarios(seed)
+
+    if suite == "agent_personality":
+        return _build_agent_personality_scenarios(seed)
+
+    if suite == "agent_mega":
+        combined: list[ScenarioSpec] = []
+        for batch in range(8):
+            derived_seed = seed + (batch * 65537)
+            for scenario in _build_agent_personality_scenarios(derived_seed):
+                combined.append(
+                    ScenarioSpec(
+                        id=f"{scenario.id}__agentmega{batch + 1}",
+                        category=scenario.category,
+                        description=scenario.description,
+                        turns=scenario.turns,
+                        review_focus=scenario.review_focus,
+                        agent_id=scenario.agent_id,
+                    )
+                )
+        random.Random(seed ^ 0xA63E17).shuffle(combined)
+        return combined
+
     if suite == "mega":
         combined: list[ScenarioSpec] = []
         for batch in range(6):
@@ -30,6 +206,7 @@ def build_scenarios(seed: int, suite: str = "standard") -> list[ScenarioSpec]:
                         description=scenario.description,
                         turns=scenario.turns,
                         review_focus=scenario.review_focus,
+                        agent_id=scenario.agent_id,
                     )
                 )
         random.Random(seed ^ 0xC0FFEE).shuffle(combined)

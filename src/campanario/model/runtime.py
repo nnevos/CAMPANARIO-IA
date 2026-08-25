@@ -1,0 +1,39 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import StrEnum
+
+from campanario.model.adapters.ollama import OllamaProvider
+from campanario.model.protocol import ModelProvider
+
+
+class ModelBackend(StrEnum):
+    OLLAMA = "ollama"
+
+
+@dataclass(frozen=True, slots=True)
+class ModelRuntimeConfig:
+    backend: ModelBackend
+    model: str
+    base_url: str
+    timeout_seconds: float = 120.0
+    temperature: float = 0.35
+
+
+class UnsupportedModelBackendError(ValueError):
+    pass
+
+
+def build_model_provider(config: ModelRuntimeConfig) -> ModelProvider:
+    """Build only the raw model adapter.
+
+    Campanario behavior, prompt safety, response contracts and memory stay outside this factory.
+    Adding a future backend should require a new adapter plus one factory branch, not changes to chat.
+    """
+    if config.backend == ModelBackend.OLLAMA:
+        return OllamaProvider(
+            config.base_url,
+            config.timeout_seconds,
+            temperature=config.temperature,
+        )
+    raise UnsupportedModelBackendError(f"Unsupported model backend: {config.backend}")

@@ -1,6 +1,6 @@
 import pytest
 
-from campanario.llm.provider import FakeModelProvider, ModelRequest
+from campanario.model.protocol import FakeModelProvider, ModelRequest
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,7 @@
 from typing import Protocol
 from uuid import UUID
 
-from campanario.chat.models import ChatSession, Message
+from campanario.chat.models import ChatSession, ContextSummary, Message
 
 
 class ChatSessionRepository(Protocol):
@@ -13,3 +13,8 @@ class ChatSessionRepository(Protocol):
 class MessageRepository(Protocol):
     def append(self, message: Message) -> Message: ...
     def list_by_session(self, session_id: UUID) -> list[Message]: ...
+
+
+class ContextSummaryRepository(Protocol):
+    def get(self, session_id: UUID) -> ContextSummary | None: ...
+    def upsert(self, summary: ContextSummary) -> ContextSummary: ...

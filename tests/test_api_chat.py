@@ -3,9 +3,10 @@ from uuid import UUID
 from fastapi.testclient import TestClient
 
 import campanario.api as api_module
+from campanario.chat.context import RecentMessagesContextManager
 from campanario.chat.models import ChatSession, Message
 from campanario.chat.service import ChatService
-from campanario.llm.provider import FakeModelProvider
+from campanario.model.protocol import FakeModelProvider
 from campanario.main import app
 
 
@@ -37,7 +38,13 @@ class InMemoryMessages:
 
 
 def test_api_session_and_sse_chat(monkeypatch) -> None:
-    service = ChatService(InMemorySessions(), InMemoryMessages(), FakeModelProvider("oi"), "fake")
+    service = ChatService(
+        InMemorySessions(),
+        InMemoryMessages(),
+        FakeModelProvider("oi"),
+        RecentMessagesContextManager(20),
+        "fake",
+    )
     monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
     client = TestClient(app)
 
@@ -58,7 +65,13 @@ def test_api_session_and_sse_chat(monkeypatch) -> None:
 
 
 def test_api_rejects_blank_message(monkeypatch) -> None:
-    service = ChatService(InMemorySessions(), InMemoryMessages(), FakeModelProvider("oi"), "fake")
+    service = ChatService(
+        InMemorySessions(),
+        InMemoryMessages(),
+        FakeModelProvider("oi"),
+        RecentMessagesContextManager(20),
+        "fake",
+    )
     monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
     client = TestClient(app)
 
@@ -76,7 +89,7 @@ def test_api_rejects_blank_message(monkeypatch) -> None:
 
 
 def test_api_reports_model_unavailable_without_persisting_assistant(monkeypatch) -> None:
-    from campanario.llm.provider import ModelUnavailableError
+    from campanario.model.protocol import ModelUnavailableError
 
     class UnavailableProvider:
         async def health(self) -> bool:
@@ -88,7 +101,13 @@ def test_api_reports_model_unavailable_without_persisting_assistant(monkeypatch)
             raise ModelUnavailableError("offline")
 
     messages = InMemoryMessages()
-    service = ChatService(InMemorySessions(), messages, UnavailableProvider(), "fake")
+    service = ChatService(
+        InMemorySessions(),
+        messages,
+        UnavailableProvider(),
+        RecentMessagesContextManager(20),
+        "fake",
+    )
     monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
     client = TestClient(app)
 

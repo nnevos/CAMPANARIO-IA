@@ -4,8 +4,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from campanario.chat.models import ChatSession, Message, MessageRole
-from campanario.storage.models import ChatSessionRow, MessageRow
+from campanario.chat.models import ChatSession, ContextSummary, Message, MessageRole
+from campanario.storage.models import ChatSessionRow, ContextSummaryRow, MessageRow
 
 SessionFactory = Callable[[], Session]
 
@@ -89,3 +89,32 @@ class SqlAlchemyMessageRepository:
                 .order_by(MessageRow.created_at.asc())
             ).all()
             return [_message_from_row(row) for row in rows]
+
+
+class SqlAlchemyContextSummaryRepository:
+    def __init__(self, session_factory: SessionFactory) -> None:
+        self._session_factory = session_factory
+
+    def get(self, session_id: UUID) -> ContextSummary | None:
+        with self._session_factory() as db:
+            row = db.get(ContextSummaryRow, str(session_id))
+            if row is None:
+                return None
+            return ContextSummary(
+                session_id=UUID(row.session_id),
+                content=row.content,
+                through_message_id=UUID(row.through_message_id),
+                updated_at=row.updated_at,
+            )
+
+    def upsert(self, summary: ContextSummary) -> ContextSummary:
+        with self._session_factory() as db:
+            row = db.get(ContextSummaryRow, str(summary.session_id))
+            if row is None:
+                row = ContextSummaryRow(session_id=str(summary.session_id))
+                db.add(row)
+            row.content = summary.content
+            row.through_message_id = str(summary.through_message_id)
+            row.updated_at = summary.updated_at
+            db.commit()
+        return summary

@@ -1,52 +1,49 @@
 # Campanario
 
-Sistema pessoal de IA local, modular e extensível.
+Inteligencia pessoal local, persistente e modular.
 
-## Antes de alterar qualquer coisa
-Leia **`PROJECT_STATE.md`**. Ele é o ponto de retomada do projeto caso o histórico de conversa seja perdido.
+Este checkpoint e a **foundation organizada pre-agentes**. Gemma 3 12B e o modelo recomendado atual, mas o sistema continua independente de familia de modelo.
 
-## Estado atual
-Fase 0 concluída. Fase 1 parcialmente implementada: persistência, API de sessões, ChatService, adapter Ollama e streaming SSE já existem. Falta validar o circuito contra Ollama real no hardware alvo e fechar os detalhes restantes da Fase 1.
+## Uso rapido no Windows
 
-## Requisitos planejados para o ambiente alvo
-- Windows
-- Python 3.12
-- `uv`
-- Ollama para o teste real do LLM
-
-## Preparação
-
-```bash
-copy .env.example .env
-uv sync
-uv run alembic upgrade head
-```
-
-Configure em `.env` um modelo que já exista no Ollama:
+Execute:
 
 ```text
-CAMPANARIO_OLLAMA_MODEL=nome-do-modelo
+CAMPANARIO.bat
 ```
 
-## Executar
+O menu centraliza iniciar o sistema, abrir manual, trocar modelo, rodar testes, comparar modelos e consultar relatorios.
 
-```bash
-uv run uvicorn campanario.main:app --reload
-```
+## Desenvolvimento
 
-Health check:
+Leia antes de alterar:
+
+1. `RECOVER_FIRST.md`
+2. `PROJECT_STATE.md`
+3. `docs/current/`
+
+## Estrutura
 
 ```text
-GET http://127.0.0.1:8000/health
+docs/          documentacao atual, manual, ADRs, referencias e historico
+migrations/    migrations do banco
+src/           codigo do Campanario
+tests/         testes offline
+tools/         launchers e manutencao
 ```
 
-## API atual
-- `POST /api/sessions`
-- `GET /api/sessions`
-- `GET /api/sessions/{session_id}/messages`
-- `POST /api/sessions/{session_id}/chat/stream`
+Arquitetura de runtime:
 
-O último endpoint usa Server-Sent Events (SSE).
+```text
+API -> ChatService -> Context/Pragmatics -> Behavior -> Response Pipeline -> ModelProvider -> Adapter
+```
 
-## Continuidade/backup lógico
-Leia `docs/RECOVERY.md`. Nunca confie apenas na conversa como memória de desenvolvimento.
+## Modelo
+
+Default recomendado no `.env.example`: `gemma3:12b`.
+
+Trocar o modelo nao reinicia o projeto. Use `CAMPANARIO.bat` -> **Trocar modelo**.
+
+## Estado dos agentes
+
+Todd e Morgana ainda nao estao ativos. O proximo gate apos a regressao desta reorganizacao e **Agent Architecture v1**.

@@ -8,3 +8,11 @@ def test_health() -> None:
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_root_serves_web_chat() -> None:
+    response = TestClient(app).get("/")
+
+    assert response.status_code == 200
+    assert "Campanario IA" in response.text
+    assert "/api/sessions" in response.text

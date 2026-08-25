@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from campanario.bootstrap import get_chat_service
 from campanario.chat.service import ModelNotConfiguredError, SessionNotFoundError
-from campanario.llm.provider import (
+from campanario.model.protocol import (
     ModelProviderError,
     ModelResponseError,
     ModelTimeoutError,

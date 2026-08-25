@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Campanario IA</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #0b1020; color: #eef2ff; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 280px 1fr; }
+    aside { padding: 20px; border-right: 1px solid #27304a; background: #0f172a; }
+    h1 { margin: 0 0 6px; font-size: 21px; }
+    .muted { color: #94a3b8; font-size: 13px; }
+    button, textarea { font: inherit; }
+    button { border: 0; border-radius: 10px; cursor: pointer; }
+    .new-chat { width: 100%; margin: 18px 0; padding: 11px 14px; background: #6366f1; color: white; font-weight: 700; }
+    .sessions { display: grid; gap: 8px; }
+    .session { width: 100%; padding: 10px 12px; text-align: left; background: #172033; color: #dbeafe; }
+    .session.active { outline: 2px solid #6366f1; background: #202a44; }
+    main { min-width: 0; display: flex; flex-direction: column; height: 100vh; }
+    header { padding: 18px 24px; border-bottom: 1px solid #27304a; display: flex; justify-content: space-between; align-items: center; }
+    .status { font-size: 13px; color: #86efac; }
+    .messages { flex: 1; overflow-y: auto; padding: 28px max(24px, calc((100% - 900px) / 2)); display: flex; flex-direction: column; gap: 16px; }
+    .message { max-width: 80%; padding: 13px 16px; border-radius: 16px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .user { align-self: flex-end; background: #4f46e5; color: white; border-bottom-right-radius: 5px; }
+    .assistant { align-self: flex-start; background: #182238; color: #e2e8f0; border-bottom-left-radius: 5px; }
+    .error { align-self: center; background: #451a1a; color: #fecaca; }
+    .empty { margin: auto; text-align: center; color: #94a3b8; }
+    form { padding: 18px max(24px, calc((100% - 900px) / 2)) 24px; border-top: 1px solid #27304a; display: grid; grid-template-columns: 1fr auto; gap: 12px; }
+    textarea { resize: none; min-height: 52px; max-height: 180px; padding: 14px; border-radius: 14px; border: 1px solid #334155; background: #111827; color: #f8fafc; outline: none; }
+    textarea:focus { border-color: #818cf8; }
+    .send { padding: 0 22px; background: #6366f1; color: white; font-weight: 700; }
+    .send:disabled, textarea:disabled { opacity: .55; cursor: not-allowed; }
+    @media (max-width: 760px) {
+      .app { grid-template-columns: 1fr; }
+      aside { display: none; }
+      .message { max-width: 92%; }
+      header, .messages, form { padding-left: 16px; padding-right: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <h1>Campanario IA</h1>
+      <div class="muted">IA local com Ollama</div>
+      <button class="new-chat" id="newChat">+ Nova conversa</button>
+      <div class="sessions" id="sessions"></div>
+    </aside>
+    <main>
+      <header>
+        <strong id="chatTitle">Campanario</strong>
+        <span class="status" id="status">Conectado</span>
+      </header>
+      <div class="messages" id="messages">
+        <div class="empty" id="empty">Crie ou selecione uma conversa e envie uma mensagem.</div>
+      </div>
+      <form id="chatForm">
+        <textarea id="prompt" placeholder="Digite sua mensagem..." rows="1"></textarea>
+        <button class="send" id="send" type="submit">Enviar</button>
+      </form>
+    </main>
+  </div>
+<script>
+  const sessionsEl = document.getElementById('sessions');
+  const messagesEl = document.getElementById('messages');
+  const form = document.getElementById('chatForm');
+  const promptEl = document.getElementById('prompt');
+  const sendEl = document.getElementById('send');
+  const statusEl = document.getElementById('status');
+  const titleEl = document.getElementById('chatTitle');
+  let currentSessionId = null;
+  let busy = false;
+
+  function escapeText(value) { return String(value ?? ''); }
+
+  function setBusy(value) {
+    busy = value;
+    promptEl.disabled = value;
+    sendEl.disabled = value;
+    statusEl.textContent = value ? 'Pensando...' : 'Conectado';
+  }
+
+  function clearMessages() { messagesEl.innerHTML = ''; }
+
+  function addMessage(role, text) {
+    const el = document.createElement('div');
+    el.className = `message ${role}`;
+    el.textContent = escapeText(text);
+    messagesEl.appendChild(el);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return el;
+  }
+
+  async function api(path, options = {}) {
+    const response = await fetch(path, options);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async function refreshSessions() {
+    const sessions = await api('/api/sessions');
+    sessionsEl.innerHTML = '';
+    for (const session of sessions) {
+      const button = document.createElement('button');
+      button.className = 'session' + (session.id === currentSessionId ? ' active' : '');
+      button.textContent = session.title || `Conversa ${session.id.slice(0, 8)}`;
+      button.onclick = () => selectSession(session.id, button.textContent);
+      sessionsEl.appendChild(button);
+    }
+    return sessions;
+  }
+
+  async function createSession() {
+    const session = await api('/api/sessions', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'
+    });
+    await refreshSessions();
+    await selectSession(session.id, session.title || `Conversa ${session.id.slice(0, 8)}`);
+  }
+
+  async function selectSession(id, title) {
+    currentSessionId = id;
+    titleEl.textContent = title || 'Campanario';
+    const history = await api(`/api/sessions/${id}/messages`);
+    clearMessages();
+    if (!history.length) addMessage('assistant', 'Olá! Como posso ajudar?');
+    for (const message of history) addMessage(message.role, message.content);
+    await refreshSessions();
+    promptEl.focus();
+  }
+
+  async function streamMessage(text) {
+    const response = await fetch(`/api/sessions/${currentSessionId}/chat/stream`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: text})
+    });
+    if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
+
+    const assistant = addMessage('assistant', '');
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, {stream: true});
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
+      for (const event of events) {
+        const dataLine = event.split('\n').find(line => line.startsWith('data: '));
+        if (!dataLine) continue;
+        const payload = JSON.parse(dataLine.slice(6));
+        if (payload.type === 'token') {
+          assistant.textContent += payload.text;
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        } else if (payload.type === 'error') {
+          assistant.remove();
+          addMessage('error', `Erro: ${payload.error}`);
+        }
+      }
+    }
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const text = promptEl.value.trim();
+    if (!text || busy) return;
+    try {
+      setBusy(true);
+      if (!currentSessionId) await createSession();
+      addMessage('user', text);
+      promptEl.value = '';
+      await streamMessage(text);
+      await refreshSessions();
+    } catch (error) {
+      addMessage('error', `Falha ao conversar com o Campanario: ${error.message}`);
+    } finally {
+      setBusy(false);
+      promptEl.focus();
+    }
+  });
+
+  promptEl.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
+  document.getElementById('newChat').addEventListener('click', () => createSession().catch(err => addMessage('error', err.message)));
+
+  (async () => {
+    try {
+      const sessions = await refreshSessions();
+      if (sessions.length) {
+        const latest = sessions[sessions.length - 1];
+        await selectSession(latest.id, latest.title || `Conversa ${latest.id.slice(0, 8)}`);
+      }
+    } catch (error) {
+      statusEl.textContent = 'Erro de conexão';
+      addMessage('error', error.message);
+    }
+  })();
+</script>
+</body>
+</html>

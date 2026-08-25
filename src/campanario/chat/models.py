@@ -29,3 +29,11 @@ class Message:
     created_at: datetime
     model: str | None = None
     status: str = "completed"
+
+
+@dataclass(frozen=True, slots=True)
+class ContextSummary:
+    session_id: UUID
+    content: str
+    through_message_id: UUID
+    updated_at: datetime

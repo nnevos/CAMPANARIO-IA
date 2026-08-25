@@ -2,9 +2,10 @@ from uuid import UUID
 
 import pytest
 
+from campanario.chat.context import RecentMessagesContextManager
 from campanario.chat.models import ChatSession, Message
 from campanario.chat.service import ChatService
-from campanario.llm.provider import FakeModelProvider
+from campanario.model.protocol import FakeModelProvider
 
 
 class InMemorySessions:
@@ -38,7 +39,13 @@ class InMemoryMessages:
 async def test_chat_service_persists_user_and_assistant_messages() -> None:
     sessions = InMemorySessions()
     messages = InMemoryMessages()
-    service = ChatService(sessions, messages, FakeModelProvider("resposta"), "fake-model")
+    service = ChatService(
+        sessions,
+        messages,
+        FakeModelProvider("resposta"),
+        RecentMessagesContextManager(20),
+        "fake-model",
+    )
     session = service.create_session()
 
     streamed = "".join([chunk async for chunk in service.stream_reply(session.id, "olá")])
@@ -54,7 +61,7 @@ class FailingModelProvider:
         return False
 
     async def stream(self, request):
-        from campanario.llm.provider import ModelUnavailableError
+        from campanario.model.protocol import ModelUnavailableError
 
         if False:
             yield
@@ -65,10 +72,16 @@ class FailingModelProvider:
 async def test_chat_service_keeps_user_message_and_does_not_persist_assistant_on_model_failure() -> None:
     sessions = InMemorySessions()
     messages = InMemoryMessages()
-    service = ChatService(sessions, messages, FailingModelProvider(), "fake-model")
+    service = ChatService(
+        sessions,
+        messages,
+        FailingModelProvider(),
+        RecentMessagesContextManager(20),
+        "fake-model",
+    )
     session = service.create_session()
 
-    from campanario.llm.provider import ModelUnavailableError
+    from campanario.model.protocol import ModelUnavailableError
 
     with pytest.raises(ModelUnavailableError):
         _ = [chunk async for chunk in service.stream_reply(session.id, "mensagem importante")]
@@ -76,3 +89,45 @@ async def test_chat_service_keeps_user_message_and_does_not_persist_assistant_on
     history = service.get_messages(session.id)
     assert [message.content for message in history] == ["mensagem importante"]
     assert history[0].role.value == "user"
+
+
+class RecordingContextManager:
+    def __init__(self) -> None:
+        self.history: list[Message] | None = None
+
+    async def build(self, history):
+        from campanario.model.protocol import ModelMessage
+
+        self.history = list(history)
+        return (ModelMessage(role=self.history[-1].role, content="context-selected"),)
+
+
+class RecordingProvider:
+    def __init__(self) -> None:
+        self.request = None
+
+    async def health(self) -> bool:
+        return True
+
+    async def stream(self, request):
+        from campanario.model.protocol import ModelChunk
+
+        self.request = request
+        yield ModelChunk(text="ok")
+
+
+@pytest.mark.asyncio
+async def test_chat_service_delegates_context_selection() -> None:
+    sessions = InMemorySessions()
+    messages = InMemoryMessages()
+    context_manager = RecordingContextManager()
+    provider = RecordingProvider()
+    service = ChatService(sessions, messages, provider, context_manager, "fake-model")
+    session = service.create_session()
+
+    _ = [chunk async for chunk in service.stream_reply(session.id, "mensagem atual")]
+
+    assert context_manager.history is not None
+    assert [message.content for message in context_manager.history] == ["mensagem atual"]
+    assert provider.request is not None
+    assert [message.content for message in provider.request.messages] == ["context-selected"]

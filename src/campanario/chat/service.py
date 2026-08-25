@@ -2,9 +2,10 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from campanario.chat.context import ContextManager
 from campanario.chat.models import ChatSession, Message, MessageRole
 from campanario.chat.repositories import ChatSessionRepository, MessageRepository
-from campanario.llm.provider import ModelMessage, ModelProvider, ModelRequest
+from campanario.model.protocol import ModelProvider, ModelRequest
 
 
 class SessionNotFoundError(LookupError):
@@ -21,11 +22,13 @@ class ChatService:
         sessions: ChatSessionRepository,
         messages: MessageRepository,
         model_provider: ModelProvider,
+        context_manager: ContextManager,
         default_model: str,
     ) -> None:
         self._sessions = sessions
         self._messages = messages
         self._model_provider = model_provider
+        self._context_manager = context_manager
         self._default_model = default_model
 
     def create_session(self, title: str | None = None) -> ChatSession:
@@ -51,7 +54,7 @@ class ChatService:
             raise SessionNotFoundError(str(session_id))
         if not self._default_model.strip():
             raise ModelNotConfiguredError(
-                "CAMPANARIO_OLLAMA_MODEL is empty. Configure a local Ollama model first."
+                "CAMPANARIO_MODEL_NAME is empty. Configure a local model first."
             )
 
         user_message = Message(
@@ -66,11 +69,7 @@ class ChatService:
         history = self._messages.list_by_session(session_id)
         request = ModelRequest(
             model=self._default_model,
-            messages=tuple(
-                ModelMessage(role=message.role, content=message.content)
-                for message in history
-                if message.status == "completed"
-            ),
+            messages=await self._context_manager.build(history),
         )
 
         parts: list[str] = []

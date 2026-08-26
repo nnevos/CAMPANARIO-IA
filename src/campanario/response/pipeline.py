@@ -271,7 +271,7 @@ class ResponseContractPipeline:
             )
         else:
             messages.insert(0, ModelMessage(role=MessageRole.SYSTEM, content=override.strip()))
-        return ModelRequest(model=request.model, messages=tuple(messages))
+        return ModelRequest(model=request.model, messages=tuple(messages), response_format=request.response_format, temperature=request.temperature, max_output_tokens=request.max_output_tokens, context_window=request.context_window)
 
     @staticmethod
     def _recent_user_context(request: ModelRequest, limit: int = 3) -> str:

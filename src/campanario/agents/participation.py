@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
-import unicodedata
 from collections.abc import Sequence
 
+from campanario.agents.addressing import directly_addressed_agent, fold_text
 from campanario.agents.profiles import AgentProfile, AgentRegistry
 from campanario.chat.models import Message, MessageRole
 from campanario.chat.pragmatics import PragmaticAct
@@ -49,9 +49,14 @@ class ParticipationArbiter:
         return others[0] if others else None
 
     def explicitly_invites_group(self, text: str) -> bool:
-        folded = _fold(text)
-        both_named = "todd" in folded and "morgana" in folded
-        return both_named or any(marker in folded for marker in self._GROUP_MARKERS)
+        folded = fold_text(text)
+        if any(marker in folded for marker in self._GROUP_MARKERS):
+            return True
+        # A direct address such as "Morgana, pegue o ponto do Todd" names both agents,
+        # but the second name is contextual reference, not a group invitation.
+        if directly_addressed_agent(text):
+            return False
+        return "todd" in folded and "morgana" in folded
 
     async def decide(
         self,
@@ -67,6 +72,12 @@ class ParticipationArbiter:
 
         if self.explicitly_invites_group(user_text):
             return ParticipationDecision(True, "explicit_group_invitation")
+
+        # Direct address is an exclusive turn-level floor unless the user explicitly invited
+        # the group above. Mentioning the other participant is context, not permission for the
+        # semantic arbiter (or the primary response) to pull them into the turn.
+        if self._directly_addresses(user_text, primary.id):
+            return ParticipationDecision(False, "direct_address_exclusive")
 
         if self._primary_invites_secondary(primary_text, secondary):
             return ParticipationDecision(True, "primary_invited_secondary")
@@ -94,7 +105,8 @@ class ParticipationArbiter:
                         "Responda exatamente JOIN ou SKIP. O segundo agente deve entrar somente se tiver "
                         "uma contribuicao distinta e natural: discordancia relevante, complemento importante, "
                         "observacao social realmente oportuna ou perspectiva diferente. Nao entre para repetir, "
-                        "cumprimentar, confirmar, competir por atencao ou transformar toda conversa em painel."
+                        "parafrasear, apenas concordar, cumprimentar, competir por atencao ou transformar toda conversa em painel. "
+                        "Uma mencao ao seu nome dentro de uma fala dirigida ao outro agente nao e convite."
                     ),
                 ),
                 ModelMessage(
@@ -122,9 +134,14 @@ class ParticipationArbiter:
                 break
         return "".join(chunks)
 
+
+    @staticmethod
+    def _directly_addresses(text: str, agent_id: str) -> bool:
+        return directly_addressed_agent(text) == agent_id
+
     @staticmethod
     def _primary_invites_secondary(text: str, secondary: AgentProfile) -> bool:
-        folded = _fold(text)
+        folded = fold_text(text)
         if secondary.id not in folded:
             return False
         return bool(re.search(rf"\b{re.escape(secondary.id)}\b.*(?:\?|o que acha|quer acrescentar|discorda|completa)", folded))
@@ -139,13 +156,29 @@ def participation_context(primary: AgentProfile, secondary: AgentProfile, primar
     return (
         "PARTICIPACAO MULTIAGENTE\n"
         f"{primary.name} ja respondeu primeiro neste turno. Voce, {secondary.name}, decidiu participar agora. "
-        "Acrescente apenas uma contribuicao distinta e proporcional. Nao repita a resposta anterior. "
+        "Acrescente apenas uma contribuicao distinta e proporcional. Nao repita nem parafraseie a resposta anterior. "
+        "Nao escreva prefixos de speaker nem simule fala do outro agente ou do Campanario. "
         "Voce pode concordar, discordar, complementar ou falar diretamente com o outro agente quando isso "
         "for natural. Nao explique o mecanismo de roteamento ou a decisao de participar.\n\n"
         f"RESPOSTA DE {primary.name.upper()}:\n{primary_text}"
     )
 
 
-def _fold(value: str) -> str:
-    normalized = unicodedata.normalize("NFKD", value.casefold())
-    return "".join(ch for ch in normalized if not unicodedata.combining(ch)).strip()
+def independent_group_participation_context(
+    primary: AgentProfile, secondary: AgentProfile, user_text: str
+) -> str:
+    """Prompt note for voice turns where the user explicitly addressed both agents.
+
+    The secondary receives the same pre-primary conversation history as the primary, so the
+    first agent's answer cannot accidentally become a new instruction. This note binds the
+    secondary back to the original user utterance while still preserving normal persona.
+    """
+    return (
+        "PARTICIPACAO MULTIAGENTE — ENDERECAMENTO DIRETO AOS DOIS\n"
+        f"O usuario dirigiu a MESMA fala diretamente a {primary.name} e {secondary.name}. "
+        f"Voce, {secondary.name}, deve responder ao pedido ORIGINAL do usuario, e nao a uma fala de {primary.name}. "
+        "A resposta do primeiro agente nao e uma nova pergunta, ordem ou mensagem do usuario. "
+        "Responda de forma independente, curta e proporcional ao enunciado original. "
+        "Nao escreva prefixos de speaker e nao explique roteamento.\n\n"
+        f"FALA ORIGINAL DO USUARIO:\n{user_text}"
+    )

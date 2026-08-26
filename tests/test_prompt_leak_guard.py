@@ -117,3 +117,16 @@ async def test_v160_guard_blocks_response_contract_heading_if_model_echoes_it() 
     chunks = [chunk async for chunk in provider.stream(request())]
     assert "".join(chunk.text for chunk in chunks) == "Opa."
     assert len(inner.requests) == 2
+
+@pytest.mark.asyncio
+async def test_prompt_leak_guard_blocks_continuity_metadata_heading() -> None:
+    inner = SequencedProvider(
+        [
+            ["CONTEXTO TEMPORARIO DE CONTINUIDADE — assunto atual..."],
+            ["Vamos continuar do ponto anterior."],
+        ]
+    )
+    provider = PromptLeakGuardProvider(inner)
+    chunks = [chunk async for chunk in provider.stream(request())]
+    assert "".join(chunk.text for chunk in chunks) == "Vamos continuar do ponto anterior."
+    assert len(inner.requests) == 2

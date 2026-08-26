@@ -21,6 +21,11 @@ _INTERNAL_PROMPT_MARKERS = {
     "self_aware": "SELF-AWARE EXPRESSION",
     "self_aware_override": "SELF-AWARE EXPRESSION OVERRIDE",
     "response_contract": "CONTRATO DE RESPOSTA DO TURNO",
+    "conversation_continuity": "CONTEXTO TEMPORARIO DE CONTINUIDADE",
+    "focus_stack_legacy": "CONVERSATION FOCUS STACK P2.3c",
+    "focus_root_legacy": "FOCO RAIZ definido pelo usuario",
+    "focus_active_legacy": "FRAME ATIVO #",
+    "answer_binding_legacy": "REGRAS DE FOCO/ANSWER BINDING",
 }
 
 _SAFE_RETRY_SYSTEM_PROMPT = """Voce e Campanario, um assistente local. Responda somente ao pedido atual do usuario.
@@ -96,4 +101,8 @@ class PromptLeakGuardProvider(ModelProvider):
                 ModelMessage(role=MessageRole.SYSTEM, content=_SAFE_RETRY_SYSTEM_PROMPT),
                 *non_system,
             ),
+            response_format=request.response_format,
+            temperature=request.temperature,
+            max_output_tokens=request.max_output_tokens,
+            context_window=request.context_window,
         )

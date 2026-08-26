@@ -4,7 +4,7 @@ cd /d "%~dp0\..\.."
 title Campanario IA
 
 set "CAMPANARIO_PORT=8000"
-set "CAMPANARIO_BUILD=agent-architecture-v1.2.1"
+set "CAMPANARIO_BUILD=realtime-presence-f5c4"
 
 echo.
 echo ========================================
@@ -95,9 +95,44 @@ if not defined CONFIGURED_MODEL (
     echo [OK] Modelo configurado: !CONFIGURED_MODEL!
 )
 
-rem 5) Sync dependencies and database schema.
+rem 5) Auto-wire F5c voice while keeping large Whisper models outside the project by default.
+rem CAMPANARIO_VOICE_MODELS_DIR may point anywhere. Default shared cache: %%LOCALAPPDATA%%\Campanario\models.
+set "VOICE_MODEL="
+set "VOICE_MODELS_DIR=%CAMPANARIO_VOICE_MODELS_DIR%"
+if not defined VOICE_MODELS_DIR if defined LOCALAPPDATA set "VOICE_MODELS_DIR=%LOCALAPPDATA%\Campanario\models"
+rem F5 physical pt-BR is accuracy-first: prefer the largest available multilingual model.
+if defined VOICE_MODELS_DIR if exist "!VOICE_MODELS_DIR!\ggml-large-v3.bin" set "VOICE_MODEL=!VOICE_MODELS_DIR!\ggml-large-v3.bin"
+if defined VOICE_MODELS_DIR if not defined VOICE_MODEL if exist "!VOICE_MODELS_DIR!\ggml-large.bin" set "VOICE_MODEL=!VOICE_MODELS_DIR!\ggml-large.bin"
+if defined VOICE_MODELS_DIR if not defined VOICE_MODEL if exist "!VOICE_MODELS_DIR!\ggml-big.bin" set "VOICE_MODEL=!VOICE_MODELS_DIR!\ggml-big.bin"
+if defined VOICE_MODELS_DIR if not defined VOICE_MODEL if exist "!VOICE_MODELS_DIR!\ggml-medium.bin" set "VOICE_MODEL=!VOICE_MODELS_DIR!\ggml-medium.bin"
+if defined VOICE_MODELS_DIR if not defined VOICE_MODEL if exist "!VOICE_MODELS_DIR!\ggml-small.bin" set "VOICE_MODEL=!VOICE_MODELS_DIR!\ggml-small.bin"
+if defined VOICE_MODELS_DIR if not defined VOICE_MODEL if exist "!VOICE_MODELS_DIR!\ggml-base.bin" set "VOICE_MODEL=!VOICE_MODELS_DIR!\ggml-base.bin"
+rem Legacy project-local layouts remain supported for existing checkpoints.
+if not defined VOICE_MODEL if exist "models\ggml-small.bin" set "VOICE_MODEL=%CD%\models\ggml-small.bin"
+if not defined VOICE_MODEL if exist "models\ggml-base.bin" set "VOICE_MODEL=%CD%\models\ggml-base.bin"
+if not defined VOICE_MODEL if exist "voice\models\ggml-small.bin" set "VOICE_MODEL=%CD%\voice\models\ggml-small.bin"
+if not defined VOICE_MODEL if exist "voice\models\ggml-base.bin" set "VOICE_MODEL=%CD%\voice\models\ggml-base.bin"
+if not defined VOICE_MODEL if exist "voice\ggml-small.bin" set "VOICE_MODEL=%CD%\voice\ggml-small.bin"
+if not defined VOICE_MODEL if exist "voice\ggml-base.bin" set "VOICE_MODEL=%CD%\voice\ggml-base.bin"
+if exist "voice\whisper-cli.exe" if defined VOICE_MODEL (
+    set "CAMPANARIO_VOICE_STT_BACKEND=whisper_cpp"
+    set "CAMPANARIO_VOICE_TTS_BACKEND=windows_sapi"
+    set "CAMPANARIO_VOICE_WHISPER_CPP_PATH=%CD%\voice\whisper-cli.exe"
+    set "CAMPANARIO_VOICE_WHISPER_MODEL_PATH=!VOICE_MODEL!"
+    if defined VOICE_MODELS_DIR set "CAMPANARIO_VOICE_MODELS_DIR=!VOICE_MODELS_DIR!"
+    set "CAMPANARIO_VOICE_LANGUAGE=pt"
+    echo [OK] Voz local F5c detectada e ligada ao Runtime ^(Whisper + Windows SAPI^).
+    echo [INFO] Modelo STT externo/compartilhado: !VOICE_MODEL!
+) else (
+    echo [AVISO] Voz local nao configurada no Runtime.
+    if not exist "voice\whisper-cli.exe" echo [AVISO] Falta: voice\whisper-cli.exe
+    if not defined VOICE_MODEL echo [AVISO] Falta modelo multilingue em !VOICE_MODELS_DIR! ou em layout legado.
+    echo [AVISO] Rode tools\windows\PREPARAR_VOZ_F5C.bat para instalar o modelo fora do projeto.
+)
+
+rem 6) Sync dependencies and database schema.
 echo [INFO] Verificando dependencias...
-uv sync
+uv sync --extra voice-host
 if errorlevel 1 goto :uv_fail
 
 echo [INFO] Aplicando migrations...

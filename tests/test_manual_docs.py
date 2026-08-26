@@ -22,6 +22,20 @@ def test_manual_area_contains_only_current_operational_guides() -> None:
         "14_TESTE_MULTIAGENTE.md",
         "15_LAUNCHER_UI_E_BUILD.md",
         "16_PERSONALIDADE_E_EVOLUCAO_DOS_AGENTES.md",
+        "17_EVENTOS_DO_RUNTIME.md",
+        "18_REALTIME_API_GATEWAY.md",
+        "19_DEVICE_REGISTRY.md",
+        "20_CAPABILITY_TOOL_REGISTRY.md",
+        "21_PERMISSION_TRUST_LAYER.md",
+        "22_CLIENT_INDEPENDENT_SESSIONS.md",
+        "23_MOBILE_READINESS.md",
+        "24_VOICE_CALL_READINESS.md",
+        "25_RUNTIME_TELEMETRY.md",
+        "26_EXPERIENCE_LEARNING.md",
+        "27_REALTIME_PRESENCE_F5.md",
+        "28_VOICE_MEDIA_F5B.md",
+        "29_HOST_VOICE_F5C.md",
+        "30_CONVERSA_HUMANA_BASELINE.md",
     }
     actual = {path.name for path in manual.iterdir() if path.is_file()}
     assert actual == expected
@@ -39,5 +53,5 @@ def test_historical_behavior_manuals_are_archived_not_active() -> None:
 def test_manual_marks_agents_as_active() -> None:
     root = Path(__file__).resolve().parents[1]
     text = (root / "docs" / "manual" / "11_FUNCOES_DO_SISTEMA.md").read_text(encoding="utf-8")
-    assert "Morgana/Todd | ATIVO / personality foundation em validacao" in text
+    assert "Morgana/Todd | ATIVO / baseline F2 congelada" in text
     assert "Gemma 3 12B recomendado | ATIVO" in text

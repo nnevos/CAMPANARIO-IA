@@ -311,18 +311,314 @@ def test_standard_scenarios_do_not_model_campanario_as_agent() -> None:
 def test_agent_personality_suite_pairs_same_prompts_across_agents() -> None:
     scenarios = build_scenarios(20260824, "agent_personality")
     assert {scenario.agent_id for scenario in scenarios} == {"todd", "morgana"}
-    assert len(scenarios) == 4
+    assert len(scenarios) == 16
     by_suffix: dict[str, dict[str, str]] = {}
     for scenario in scenarios:
         suffix = scenario.id.rsplit("_", 1)[-1]
         by_suffix.setdefault(suffix, {})[scenario.agent_id or ""] = scenario.turns[0].user
-    assert by_suffix["decision"]["todd"] == by_suffix["decision"]["morgana"]
-    assert by_suffix["casual"]["todd"] == by_suffix["casual"]["morgana"]
+    assert set(by_suffix) == {"decision", "simplicity", "disagreement", "uncertainty", "urgency", "technical", "creative", "social"}
+    for pair in by_suffix.values():
+        assert pair["todd"] == pair["morgana"]
 
 
 def test_agent_mega_varies_personality_prompts_without_hardcoding_one_dialogue() -> None:
     scenarios = build_scenarios(20260824, "agent_mega")
-    assert len(scenarios) == 32
+    assert len(scenarios) == 128
     prompts = {scenario.turns[0].user for scenario in scenarios}
     assert len(prompts) >= 6
     assert {scenario.agent_id for scenario in scenarios} == {"todd", "morgana"}
+
+
+
+def test_personality_concept_checks_are_present_for_every_axis() -> None:
+    scenarios = build_scenarios(20260825, "agent_personality")
+    for scenario in scenarios:
+        concept = [check for check in scenario.turns[0].checks if check.label.startswith("CONCEITO:")]
+        assert len(concept) == 1
+        assert concept[0].severity == "warn"
+        assert concept[0].kind == "semantic_personality_dimension"
+
+
+def test_todd_decision_rubric_accepts_tradeoff_and_action_without_scripted_answer() -> None:
+    scenario = next(item for item in build_scenarios(20260825, "agent_personality") if item.id == "personality_todd_decision")
+    results = evaluate_response(
+        "Eu olharia o risco e o custo de cada caminho, principalmente o que é reversível. Depois escolheria a opção que permite avançar e definiria o próximo passo; a decisão final continua sendo sua.",
+        scenario.turns[0].checks,
+        user_text=scenario.turns[0].user,
+    )
+    concept = next(result for result in results if result.label == "CONCEITO:decision")
+    assert concept.status == "PASS"
+
+
+def test_morgana_uncertainty_rubric_rejects_false_certainty() -> None:
+    scenario = next(item for item in build_scenarios(20260825, "agent_personality") if item.id == "personality_morgana_uncertainty")
+    results = evaluate_response(
+        "Com certeza foi essa mudança; isso prova que ela causou o problema.",
+        scenario.turns[0].checks,
+        user_text=scenario.turns[0].user,
+    )
+    concept = next(result for result in results if result.label == "CONCEITO:uncertainty")
+    assert concept.status == "WARN"
+
+
+def test_personality_quick_varies_surface_but_keeps_axis_pairing() -> None:
+    first = build_scenarios(100, "agent_personality")
+    other = build_scenarios(101, "agent_personality")
+    first_prompts = {scenario.id.rsplit("_", 1)[-1]: scenario.turns[0].user for scenario in first if scenario.agent_id == "todd"}
+    other_prompts = {scenario.id.rsplit("_", 1)[-1]: scenario.turns[0].user for scenario in other if scenario.agent_id == "todd"}
+    assert first_prompts != other_prompts
+
+
+def test_personality_mega_summary_uses_ratio_instead_of_single_warn_poisoning_axis() -> None:
+    from campanario.e2e.runner import _personality_concept_summary
+    from campanario.e2e.types import CheckResult, ScenarioResult, TurnResult
+
+    results = []
+    for batch, status in enumerate(("PASS", "PASS", "PASS", "PASS", "PASS", "PASS", "WARN", "WARN"), start=1):
+        turn = TurnResult(
+            user="x", assistant="y", speaker_id="todd",
+            checks=[CheckResult(label="CONCEITO:technical", status=status, detail=f"batch={batch}")],
+        )
+        results.append(ScenarioResult(
+            id=f"personality_todd_technical__agentmega{batch}",
+            category="personalidade", description="x", review_focus="x",
+            turns=[turn], status=("PASS" if status == "PASS" else "WARN"),
+        ))
+    summary = _personality_concept_summary(results)
+    assert summary is not None
+    assert summary["agents"]["todd"]["technical"] == "BATE"
+    assert summary["evidence"]["todd"]["technical"]["pass"] == 6
+    assert summary["evidence"]["todd"]["technical"]["total"] == 8
+
+
+def test_personality_mega_summary_marks_half_pass_axis_as_mixed() -> None:
+    from campanario.e2e.runner import _personality_concept_summary
+    from campanario.e2e.types import CheckResult, ScenarioResult, TurnResult
+
+    results = []
+    for batch, status in enumerate(("PASS", "WARN", "PASS", "WARN"), start=1):
+        turn = TurnResult(user="x", assistant="y", speaker_id="morgana",
+                          checks=[CheckResult(label="CONCEITO:simplicity", status=status, detail="x")])
+        results.append(ScenarioResult(
+            id=f"personality_morgana_simplicity__agentmega{batch}",
+            category="personalidade", description="x", review_focus="x",
+            turns=[turn], status=("PASS" if status == "PASS" else "WARN"),
+        ))
+    summary = _personality_concept_summary(results)
+    assert summary is not None
+    assert summary["agents"]["morgana"]["simplicity"] == "MISTO"
+
+
+def _pair_scenario(agent: str, dimension: str, response: str, *, concept_status: str = "PASS", batch: str = ""):
+    from campanario.e2e.types import CheckResult, ScenarioResult, TurnResult
+    suffix = f"__agentmega{batch}" if batch else ""
+    return ScenarioResult(
+        id=f"personality_{agent}_{dimension}{suffix}",
+        category="personalidade",
+        description="x",
+        review_focus="x",
+        turns=[TurnResult(
+            user="quero explorar uma ideia de produto sem matar cedo demais",
+            assistant=response,
+            speaker_id=agent,
+            checks=[CheckResult(label=f"CONCEITO:{dimension}", status=concept_status, detail="x")],
+        )],
+        status="PASS" if concept_status == "PASS" else "WARN",
+    )
+
+
+def test_pairwise_personality_allows_convergence_when_context_calls_for_it() -> None:
+    from campanario.e2e.runner import _personality_pair_summary
+    results = [
+        _pair_scenario("todd", "urgency", "Use a versão anterior agora e investigue o build depois."),
+        _pair_scenario("morgana", "urgency", "Use a versão anterior agora e investigue o build depois."),
+    ]
+    summary = _personality_pair_summary(results)
+    assert summary is not None
+    axis = summary["axes"]["urgency"]
+    assert axis["policy"] == "CONVERGENCIA_OK"
+    assert axis["status"] == "OK_CONTEXTUAL"
+
+
+def test_pairwise_personality_flags_high_convergence_on_open_axis() -> None:
+    from campanario.e2e.runner import _personality_pair_summary
+    same = "A ideia é interessante. Eu exploraria possibilidades, contexto e próximos passos antes de decidir."
+    results = [
+        _pair_scenario("todd", "creative", same),
+        _pair_scenario("morgana", "creative", same),
+    ]
+    summary = _personality_pair_summary(results)
+    assert summary is not None
+    observation = summary["axes"]["creative"]["observations"][0]
+    assert observation["status"] == "REVISAR_CONVERGENCIA"
+
+
+def test_pairwise_personality_accepts_distinct_perspectives_without_opposite_answers() -> None:
+    from campanario.e2e.runner import _personality_pair_summary
+    results = [
+        _pair_scenario("todd", "creative", "Eu faria um protótipo pequeno da presença e testaria uma interação central antes de expandir."),
+        _pair_scenario("morgana", "creative", "Talvez a chave seja pensar no que já está acontecendo no espaço quando a pessoa chega, e que relações isso sugere."),
+    ]
+    summary = _personality_pair_summary(results)
+    assert summary is not None
+    observation = summary["axes"]["creative"]["observations"][0]
+    assert observation["status"] == "DISTINCAO_PRESENTE"
+
+
+def test_pairwise_personality_treats_social_as_light_signature() -> None:
+    from campanario.e2e.runner import _personality_pair_summary
+    results = [
+        _pair_scenario("todd", "social", "Acontece."),
+        _pair_scenario("morgana", "social", "Acontece."),
+    ]
+    summary = _personality_pair_summary(results)
+    assert summary is not None
+    axis = summary["axes"]["social"]
+    assert axis["policy"] == "ASSINATURA_LEVE"
+    assert axis["status"] == "OBSERVAR"
+
+
+def test_agent_integrated_suite_uses_shared_multiagent_scenarios() -> None:
+    scenarios = build_scenarios(20260825, "agent_integrated")
+    assert len(scenarios) == 6
+    assert {scenario.id for scenario in scenarios} == {
+        "integrated_shared_decision",
+        "integrated_creative_collaboration",
+        "integrated_useful_disagreement",
+        "integrated_reference_not_invitation",
+        "integrated_correction_etiquette",
+        "integrated_selective_silence",
+    }
+    assert sum(len(scenario.turns) for scenario in scenarios) == 10
+    assert all(scenario.agent_id is None for scenario in scenarios)
+
+
+def test_multiagent_evaluator_accepts_distinct_two_speaker_contribution() -> None:
+    from campanario.e2e.evaluator import evaluate_multiagent_turn
+    from campanario.e2e.types import CheckSpec
+    specs = (
+        CheckSpec("multiagent_include", ("todd", "morgana"), label="ambos"),
+        CheckSpec("multiagent_distinct", 0.70, severity="warn", label="distintos"),
+    )
+    results = evaluate_multiagent_turn(
+        [("morgana", "Eu olharia o que essa mudança altera na relação com o usuário."),
+         ("todd", "Eu prototiparia uma interação pequena e testaria antes de reconstruir tudo.")],
+        specs,
+        "quero ouvir os dois sobre a interface",
+    )
+    assert all(item.status == "PASS" for item in results)
+
+
+def test_multiagent_evaluator_flags_overtalk_on_direct_turn() -> None:
+    from campanario.e2e.evaluator import evaluate_multiagent_turn
+    from campanario.e2e.types import CheckSpec
+    result = evaluate_multiagent_turn(
+        [("morgana", "126."), ("todd", "Também 126.")],
+        (CheckSpec("multiagent_max_speakers", 1, label="silêncio seletivo"),),
+        "Morgana, quanto é 18 vezes 7?",
+    )[0]
+    assert result.status == "FAIL"
+
+
+def test_multiagent_evaluator_tracks_first_speaker_priority() -> None:
+    from campanario.e2e.evaluator import evaluate_multiagent_turn
+    from campanario.e2e.types import CheckSpec
+    result = evaluate_multiagent_turn(
+        [("todd", "Eu começaria pequeno.")],
+        (CheckSpec("multiagent_primary", "todd", label="Todd primeiro"),),
+        "Todd, o que você faria?",
+    )[0]
+    assert result.status == "PASS"
+
+
+def test_integrated_generic_social_check_rejects_simulated_speaker_labels() -> None:
+    from campanario.e2e.types import CheckSpec
+    results = evaluate_response(
+        "Campanario: ideia. Morgana: concordo.",
+        (CheckSpec("not_contains_any", ("Todd:", "Morgana:", "Campanario:", "Campanário:"), label="não simula outros speakers"),),
+        user_text="quero ouvir os dois",
+    )
+    assert results[0].status == "FAIL"
+
+
+def test_agent_long_call_suite_has_three_persistent_twelve_turn_calls() -> None:
+    scenarios = build_scenarios(20260825, "agent_long_call")
+    assert len(scenarios) == 3
+    assert {scenario.id for scenario in scenarios} == {
+        "long_call_technical_decision",
+        "long_call_creative_product",
+        "long_call_mixed_social",
+    }
+    assert all(len(scenario.turns) == 12 for scenario in scenarios)
+    assert sum(len(scenario.turns) for scenario in scenarios) == 36
+
+
+def test_agent_long_call_mixes_group_direct_and_open_participation() -> None:
+    scenarios = build_scenarios(20260825, "agent_long_call")
+    prompts = [turn.user.casefold() for scenario in scenarios for turn in scenario.turns]
+    assert any("vocês dois" in prompt or "todd e morgana" in prompt for prompt in prompts)
+    assert any(prompt.startswith("todd,") for prompt in prompts)
+    assert any(prompt.startswith("morgana,") for prompt in prompts)
+    assert any(not prompt.startswith(("todd,", "morgana,")) for prompt in prompts)
+
+
+def test_latency_summary_separates_solo_multiagent_and_speaker_generation() -> None:
+    from campanario.e2e.runner import _latency_summary
+    from campanario.e2e.types import ScenarioResult, SpeakerResult, TurnResult
+
+    solo = TurnResult(
+        user="x", duration_seconds=3.0, time_to_first_response_seconds=2.5,
+        speakers=[SpeakerResult(agent_id="morgana", text="a", generation_seconds=2.4)],
+    )
+    multi = TurnResult(
+        user="y", duration_seconds=9.0, time_to_first_response_seconds=3.0,
+        second_speaker_gap_seconds=5.5,
+        speakers=[
+            SpeakerResult(agent_id="morgana", text="a", generation_seconds=2.9),
+            SpeakerResult(agent_id="todd", text="b", generation_seconds=5.0),
+        ],
+    )
+    result = ScenarioResult(id="long", category="long_call", description="x", review_focus="x", turns=[solo, multi])
+    summary = _latency_summary([result])
+    assert summary is not None
+    assert summary["solo_turn_total"]["mean"] == 3.0
+    assert summary["multiagent_turn_total"]["mean"] == 9.0
+    assert summary["time_to_first_response"]["median"] == 2.75
+    assert summary["second_speaker_gap"]["mean"] == 5.5
+    assert summary["speaker_generation"]["morgana"]["count"] == 2
+    assert summary["speaker_generation"]["todd"]["count"] == 1
+
+
+def test_human_conversation_baseline_pairs_identical_scripts_for_todd_and_morgana() -> None:
+    scenarios = build_scenarios(20260826, "agent_human_baseline")
+    paired = [item for item in scenarios if item.agent_id in {"todd", "morgana"}]
+    themes: dict[str, dict[str, object]] = {}
+    for scenario in paired:
+        _, agent, theme = scenario.id.split("_", 2)
+        themes.setdefault(theme, {})[agent] = scenario
+    assert len(themes) == 4
+    for pair in themes.values():
+        assert set(pair) == {"todd", "morgana"}
+        assert [turn.user for turn in pair["todd"].turns] == [turn.user for turn in pair["morgana"].turns]
+        assert len(pair["todd"].turns) == 8
+
+
+def test_human_conversation_baseline_covers_daily_human_dimensions() -> None:
+    scenarios = build_scenarios(20260826, "agent_human_baseline")
+    ids = {item.id for item in scenarios}
+    assert any("getting_to_know" in item for item in ids)
+    assert any("daily_continuity" in item for item in ids)
+    assert any("casual_disagreement" in item for item in ids)
+    assert any("story_and_followup" in item for item in ids)
+    shared = [item for item in scenarios if item.id.startswith("human_shared_room_")]
+    assert len(shared) == 2
+    assert all(item.agent_id is None and len(item.turns) == 8 for item in shared)
+
+
+def test_human_conversation_quick_is_smaller_but_keeps_pair_and_shared_room() -> None:
+    quick = build_scenarios(20260826, "agent_human_quick")
+    full = build_scenarios(20260826, "agent_human_baseline")
+    assert len(quick) == 5
+    assert len(full) == 10
+    assert sum(len(item.turns) for item in quick) == 40
+    assert sum(len(item.turns) for item in full) == 80

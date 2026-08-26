@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
-import unicodedata
 
+from campanario.agents.addressing import directly_addressed_agent, fold_text
 from campanario.agents.profiles import AgentProfile, AgentRegistry
 
 
@@ -24,9 +24,6 @@ class AgentResolution:
         return self.persist_primary
 
 
-def _fold(value: str) -> str:
-    normalized = unicodedata.normalize("NFKD", value)
-    return "".join(ch for ch in normalized if not unicodedata.combining(ch)).lower().strip()
 
 
 class AgentRouter:
@@ -44,12 +41,7 @@ class AgentRouter:
         self._registry = registry
 
     def resolve(self, text: str, current_primary_agent_id: str | None) -> AgentResolution:
-        folded = _fold(text)
-        direct = self._DIRECT.match(folded)
-        if direct:
-            profile = self._registry.get(direct.group(1))
-            return AgentResolution(profile=profile, source="direct_agent_wake", persist_primary=True)
-
+        folded = fold_text(text)
         if self._SYSTEM.match(folded):
             wake_prefix = folded[:200]
             for agent_id in ("morgana", "todd"):
@@ -62,6 +54,11 @@ class AgentRouter:
                     )
             profile = self._registry.get(current_primary_agent_id)
             return AgentResolution(profile=profile, source="system_wake_primary")
+
+        direct_agent = directly_addressed_agent(text)
+        if direct_agent:
+            profile = self._registry.get(direct_agent)
+            return AgentResolution(profile=profile, source="direct_agent_wake", persist_primary=True)
 
         profile = self._registry.get(current_primary_agent_id)
         return AgentResolution(profile=profile, source="session_primary")

@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0\..\.."
 if not exist "test_reports\behavioral_e2e\latest.html" (
     echo Nenhum relatorio comportamental encontrado.
-    echo Execute TESTAR_COMPORTAMENTO.bat primeiro.
+    echo Execute uma suite de teste primeiro (por exemplo TESTAR_LONG_CALL.bat).
     pause
     exit /b 1
 )

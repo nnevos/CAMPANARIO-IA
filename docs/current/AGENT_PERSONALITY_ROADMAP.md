@@ -21,18 +21,21 @@ Fatos, ferramentas, memoria-base e capacidades continuam pertencendo ao Campanar
 
 ## Gates
 
-### P1 — Contrato de personalidade estruturado
+### P1 — Contrato de personalidade estruturado — CONCLUIDO
 
-- consolidar `TODD_BACKGROUND.md`, `MORGANA_BACKGROUND.md` e dialogue references;
-- definir traits, anti-traits, tendencies, boundaries e exemplos positivos/negativos;
-- separar core estavel de adaptacao aprendida;
+- [x] consolidar `TODD_BACKGROUND.md`, `MORGANA_BACKGROUND.md` e dialogue references;
+- [x] definir traits, anti-traits, tendencies, boundaries e exemplos positivos/negativos;
+- [x] separar core estavel de adaptacao aprendida;
 - nao hardcodar respostas concretas.
 
-### P2 — Teste automatizado de personalidade
+### P2 — Teste automatizado de personalidade — PROXIMO GATE
 
 - `TESTAR_PERSONALIDADES.bat`: comparacao rapida Todd/Morgana no mesmo seed;
 - `TESTAR_PERSONALIDADES_MEGA.bat`: oito lotes com prompts variados;
-- checks automaticos cobrem invariantes objetivas;
+- quick cobre 8 eixos conceituais pareados (16 cenarios);
+- mega cobre 8 lotes variados (128 cenarios);
+- checks automaticos cobrem invariantes objetivas e uma rubrica heuristica WARN-only por eixo;
+- relatorio resume BATE/REVISAR antes do transcript pareado;
 - transcript coloca os dois agentes lado a lado para revisao humana;
 - nenhum LLM e usado como juiz autoritativo de sua propria personalidade.
 

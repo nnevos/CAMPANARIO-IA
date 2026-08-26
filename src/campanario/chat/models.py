@@ -36,6 +36,8 @@ class Message:
     model: str | None = None
     status: str = "completed"
     agent_id: str | None = None
+    client_id: str | None = None
+    device_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

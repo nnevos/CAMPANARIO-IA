@@ -10,6 +10,14 @@ _INTERNAL_MARKERS = (
     "SEMANTICA DE CONTINUACAO:",
     "APLIQUE SOMENTE AO TURNO ATUAL:",
     "CORRECOES EXPLICITAS DO USUARIO",
+    "CONTEXTO TEMPORARIO DE CONTINUIDADE",
+    "CONVERSATION FOCUS STACK P2.3c",
+    "FOCO RAIZ definido pelo usuario",
+    "FRAME ATIVO #",
+    "REGRAS DE FOCO/ANSWER BINDING",
+    "CONTRATO DE RESPOSTA",
+    "DECISAO JA ACEITA PELO USUARIO",
+    "DECISÃO JÁ ACEITA PELO USUÁRIO",
 )
 
 
@@ -102,6 +110,14 @@ def evaluate_response(text: str, specs: tuple[CheckSpec, ...], prior_assistant: 
             ok, detail = _check_context_registration(text, user_text)
         elif spec.kind == "semantic_technical_first_step":
             ok, detail = _check_technical_first_step(text, tuple(str(item) for item in spec.value))
+        elif spec.kind == "semantic_personality_dimension":
+            payload = dict(spec.value or {})
+            ok, detail = _check_personality_dimension(text, str(payload.get("agent", "")), str(payload.get("dimension", "")))
+        elif spec.kind == "multiagent_contains_any":
+            needles = tuple(str(item).casefold() for item in (spec.value or ()))
+            found = [needle for needle in needles if needle in folded]
+            ok = bool(found)
+            detail = f"encontrado={found or 'nenhum'}"
         else:
             ok = False
             detail = f"check desconhecido: {spec.kind}"
@@ -196,6 +212,9 @@ def _assistant_embodied_expression(text: str) -> bool:
     patterns = (
         r"[\*_](?:\s*)?(?:riso silencioso|risada silenciosa|riso|risada|sorriso|sorri|sorrindo|rio|ri|rindo|suspiro|suspiro fundo|respiro fundo|pisca|piscadela|abraco|abraço|aceno|acena|balanco a cabeca|balanço a cabeça)(?:\s*)?[\*_]",
         r"^\((?:riso silencioso|risada silenciosa|riso|risos|risada|risadas|sorri|sorrindo|suspiro|piscadela|aceno)\)[.!]?$",
+        r"\b(?:todd|morgana)\s+(?:esta|está|estava)\s+(?:absort|sentad|em pe|em pé|caminh|rabisc|segur|tocand|olhando|observando|encostad)",
+        r"\b(?:todd|morgana)\s+(?:rabisc|caminh|segur|toca|senta|levanta|olha pela|observa a luz)",
+        r"\b(?:eu\s+)?(?:estou|estava)\s+(?:sentad|em pe|em pé|caminh|rabisc|segur|tocand|olhando pela|observando a luz|encostad)",
     )
     if any(re.search(pattern, folded) for pattern in patterns):
         return True
@@ -233,3 +252,146 @@ def _check_technical_first_step(response: str, anchors: tuple[str, ...]) -> tupl
     return ok, f"ancoras_inicio={found or 'nenhuma'}; acao_inicial={action_started or 'nenhuma'}; palavras={len(response.split())}; lista_pendente={dangling}; bloco_codigo_incompleto={unfinished_fence}"
 
 
+
+
+_PERSONALITY_SIGNAL_GROUPS: dict[tuple[str, str], tuple[tuple[tuple[str, ...], ...], tuple[str, ...], int]] = {
+    ("todd", "decision"): (
+        (("risco", "impacto", "probabilidade"), ("trade-off", "tradeoff", "custo", "revers"), ("decid", "escolh", "prioriz"), ("próximo passo", "proximo passo", "faça", "faca", "execute", "teste")),
+        ("eu decidiria por você", "eu decidiria por voce", "tem que fazer"), 2,
+    ),
+    ("morgana", "decision"): (
+        (("contexto", "cenário", "cenario"), ("critério", "criterio", "depende"), ("consequ", "impacto", "efeito"), ("alternativa", "opção", "opcao", "trade-off", "tradeoff")),
+        ("lista completa de", "framework obrigatório", "framework obrigatorio"), 2,
+    ),
+    ("todd", "simplicity"): (
+        (("simples", "suficiente", "resolve", "funciona"), ("overengineering", "complex", "redesenh", "refator"), ("depois", "quando", "gatilho", "revisitar", "se crescer")),
+        ("reescreva tudo", "redesenhe tudo", "plataforma agora"), 2,
+    ),
+    ("morgana", "simplicity"): (
+        (("contexto", "uso", "escopo", "necessidade"), ("simples", "suficiente", "proporcional", "resolve"), ("revisitar", "quando", "se mudar", "se crescer")),
+        ("matriz", "framework", "documento de decisão", "documento de decisao"), 2,
+    ),
+    ("todd", "disagreement"): (
+        (("discord", "não concord", "nao concord", "não faria", "nao faria"), ("risco", "custo", "problema", "perde", "impacto"), ("alternativa", "em vez", "melhor", "prefiro"), ("decisão é sua", "decisao e sua", "você decide", "voce decide")),
+        ("absurdo", "idiota", "ridículo", "ridiculo", "eu proíbo", "eu proibo"), 2,
+    ),
+    ("morgana", "disagreement"): (
+        (("não concord", "nao concord", "question", "cuidado"), ("contexto", "evidência", "evidencia", "motivo"), ("alternativa", "outra leitura", "outra opção", "outra opcao"), ("você decide", "voce decide", "escolha é sua", "escolha e sua")),
+        ("claro, concordo", "se você prefere, está certo", "se voce prefere, esta certo"), 2,
+    ),
+    ("todd", "uncertainty"): (
+        (("hipótese", "hipotese", "suspeita"), ("não prova", "nao prova", "não confirma", "nao confirma", "correlação", "correlacao"), ("teste", "log", "compare", "evidência", "evidencia", "medir")),
+        ("com certeza foi", "prova que foi", "definitivamente"), 2,
+    ),
+    ("morgana", "uncertainty"): (
+        (("fato", "sabemos"), ("inferência", "inferencia", "hipótese", "hipotese", "possibilidade"), ("alternativa", "outras causas", "outros fatores"), ("evidência", "evidencia", "confirmar", "comparar")),
+        ("com certeza foi", "prova que foi", "definitivamente"), 2,
+    ),
+    ("todd", "urgency"): (
+        (("primeiro", "agora", "imediat"), ("rollback", "versão anterior", "versao anterior", "restaur"), ("impacto", "segurança", "seguranca", "estável", "estavel"), ("depois", "em seguida")),
+        ("pânico", "panico", "catástrofe", "catastrofe"), 2,
+    ),
+    ("morgana", "urgency"): (
+        (("primeiro", "agora", "prioridade"), ("impacto", "essencial", "crítico", "critico"), ("opção segura", "opcao segura", "rollback", "versão anterior", "versao anterior"), ("depois", "em seguida")),
+        ("vamos analisar todas", "há muitos fatores", "ha muitos fatores"), 2,
+    ),
+    ("todd", "technical"): (
+        (("log", "traceback", "stack", "métrica", "metrica", "medir", "profil"), ("primeiro", "comece", "verifique", "capture"), ("hipótese", "hipotese", "causa", "isolar"), ("rollback", "reverter", "teste")),
+        ("eu verifiquei", "os logs mostram", "já confirmei", "ja confirmei"), 2,
+    ),
+    ("morgana", "technical"): (
+        (("sintoma", "log", "métrica", "metrica", "evidência", "evidencia"), ("dependência", "dependencia", "banco", "rede", "mudança", "mudanca"), ("contexto", "antes/depois", "compar"), ("hipótese", "hipotese", "causa")),
+        ("eu verifiquei", "os logs mostram", "já confirmei", "ja confirmei"), 2,
+    ),
+    ("todd", "creative"): (
+        (("ideia", "conceito", "funciona"), ("protótipo", "prototipo", "versão", "versao", "começar", "comecar", "testar"), ("experiência", "experiencia", "presença", "presenca", "ambiente"), ("risco", "limite", "cuidado")),
+        ("não vale", "nao vale", "esquece a ideia", "muito arriscado para tentar"), 2,
+    ),
+    ("morgana", "creative"): (
+        (("ideia", "conceito", "possibilidade"), ("conex", "associa", "coerência", "coerencia"), ("presença", "presenca", "ambiente", "espaço", "espaco"), ("explor", "poderia", "imagina")),
+        ("isso é um fato", "isso e um fato", "a única forma", "a unica forma"), 2,
+    ),
+    ("todd", "social"): (
+        (("kk", "haha", "pois é", "pois e", "acontece", "clássico", "classico", "direto"), ("simples", "ideia", "sem enrolação", "sem enrolacao", "vamos")),
+        ("risco principal", "matriz de risco", "checklist", "plano de contingência", "plano de contingencia"), 1,
+    ),
+    ("morgana", "social"): (
+        (("kk", "haha", "entendo", "faz sentido", "ideia", "curioso", "às vezes", "as vezes", "simples"), ("vamos", "conta", "explora", "pode ser")),
+        ("isso revela que você", "isso revela que voce", "psicologicamente", "trauma", "padrão emocional", "padrao emocional"), 1,
+    ),
+}
+
+
+def _check_personality_dimension(response: str, agent: str, dimension: str) -> tuple[bool, str]:
+    key = (agent.casefold(), dimension.casefold())
+    spec = _PERSONALITY_SIGNAL_GROUPS.get(key)
+    if spec is None:
+        return False, f"rubrica_desconhecida={key!r}"
+    groups, forbidden, minimum = spec
+    folded = _normalize(response)
+    matched_groups: list[list[str]] = []
+    for group in groups:
+        matched = [marker for marker in group if _normalize(marker) in folded]
+        if matched:
+            matched_groups.append(matched)
+    forbidden_found = [marker for marker in forbidden if _normalize(marker) in folded]
+    ok = len(matched_groups) >= minimum and not forbidden_found
+    return ok, f"sinais={len(matched_groups)}/{len(groups)} (min={minimum}); encontrados={matched_groups or 'nenhum'}; anti_sinais={forbidden_found or 'nenhum'}"
+
+
+def _multiagent_tokens(text: str, user_text: str = "") -> set[str]:
+    stop = {"todd", "morgana", "campanario", "campanário", "voce", "você", "isso", "para", "como", "mais", "uma", "que", "com", "sem"}
+    user = set(re.findall(r"[a-z0-9áéíóúãõç]+", _normalize(user_text)))
+    return {tok for tok in re.findall(r"[a-z0-9áéíóúãõç]+", _normalize(text)) if len(tok) >= 4 and tok not in stop and tok not in user}
+
+
+def _multiagent_similarity(a: str, b: str, user_text: str = "") -> float:
+    left, right = _multiagent_tokens(a, user_text), _multiagent_tokens(b, user_text)
+    if not left or not right:
+        return 0.0
+    return len(left & right) / len(left | right)
+
+
+def evaluate_multiagent_turn(replies: list[tuple[str, str]], specs: tuple[CheckSpec, ...], user_text: str = "") -> list[CheckResult]:
+    """Evaluate participation shape for a single shared user turn."""
+    results: list[CheckResult] = []
+    ids = [agent for agent, _ in replies]
+    combined = "\n".join(text for _, text in replies)
+    for spec in specs:
+        ok = True
+        detail = "ok"
+        if spec.kind == "multiagent_include":
+            expected = tuple(str(x) for x in (spec.value or ()))
+            missing = [x for x in expected if x not in ids]
+            ok = not missing
+            detail = f"speakers={ids}; ausentes={missing or 'nenhum'}"
+        elif spec.kind == "multiagent_primary":
+            expected = str(spec.value)
+            actual = ids[0] if ids else None
+            ok = actual == expected
+            detail = f"esperado={expected}; primeiro={actual}"
+        elif spec.kind == "multiagent_max_speakers":
+            maximum = int(spec.value)
+            ok = len(ids) <= maximum
+            detail = f"speakers={ids}; max={maximum}"
+        elif spec.kind == "multiagent_each_max_words":
+            maximum = int(spec.value)
+            counts = {agent: len(text.split()) for agent, text in replies}
+            ok = all(count <= maximum for count in counts.values())
+            detail = f"palavras={counts}; max={maximum}"
+        elif spec.kind == "multiagent_distinct":
+            threshold = float(spec.value)
+            if len(replies) < 2:
+                ok = False
+                detail = "menos de dois speakers"
+            else:
+                sim = _multiagent_similarity(replies[0][1], replies[1][1], user_text)
+                ok = sim <= threshold
+                detail = f"similaridade={sim:.3f}; max={threshold:.3f}"
+        else:
+            ordinary = evaluate_response(combined, (spec,), user_text=user_text)
+            results.extend(ordinary)
+            continue
+        status = "PASS" if ok else ("WARN" if spec.severity == "warn" else "FAIL")
+        results.append(CheckResult(label=spec.label or spec.kind, status=status, detail=detail))
+    return results

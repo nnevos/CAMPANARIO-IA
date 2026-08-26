@@ -34,6 +34,36 @@ class Settings(BaseSettings):
     context_summary_max_chars: int = Field(default=4000, ge=500, le=20000)
     data_dir: Path = Field(default_factory=lambda: user_data_path("Campanario", appauthor=False))
 
+    # F5c host voice integration. Defaults stay disabled so server startup never pretends that
+    # microphone/STT/TTS are ready. The Windows target baseline is whisper.cpp + local SAPI.
+    voice_stt_backend: str = "unconfigured"
+    voice_tts_backend: str = "unconfigured"
+    voice_whisper_cpp_path: str = "whisper-cli.exe"
+    voice_whisper_model_path: Path | None = None
+    # Optional external model store. Keeps multi-hundred-MB Whisper weights outside project handoffs.
+    voice_models_dir: Path | None = None
+    voice_language: str = "pt"
+    voice_whisper_prompt: str = "Campanario. Todd. Morgana."
+    voice_whisper_no_speech_threshold: float = Field(default=0.50, ge=0.0, le=1.0)
+    # Physical F5 pt-BR favors recognition quality when multiple local weights are available.
+    voice_whisper_prefer_accuracy: bool = True
+    voice_powershell_path: str = "powershell.exe"
+    voice_todd_voice: str = ""
+    voice_morgana_voice: str = ""
+    voice_todd_rate: int = Field(default=4, ge=-10, le=10)
+    voice_morgana_rate: int = Field(default=3, ge=-10, le=10)
+    voice_vad_threshold: int = Field(default=450, ge=1, le=32767)
+    voice_silence_frames_to_finalize: int = Field(default=45, ge=1, le=100)
+    voice_preroll_frames: int = Field(default=6, ge=0, le=25)
+    voice_min_speech_ms: int = Field(default=300, ge=80, le=5000)
+    # Short grace window only for STT fragments that look linguistically unfinished.
+    voice_fragment_hold_ms: int = Field(default=1200, ge=0, le=4000)
+    voice_stt_timeout_seconds: float = Field(default=45.0, gt=0)
+    voice_tts_timeout_seconds: float = Field(default=30.0, gt=0)
+    voice_barge_in_threshold: int = Field(default=1600, ge=100, le=32767)
+    voice_barge_in_frames: int = Field(default=2, ge=1, le=10)
+    voice_barge_in_preroll_frames: int = Field(default=6, ge=1, le=25)
+
     @property
     def effective_model_name(self) -> str:
         return self.model_name.strip() or self.ollama_model.strip()

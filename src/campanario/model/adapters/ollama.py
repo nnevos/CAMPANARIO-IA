@@ -27,15 +27,25 @@ class OllamaProvider(ModelProvider):
         self._temperature = temperature
 
     def _build_payload(self, request: ModelRequest, *, stream: bool) -> dict[str, object]:
-        return {
+        options: dict[str, object] = {
+            "temperature": self._temperature if request.temperature is None else request.temperature
+        }
+        if request.max_output_tokens is not None:
+            options["num_predict"] = request.max_output_tokens
+        if request.context_window is not None:
+            options["num_ctx"] = request.context_window
+        payload: dict[str, object] = {
             "model": request.model,
             "messages": [
                 {"role": message.role.value, "content": message.content}
                 for message in request.messages
             ],
             "stream": stream,
-            "options": {"temperature": self._temperature},
+            "options": options,
         }
+        if request.response_format:
+            payload["format"] = request.response_format
+        return payload
 
     async def health(self) -> bool:
         try:

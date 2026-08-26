@@ -15,4 +15,6 @@ def test_root_serves_web_chat() -> None:
 
     assert response.status_code == 200
     assert "CAMPANÁRIO" in response.text
-    assert "/api/sessions" in response.text
+    assert "/api/v1/sessions" in response.text
+    assert "/ws/v1/events" in response.text
+    assert "/chat/stream" not in response.text

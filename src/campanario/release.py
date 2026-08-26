@@ -3,6 +3,6 @@
 Keep this tiny and dependency-free so every surface can prove which build is running.
 """
 
-RELEASE_ID = "agent-personality-continuous-presence-v1.3.1"
+RELEASE_ID = "realtime-presence-f5c1-voice-stabilization-checkpoint"
 UI_VERSION = "living-presence-ui-v1.3.1"
-ARCHITECTURE_VERSION = "persistent-participants-v1.3"
+ARCHITECTURE_VERSION = "realtime-presence-f5c1"

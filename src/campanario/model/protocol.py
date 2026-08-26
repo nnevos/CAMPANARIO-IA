@@ -15,6 +15,11 @@ class ModelMessage:
 class ModelRequest:
     model: str
     messages: tuple[ModelMessage, ...]
+    # Optional generation hints. Providers that do not support them may ignore them.
+    response_format: str | None = None
+    temperature: float | None = None
+    max_output_tokens: int | None = None
+    context_window: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

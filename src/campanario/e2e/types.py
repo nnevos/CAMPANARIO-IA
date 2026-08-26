@@ -33,13 +33,26 @@ class CheckResult:
 
 
 @dataclass(slots=True)
+class SpeakerResult:
+    agent_id: str
+    text: str = ""
+    reason: str | None = None
+    start_offset_seconds: float | None = None
+    first_response_offset_seconds: float | None = None
+    generation_seconds: float | None = None
+
+
+@dataclass(slots=True)
 class TurnResult:
     user: str
     assistant: str = ""
     speaker_id: str | None = None
     error: str | None = None
     duration_seconds: float = 0.0
+    time_to_first_response_seconds: float | None = None
+    second_speaker_gap_seconds: float | None = None
     checks: list[CheckResult] = field(default_factory=list)
+    speakers: list[SpeakerResult] = field(default_factory=list)
 
 
 @dataclass(slots=True)

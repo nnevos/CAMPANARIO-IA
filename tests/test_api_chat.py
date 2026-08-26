@@ -1,4 +1,5 @@
-from uuid import UUID
+from types import SimpleNamespace
+from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
 
@@ -40,6 +41,19 @@ class InMemorySessions:
         return updated
 
 
+
+
+class RuntimeStub:
+    def __init__(self, service: ChatService) -> None:
+        self.conversation = service
+        self.state = SimpleNamespace(runtime_id=uuid4(), status="running")
+
+
+def install_runtime(monkeypatch, service: ChatService) -> RuntimeStub:
+    runtime = RuntimeStub(service)
+    monkeypatch.setattr(api_module, "get_runtime", lambda: runtime)
+    return runtime
+
 class InMemoryMessages:
     def __init__(self) -> None:
         self.items: list[Message] = []
@@ -60,7 +74,7 @@ def test_api_session_and_sse_chat(monkeypatch) -> None:
         RecentMessagesContextManager(20),
         "fake",
     )
-    monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
+    install_runtime(monkeypatch, service)
     client = TestClient(app)
 
     created = client.post("/api/sessions", json={}).json()
@@ -87,7 +101,7 @@ def test_api_rejects_blank_message(monkeypatch) -> None:
         RecentMessagesContextManager(20),
         "fake",
     )
-    monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
+    install_runtime(monkeypatch, service)
     client = TestClient(app)
 
     created = client.post("/api/sessions", json={}).json()
@@ -123,7 +137,7 @@ def test_api_reports_model_unavailable_without_persisting_assistant(monkeypatch)
         RecentMessagesContextManager(20),
         "fake",
     )
-    monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
+    install_runtime(monkeypatch, service)
     client = TestClient(app)
 
     created = client.post("/api/sessions", json={}).json()
@@ -147,7 +161,7 @@ def test_api_lists_and_switches_agents(monkeypatch) -> None:
         RecentMessagesContextManager(20),
         "fake",
     )
-    monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
+    install_runtime(monkeypatch, service)
     client = TestClient(app)
 
     agents = client.get("/api/agents")
@@ -177,7 +191,7 @@ def test_api_rejects_unknown_agent(monkeypatch) -> None:
         RecentMessagesContextManager(20),
         "fake",
     )
-    monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
+    install_runtime(monkeypatch, service)
     client = TestClient(app)
     response = client.post("/api/sessions", json={"agent_id": "nao-existe"})
     assert response.status_code == 422
@@ -192,7 +206,7 @@ def test_api_exposes_primary_speaker_and_persistent_participants(monkeypatch) ->
         RecentMessagesContextManager(20),
         "fake",
     )
-    monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
+    install_runtime(monkeypatch, service)
     client = TestClient(app)
 
     system = client.get("/api/system").json()
@@ -228,7 +242,7 @@ def test_api_stream_has_explicit_speaker_boundaries_for_group_turn(monkeypatch) 
         RecentMessagesContextManager(20),
         "fake",
     )
-    monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
+    install_runtime(monkeypatch, service)
     client = TestClient(app)
     session_id = client.post("/api/sessions", json={}).json()["id"]
 
@@ -248,12 +262,14 @@ def test_system_info_exposes_release_identity(monkeypatch) -> None:
         RecentMessagesContextManager(20),
         "fake",
     )
-    monkeypatch.setattr(api_module, "get_chat_service", lambda: service)
+    install_runtime(monkeypatch, service)
     client = TestClient(app)
     payload = client.get("/api/system").json()
-    assert payload["release_id"] == "agent-personality-continuous-presence-v1.3.1"
+    assert payload["release_id"] == "realtime-presence-f5c1-voice-stabilization-checkpoint"
     assert payload["ui_version"] == "living-presence-ui-v1.3.1"
-    assert payload["architecture_version"] == "persistent-participants-v1.3"
+    assert payload["architecture_version"] == "realtime-presence-f5c1"
+    assert payload["runtime_status"] == "running"
+    assert payload["runtime_id"]
 
 
 def test_web_ui_disables_cache_and_contains_build_marker() -> None:
@@ -263,3 +279,5 @@ def test_web_ui_disables_cache_and_contains_build_marker() -> None:
     assert "no-store" in response.headers["cache-control"]
     assert 'id="build"' in response.text
     assert "Morgana e Todd estão aqui" in response.text
+
+

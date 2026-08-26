@@ -13,3 +13,8 @@ build/
 
 # Local behavioral E2E reports
 test_reports/
+
+# Large local Whisper weights are machine assets, not source/handoff content.
+models/*.bin
+voice/models/*.bin
+voice/ggml-*.bin

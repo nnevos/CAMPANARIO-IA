@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import math
 import sys
+from dataclasses import replace
 from pathlib import Path
 from uuid import UUID
 
@@ -33,6 +34,7 @@ def main() -> int:
                                   max_input_chars=int(item['max_input_chars']),
                                   max_memory_mb=int(item['max_memory_mb'])),
             permission_scopes=frozenset({'library:read'}), trace_id=UUID(item['trace_id']),
+            upstream_evidence_ids=tuple(item.get('upstream_evidence_ids', ())),
         )
         # Soft CPU cap on POSIX; Windows uses parent wall-time and RSS monitoring.
         if sys.platform != 'win32':
@@ -45,7 +47,8 @@ def main() -> int:
         adapter = KnowledgeBrain(db) if item['brain_id'] == 'knowledge' else AnalysisBrain(db)
         with deny_worker_network():
             outcome = adapter.execute(request)
-        sys.stdout.buffer.write(encode_result(outcome))
+        sys.stdout.buffer.write(encode_result(replace(
+            outcome, upstream_evidence_ids=request.upstream_evidence_ids)))
         sys.stdout.buffer.flush()
         return 0
     except (Exception, KeyboardInterrupt):

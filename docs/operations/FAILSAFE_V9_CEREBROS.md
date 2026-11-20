@@ -65,7 +65,7 @@ CAMPANARIO_BRAINS_V9_ENABLED=false
 | S6 — Memória/identidade | Troca de build/flag não apaga experiência, memórias, perfil ou histórico | Testes temporários passaram; banco real não homologado |
 | S7 — Migrações/reinstalação | Backup/restore de banco em cópia, upgrade/downgrade planejados, 3 pastas consistentes | Migração 0010 testada em SQLite temporário; PC real pendente |
 | S8 — Modelo/multi-client | Ollama local e conexão móvel/voz em hardware real sem duplicar sessões ou modelos | Pendente no ambiente alvo |
-| S9 — Regressão | Reexecutar suíte e comparar falhas pelo ID; zero regressões novas e pendências históricas triadas | Última evidência: 1.004 PASS / 31 FAIL (já presentes na base V9.1) |
+| S9 — Regressão | Reexecutar suíte e comparar falhas pelo ID; zero regressões novas e pendências históricas triadas | Última evidência R2: 1.029 PASS / 31 FAIL históricos em grupos disjuntos (Linux/Python 3.13), nenhuma falha nova; Windows não homologado |
 
 **Gate de release:** todos S1–S9 com evidência reproduzível, mais o aceite F5/F6/F7 do `ROADMAP.md` canônico. `READY` é resultado medido do executor, não configuração do catálogo.
 
@@ -81,7 +81,7 @@ Set-Location $projeto
 & $python -m pytest -q
 ```
 
-Esses comandos são **procedimento recomendado**, não evidência de que foram executados no Windows. A suíte completa de referência foi executada no ambiente Linux/Python 3.13 com 1.004 aprovados e 31 falhas preexistentes; as falhas precisam ser investigadas, não escondidas.
+Esses comandos são **procedimento recomendado**, não evidência de que foram executados no Windows. A regressão R2 de referência foi executada em grupos disjuntos no Linux/Python 3.13 com 1.029 aprovados e 31 falhas preexistentes; as falhas precisam ser investigadas, não escondidas.
 
 ## 6. O que este documento NÃO faz
 
@@ -143,3 +143,32 @@ A auditoria encontrou `CAMPANARIO-IA/data/interaction_library_v2.sqlite`, usado 
 **Topologia e restauração:** IA (`CAMPANARIO-IA`) só contém código/interface e `.env` privado; Python (`CAMPANARIO-PYTHON/.venv`) fornece runtime; Database (`CAMPANARIO-DATABASE/dados/{desenvolvimento|producao}/campanario.db`) contém dados pessoais, com SQLite V2 de referência externo opcional em `dados/reference` e ZIM em `zim`. `CAMPANARIO_DATA_DIR`, `CAMPANARIO_MEMORY_ENVIRONMENT` e `CAMPANARIO_ZIM_DIR` determinam os caminhos; NÃO trocar ambientes involuntariamente. Para atualizar código, feche o aplicativo, faça backup privado de IA e Database, extraia **`CAMPANARIO_R11_ARQUIVOS_PARA_COPIAR.zip`** fora da raiz e copie seu conteúdo relativo para **dentro** do IA pelo Explorador, comparando personalizações. **Não usar PowerShell para substituir arquivos; não apagar pasta IA; não sobrescrever `.env`, `.venv`, Database ou modelos.** Se falhar, desligue V9, reinicie, restaure apenas o código IA do backup e trate recuperação de SQLite em procedimento separado com cópia validada.
 
 **Gate ainda aberto:** `utilities/api.py` mantém confirmação própria; políticas de ferramentas, isolação rígida de rede/arquivos, quotas imutáveis do kernel, Python 3.12/Windows, EXE congelado, testes com Ollama real e backup/restore não foram homologados. A fase R2 só deve usar capacidades autorizadas e com evidências. Consulte [`R11_PROTECOES_EXECUTOR_CEREBROS.md`](../current/R11_PROTECOES_EXECUTOR_CEREBROS.md) e [`RESULTADOS_TESTES_R11.md`](RESULTADOS_TESTES_R11.md).
+
+
+## 10. R2 — planos compostos de leitura, falha parcial e volta segura (19/11/2026)
+
+**Implementado somente no IA:** `BrainStep`/`BrainPlan` validam limite de três etapas, dependência anterior e escopos. O roteamento misto `knowledge → analysis` só é selecionado para pedido explícito a documento **e** planilha. Ambas as operações mantêm subprocessos separados, orçamento único, permissão `library:read`, trace e seus respectivos erros. `upstream_evidence_ids` contém **somente identificadores da consulta anterior concluída**, nunca instruções, texto de documento como prompt privilegiado ou concessão de acesso.
+
+**Nunca confundir as etapas:** o resultado da planilha é calculado pelo seu adaptador a partir de dados importados, **não** usando semanticamente o documento recuperado. `collaboration.semantic_comparison_performed=false` comunica o limite. A resposta neutra apresenta documento e planilha separadamente, com limitações. Uma única fonte encontrada não autoriza dizer que a outra foi consultada com sucesso. Ausência, erro de autorização, timeout, `worker_failed` ou evidência inconsistente são falhas honestas, não sucesso textual. A alteração do `DocumentRequest` permite instruções imperativas e delimita nomes de documentos antes de `com a planilha`, sem elevar mensagens do agente a referência de usuário.
+
+**Se a resposta misturar números/fontes, faltar etapa ou travar:** confira na Central o plano, cada `brain_run`, `trace_id`, `status`, `operations`, `upstream_evidence_ids` e `evidence_refs`, sem copiar conteúdo confidencial para tickets. Desative `CAMPANARIO_BRAINS_V9_ENABLED=false` no `.env`, feche/reinicie o app e teste modo legado. Para rollback de código, com app parado restaure os arquivos IA anteriores do backup; **não** rebaixe Alembic 0010 nem restaure Database sem validação prévia em cópia. O registro de execuções pode persistir; a flag não elimina dados ou trabalho já realizado.
+
+**Três pastas:** `CAMPANARIO-IA` contém código/UI/`.env`; `CAMPANARIO-PYTHON\.venv` fornece Python 3.12 e dependências do launcher; `CAMPANARIO-DATABASE\dados\{desenvolvimento|producao}\campanario.db` e documentos/ZIM ficam externos (`CAMPANARIO_DATA_DIR`, `CAMPANARIO_MEMORY_ENVIRONMENT`, `CAMPANARIO_ZIM_DIR`). O SQLite de referência V2 pode existir no IA como fallback P0 até ser copiado com backup para `Database\dados\reference`. **R2 não altera bancos, modelos, `.venv` ou caminhos locais.**
+
+**Atualização sem PowerShell:** feche app; backup de IA+Database; extraia `CAMPANARIO_R2_ARQUIVOS_PARA_COPIAR.zip` em Downloads, copie o **conteúdo relativo** sobre IA pelo Explorador, mesclando arquivos de código sem apagar a pasta e sem sobrescrever `.env`. A cópia manual não executa checagem automática de hash/rollback: use o manifesto, compare personalizações e retenha backups. Se `Campanario.exe` congelado ainda tiver prioridade, o launcher poderá executar versão anterior. Terminal apenas para instalar dependências, rodar diagnósticos/migrações autorizadas ou testes quando necessário.
+
+**Gates abertos:** isolamento de rede/arquivos por SO, política comum das utilidades, homologação Windows+Python 3.12+Ollama, comparação semântica, cache de fontes, consentimento e isolamento entre sessões. A fase R2 é parcial, não liberação de Programação nem execução externa. `docs/current/R2_PLANEJAMENTO_COLABORACAO_CEREBROS.md` e `docs/operations/RESULTADOS_TESTES_R2.md` explicam testes/limites.
+
+## 11. R2.1 — dependências obrigatórias, fontes validadas e identidade explícita
+
+**Detectar:** `dependency_not_met` significa que a etapa seguinte exigia ao menos uma evidência real de **cada** dependência, mas uma não foi concluída; o worker dependente NÃO foi iniciado. `plan_request_mismatch` significa que `trace_id` ou `intent` do plano composto divergiu da requisição — nenhuma etapa foi executada. `invalid_brain_result` bloqueia operações/IDs/trechos inconsistentes com o resultado registrado. **Nenhum desses status comprova leitura da fonte.** Não promover dados de extensão in-process a evidência documental sem adaptador first-party revisado.
+
+**Compatibilidade intencional:** planos de leitura documento + planilha continuam com dependência `optional`: documento ausente não cancela o cálculo independente. A resposta deve sinalizar a fonte que faltou e não concluir comparação semântica. `required` só deve ser usado quando o passo realmente depender de evidência anterior, nunca para restringir capacidades por arquétipo.
+
+**Permissões:** com `CAMPANARIO_BRAINS_V9_ENABLED=true`, a instância de `CapabilityRegistry` composta pelo runtime exige `AuthorizationContext` explícito para ferramentas registradas com permissões; nenhuma ausência de contexto vira `internal_system`. Ao receber `PermissionDeniedError` ou `PermissionConfirmationRequired`, não tentar via outro canal nem chamar o provider; registrar o motivo sem token. Com flag desligada, compatibilidade com o registro legado é preservada.
+
+**LACUNA CRÍTICA AINDA ABERTA:** `/api/v1/utilities/invoke`, uploads e prévia original do documento utilizam a API HTTP local e seu gate anterior, e **não** passam obrigatoriamente pelo registro de capacidades. A proteção R2.1 não unificou consentimento, autenticação de clientes pareados e confirmação central nesses endpoints. Restringir exposição à máquina local e **não liberar** Programação, rede ou ações irreversíveis até homologação R1. Não tratar `confirm:true` dentro de argumentos do modelo como aprovação de usuário.
+
+**Recuperação:** desative a flag V9 no `.env` e reinicie, se precisar voltar ao fluxo antigo. Faça backup de IA e Database; com a aplicação parada, reponha **somente os arquivos IA** anteriores caso um contrato adicional cause regressão. Não aplicar downgrade Alembic nem restaurar o Database sem validação em cópia. Se falhas envolverem `trace_id`, envie apenas IDs/status e não os textos dos documentos/credenciais. Testes e limitações estão em `docs/operations/RESULTADOS_TESTES_R21.md`.
+
+**Pastas e venv sem misturar dados:** `CAMPANARIO-IA` = código/UI/.env privado; `CAMPANARIO-PYTHON\.venv\Scripts\python.exe` = runtime Python 3.12 do usuário; `CAMPANARIO-DATABASE\dados\{desenvolvimento|producao}` = SQLite pessoais e originais, ZIM conforme `CAMPANARIO_ZIM_DIR`; fallback do SQLite de referência V2 ainda pode existir em IA. Configurar `CAMPANARIO_DATA_DIR` e `CAMPANARIO_MEMORY_ENVIRONMENT` sem trocar bases involuntariamente. Para instalar código R2.1, extrair o ZIP em Downloads e copiar arquivos relativos pelo Explorador (após backup), **sem PowerShell**. NÃO substituir a pasta IA inteira, `.env`, `.venv`, bancos, modelos ou ZIM. Executável `Campanario.exe` congelado pode continuar na versão anterior: validar host real.

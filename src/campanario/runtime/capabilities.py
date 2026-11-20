@@ -176,9 +176,13 @@ class CapabilityRegistry:
     provenance remain runtime concerns. Permission strings are metadata only until PF6.
     """
 
-    def __init__(self, events: RuntimeEventBus, permissions: PermissionPolicy | None = None) -> None:
+    def __init__(self, events: RuntimeEventBus, permissions: PermissionPolicy | None = None, *,
+                 require_explicit_authorization: bool = False) -> None:
         self._events = events
         self._permissions = permissions
+        # V9 opt-in: no caller can silently inherit the internal runtime's
+        # identity to bypass utility read/write/confirmation rules.
+        self._require_explicit_authorization = bool(require_explicit_authorization)
         self._definitions: dict[str, CapabilityDefinition] = {}
         self._providers: dict[str, CapabilityProvider] = {}
 
@@ -238,6 +242,11 @@ class CapabilityRegistry:
         _validate_schema(arguments, definition.input_schema, where="input")
 
         if self._permissions and definition.permissions:
+            if authorization is None and self._require_explicit_authorization:
+                # The identity must be supplied by a trusted runtime boundary,
+                # not by the model's text or a tool's arguments.
+                raise PermissionDeniedError(definition.permissions[0],
+                                            'explicit authorization context required')
             auth = authorization or AuthorizationContext.internal_system()
             for permission in definition.permissions:
                 check = self._permissions.check(permission, auth, capability=definition.name, scope=permission_scope)

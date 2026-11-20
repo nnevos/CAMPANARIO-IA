@@ -16,6 +16,7 @@ from campanario.brains.contracts import BrainRequest, BrainResult, BrainStatus
 from campanario.brains.isolation import WorkerFailure, execute_local_worker
 from campanario.brains.registry import BrainRegistry
 from campanario.brains.router import BrainPlan
+from campanario.brains.result_validation import validate_brain_result, trustworthy_upstream
 
 _LOG = logging.getLogger(__name__)
 # Only infrastructure failures count; an empty or contradictory document is not
@@ -23,7 +24,7 @@ _LOG = logging.getLogger(__name__)
 _BREAKER_ERRORS = frozenset({
     'timeout', 'timeout_terminated', 'memory_limit_terminated', 'worker_failed',
     'worker_start_failed', 'invalid_worker_payload', 'invalid_brain_result',
-    'worker_output_too_large',
+    'worker_output_too_large', 'dependency_result_invalid',
 })
 
 
@@ -98,15 +99,43 @@ class BrainExecutor:
         External task cancellation propagates, while the subprocess's finally
         block kills the child. No automatic retry can repeat a tool side effect.
         """
+        # Multi-brain runs require a single, matching trace and intent; never
+        # execute a partly forged plan under the identity of another request.
+        if len(plan.steps) > 1 and (request.trace_id != plan.trace_id or request.intent != plan.intent):
+            rejected = tuple(BrainResult(step.brain_id, BrainStatus.FAILED,
+                                         request.trace_id, 0,
+                                         error='plan_request_mismatch') for step in plan.steps)
+            for result in rejected:
+                self._audit(result, request)
+            return rejected
         deadline = monotonic() + request.budget.timeout_seconds
         results = []
-        for brain_id in plan.brain_ids:
+        for step in plan.steps:
+            brain_id = step.brain_id
             start = perf_counter()
+            # Only evidence IDs from executions actually completed in this plan.
+            prior = {previous.brain_id: previous for previous in results}
+            verified_upstream = tuple(dict.fromkeys(
+                source_id
+                for name in step.depends_on
+                for source_id in trustworthy_upstream(prior[name])
+            ))[:request.budget.max_evidence]
+            dependency_unmet = bool(step.depends_on) and step.dependency_policy == 'required' and any(
+                not trustworthy_upstream(prior[name]) for name in step.depends_on)
+            bounded_request = replace(request, upstream_evidence_ids=verified_upstream,
+                                      query=step.query_override or request.query)
             brain = self.registry.get(brain_id)
-            if brain is None:
+            if dependency_unmet:
+                # Required dependencies fail closed. Optional dependencies remain
+                # independent (e.g., a calculation when the document was absent).
+                result = BrainResult(brain_id, BrainStatus.UNAVAILABLE, request.trace_id, 0,
+                                     error='dependency_not_met')
+            elif brain is None:
                 result = BrainResult(brain_id, BrainStatus.UNAVAILABLE, request.trace_id, 0,
                                      error='not_installed')
-            elif not brain.definition.permission_scopes.issubset(request.permission_scopes):
+            elif (not step.required_scopes.issubset(request.permission_scopes)
+                  or not brain.definition.permission_scopes.issubset(request.permission_scopes)
+                  or not brain.definition.permission_scopes.issubset(step.required_scopes)):
                 result = BrainResult(brain_id, BrainStatus.FAILED, request.trace_id, 0,
                                      error='permission_denied')
             elif self.permission_policy is not None and not self._authorized(brain, authorization):
@@ -122,7 +151,7 @@ class BrainExecutor:
                                          error='turn_budget_exhausted')
                 else:
                     try:
-                        bounded = replace(request, budget=replace(
+                        bounded = replace(bounded_request, budget=replace(
                             request.budget, timeout_seconds=min(remaining, request.budget.timeout_seconds)))
                         if isinstance(brain, (KnowledgeBrain, AnalysisBrain)):
                             result = await execute_local_worker(brain_id, brain.database, bounded)
@@ -131,10 +160,11 @@ class BrainExecutor:
                             # A timed-out thread is NOT a security boundary.
                             result = await asyncio.wait_for(
                                 asyncio.to_thread(brain.execute, bounded), timeout=bounded.budget.timeout_seconds)
-                        if (not isinstance(result, BrainResult) or result.brain_id != brain_id
-                                or result.trace_id != request.trace_id
-                                or (result.status == BrainStatus.COMPLETED and not result.operations)
-                                or len(result.evidence_refs) > request.budget.max_evidence):
+                        if not validate_brain_result(
+                                result, brain_id=brain_id, trace_id=request.trace_id,
+                                max_evidence=request.budget.max_evidence,
+                                required_upstream=verified_upstream,
+                                first_party=isinstance(brain, (KnowledgeBrain, AnalysisBrain))):
                             result = BrainResult(brain_id, BrainStatus.FAILED, request.trace_id, 0,
                                                  error='invalid_brain_result')
                     except WorkerFailure as exc:
@@ -146,6 +176,11 @@ class BrainExecutor:
                     except Exception as exc:
                         result = BrainResult(brain_id, BrainStatus.FAILED, request.trace_id, 0,
                                              error=type(exc).__name__)
+            # Older trusted in-process adapters do not know the new R2 metadata.
+            # Only immutable observed IDs are attached; this does not promote data.
+            if (brain is not None and not isinstance(brain, (KnowledgeBrain, AnalysisBrain))
+                    and result.status in {BrainStatus.COMPLETED, BrainStatus.PARTIAL}):
+                result = replace(result, upstream_evidence_ids=verified_upstream)
             result = replace(result, elapsed_ms=round((perf_counter() - start) * 1000, 2))
             results.append(result)
             self._record_health(result, monotonic())

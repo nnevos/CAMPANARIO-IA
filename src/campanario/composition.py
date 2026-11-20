@@ -208,7 +208,8 @@ def build_runtime(
     permissions.set_rule("file.delete", PermissionMode.CONFIRM)
     permissions.set_rule("computer.execute", PermissionMode.SCOPED_CONFIRM)
     permissions.set_rule("microphone.listen", PermissionMode.ALLOW_WHILE_CALL)
-    tools = CapabilityRegistry(event_bus, permissions)
+    tools = CapabilityRegistry(event_bus, permissions,
+                               require_explicit_authorization=settings.brains_v9_enabled)
     from campanario.utilities.integration import register_utilities
     register_utilities(tools)
     permissions.set_rule("utilities.read", PermissionMode.ALLOW_WHILE_SESSION)

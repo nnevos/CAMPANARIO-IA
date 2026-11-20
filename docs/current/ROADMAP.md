@@ -212,14 +212,14 @@ F6 continua bloqueada ate o freeze de F5.
 |---|---|---|---|
 | R0 — Baseline das 3 pastas e host | P0 | [~] Base IA auditada; Python/Database reais não disponíveis | Backup/restore de cópia + Python 3.12/Windows/Ollama + contratos das 3 pastas |
 | R1 — Sandbox e permissão única | P0 | [~] Worker separado para Conhecimento/Análise com kill em timeout e limite RSS monitorado; leitura ligada à PermissionPolicy. **Não é sandbox de segurança**; APIs de utilidades ainda distintas | Isolamento OS de diretórios/rede/processos, política unificada em todas as rotas, aceite Windows e fault injection real |
-| R2 — Planejador colaborativo | P0 | [~] Router determinístico separado, no máximo 3 IDs; sem composição real | DAG limitado, trace, orçamento, sem loops e sem mexer no `AgentRouter` |
+| R2 — Planejador colaborativo | P0 | [~] R2 parcial: plano tipado e sequência Conhecimento→Análise (somente leitura), sem comparação semântica | Integração factual cross-brain, cache, permissão/isolamento R1 e homologação host |
 | R3/R4 — Conhecimento e Análise sólidos | P0/P1 | [~] Dois executores reais reutilizam V8 | Evidências/páginas reais, planilha reproduzível, citações e fallback corretos |
 | R5 — Investigação e Estratégia | P1 | [ ] Catálogo apenas, sem executor | Executors tipados, health-check e testes independentes |
 | R6 — Programação | P1 | [ ] Indisponível | Sandbox R1 + diffs/autorização/rollback testados |
 | R7 — Percepção | P1/P2 | [ ] Indisponível | Modelo local, provenance/consentimento; mídia segue F5 |
 | R8 — Comunicação e Criação | P1/P2 | [ ] Indisponíveis | Executors integrados ao validador V9.1; sem novas alegações |
 | R9 — Forja, talentos e `.campagent` | P1/P2 | [~] MVP de fichas, 8 arquétipos e 6 talentos | Preconditions completas, UI/mobile e pacote hostil testados |
-| R10 — Homologação integrada | P0 release | [ ] 1.004 testes passaram, 31 falhas conhecidas; sem host real | 8 cérebros comprovados + falhas triadas + SLIs medidos + F5/F6/F7 |
+| R10 — Homologação integrada | P0 release | [ ] 1.029 testes passaram, 31 falhas conhecidas (grupos disjuntos, Linux/Python 3.13); sem host real | 8 cérebros comprovados + falhas triadas + SLIs medidos + F5/F6/F7 |
 
 **Regras inegociáveis:** política/permissões > integridade factual > pedido > tarefa > talento > estilo; memórias e personalidade não migram para cérebros; ferramenta sem execução não gera fonte; falha de validação retorna resposta canônica/limitação. Arquétipos não bloqueiam capacidades, e registro no catálogo não substitui implementação. O roadmap detalhado define subtarefas, testes de aceite, dependências, entregáveis, métricas e rollback por fase. **Acrescentar esta trilha aos documentos não implementa as pendências.**
 
@@ -250,3 +250,14 @@ Atualizações do código continuam por **cópia manual de arquivos pelo Explora
 ## Trilha experimental V9 — checkpoint R1.1 (não promove F5/F6)
 
 A R1.1 implementa orçamento total de tempo para o plano de cérebros, contenção de falhas sucessivas, higiene de ambiente e cancelamento de worker de leitura. **A R1 ainda não está homologada:** sem sandbox OS/Job Objects, autorização unificada das utilidades ou teste nas três pastas reais. A sequência R1 pendente → R2 tipada permanece em [`ROADMAP_V9_CEREBROS_COMPLETO.md`](ROADMAP_V9_CEREBROS_COMPLETO.md), com procedimentos de falha no [`FAILSAFE_V9_CEREBROS.md`](../operations/FAILSAFE_V9_CEREBROS.md). As fases F5/F6 permanecem com seus gates próprios.
+
+
+## Checkpoint experimental R2 — planejamento tipado (19/11/2026)
+
+Sobre R1.1, a R2 acrescenta `BrainStep`/`BrainPlan`, dependências ordenadas, trace real de evidências e apresentação conjunta **somente** de Conhecimento e Análise quando o usuário menciona explicitamente um documento **e** uma planilha. O `CollaborationSnapshot` consolida dados canônicos com fontes reais antes da expressão por Morgana/Todd e deixa claro que **não** executou comparação semântica. Nenhum dos outros seis cérebros foi ativado.
+
+**Gates R0/R1/R2 continuam pendentes** para o release: sandbox OS, utilidades com permissões centralizadas, Windows 3.12, três pastas e restore no host, Ollama/mobile e análise semântica cross-brain. Regressão no ambiente de teste: **1.029 PASS / 31 falhas históricas sem novas falhas** (1.022 testes legados + 7 novos; grupos disjuntos). Ver [`R2_PLANEJAMENTO_COLABORACAO_CEREBROS.md`](R2_PLANEJAMENTO_COLABORACAO_CEREBROS.md), [`RESULTADOS_TESTES_R2.md`](../operations/RESULTADOS_TESTES_R2.md) e [`FAILSAFE`](../operations/FAILSAFE_V9_CEREBROS.md). Atualização de arquivos por cópia no Explorador, sem PowerShell; não alterar `.env`, `.venv` externa ou SQLite de usuário.
+
+### Trilha experimental de cérebros — checkpoint R2.1 (19/11/2026)
+
+A R2.1 acrescentou contratos `optional|required` para dependências, checagem de proveniência first-party e exigência de contexto de autorização explícito no registro de capacidades **quando V9 está ativada**. Isso NÃO libera F6, não conclui R0/R1/R2 e não inclui `/api/v1/utilities/invoke` na mesma política. O roadmap detalhado e o FAILSAFE documentam os gates abertos e a topologia IA / `.venv` externa no Python / Database externo. Ver `ROADMAP_V9_CEREBROS_COMPLETO.md`, `R21_DEPENDENCIAS_PROVENIENCIA_PERMISSOES.md` e `../operations/FAILSAFE_V9_CEREBROS.md`.

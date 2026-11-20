@@ -15,7 +15,7 @@ from campanario.brains.builds import AgentBuild, ARCHETYPES, TALENTS, select_tal
 from campanario.brains.package import export_package, import_package
 from campanario.brains.store import BuildConflict
 from campanario.config import get_settings
-from campanario.chat.document_intent import DocumentRequest
+from campanario.chat.document_intent import DocumentRequest, document_request
 
 router = APIRouter(prefix='/api/v1/brains', dependencies=[Depends(require_local)], tags=['V9 brains'])
 
@@ -128,8 +128,9 @@ async def preview(body: PreviewRequest):
     # No arbitrary code, no direct filesystem paths, no externally supplied tools.
     plan = service._capability_router.plan(
         body.query,
-        document_request=DocumentRequest(body.query, body.document_hint)
-        if body.brain_id == 'knowledge' else None,
+        document_request=(DocumentRequest(body.query, body.document_hint)
+                          if body.brain_id == 'knowledge' else
+                          document_request(body.query, []) if body.brain_id is None else None),
         data_request=True if body.brain_id == 'analysis' else None)
     request = BrainRequest(request_id=uuid4(), conversation_id=None,
                            query=body.query, intent=plan.intent,
@@ -144,8 +145,23 @@ async def preview(body: PreviewRequest):
             session_active=True))
     build = service._build_store.get(body.agent_id)
     active = select_talents(build, intent=plan.intent, text=body.query)
-    return {'plan': {'intent': plan.intent, 'brain_ids': plan.brain_ids,
-                     'reasons': plan.reasons, 'trace_id': str(plan.trace_id)},
+    collaboration = None
+    if len(plan.steps) > 1:
+        from campanario.brains.collaboration import consolidate_read_only
+        try:
+            snapshot = consolidate_read_only(request.request_id, body.query, plan, outcomes)
+            collaboration = {
+                'canonical_answer': snapshot.canonical.canonical_answer,
+                'status': snapshot.canonical.status.value,
+                'limitations': list(snapshot.canonical.limitations),
+                'completed_steps': list(snapshot.completed_steps),
+                'incomplete_steps': list(snapshot.incomplete_steps),
+                'semantic_comparison_performed': False,
+            }
+        except ValueError:
+            collaboration = {'status': 'tool_error', 'limitations': ['Resultado do plano inconsistente.'],
+                             'semantic_comparison_performed': False}
+    return {'plan': plan.public(), 'collaboration': collaboration,
             'runs': [out.public() for out in outcomes],
             'evidence': [
                 {'id': src.source_id, 'title': src.title, 'document_id': src.document_id,

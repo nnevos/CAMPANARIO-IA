@@ -52,6 +52,8 @@ class BrainRequest:
     budget: ResourceBudget = field(default_factory=ResourceBudget)
     permission_scopes: frozenset[str] = frozenset({'library:read'})
     trace_id: UUID = field(default_factory=uuid4)
+    # IDs from already executed earlier steps. Never instructions or privileges.
+    upstream_evidence_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +66,7 @@ class BrainResult:
     operations: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
     error: str | None = None
+    upstream_evidence_ids: tuple[str, ...] = ()
     # Internal adapter result; never accept this from the language model or client.
     guard: Any = field(default=None, repr=False, compare=False)
 
@@ -71,6 +74,7 @@ class BrainResult:
         return {'brain_id': self.brain_id, 'status': self.status.value,
                 'trace_id': str(self.trace_id), 'elapsed_ms': self.elapsed_ms,
                 'evidence_count': len(self.evidence_refs), 'operations': list(self.operations),
+                'upstream_evidence_ids': list(self.upstream_evidence_ids),
                 'warnings': list(self.warnings), 'error': self.error,
                 'evidence_refs': [
                     {'source_id': s.source_id, 'document_id': s.document_id,

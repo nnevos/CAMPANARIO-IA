@@ -1,7 +1,7 @@
 # CAMPANÁRIO — Roadmap de conclusão da arquitetura de cérebros (V9 + V9.1)
 
 **Estado:** planejamento de integração; NÃO constitui declaração de implementação das fases pendentes.  
-**Base auditada:** cópia `CAMPANARIO-IA` V9 integrada à V9.1, em 19/11/2026; incrementos P0, R1 e R1.1 realizados localmente na cópia IA, sem acesso ao host Windows.  
+**Base auditada:** cópia `CAMPANARIO-IA` V9 integrada à V9.1, em 19/11/2026; incrementos P0, R1, R1.1 e R2 experimental realizados localmente na cópia IA, sem acesso ao host Windows.  
 **Documentos vinculados:** `docs/current/ROADMAP.md`, `docs/current/V9_BRAINS_ARQUETIPOS_TALENTOS.md`, `docs/current/RELATORIO_V9_V91_INTEGRACAO.md`, `docs/operations/FAILSAFE_V9_CEREBROS.md`, `docs/operations/ETAPA1_AUDITORIA_FAILSAFES_FLUXOS_2026-11-19.md` e `docs/operations/ETAPA2_ESTABILIZACAO_FAILSAFES_2026-11-19.md`.
 
 > **Gate de sequenciamento:** o roadmap canônico mantém a F5 (aceite físico de voz) aberta e a liberação formal da F6 bloqueada. Desenvolvimento e testes da arquitetura de cérebros podem evoluir como trilha *experimental/opt-in*, mas não promovem o projeto para F6/produção nem dispensam os gates F5. A versão V9 está desligada por padrão (`CAMPANARIO_BRAINS_V9_ENABLED=false`).
@@ -20,7 +20,7 @@
 | Fichas e talentos | `brains/builds.py`, `store.py`, `agents.py` | **MVP**: oito arquétipos, seis talentos, dois ativos por turno; preconditions complexas pendentes |
 | Interface e pacotes | `brains/api.py`, `brains/package.py`, `web/ferramentas.js` | **MVP local**: Central, Forja e inspeção segura; sem homologação mobile físico |
 | Persistência | migração Alembic `0010_v9_brains.py` | Testada sobre SQLite temporário; instalação real de 3 pastas não verificada |
-| Testes disponíveis | `tests/test_v9_brains.py` e regressão V8/V9.1 | Última regressão dividida documentada: **1.022 aprovados / 31 falhas preexistentes** (R1.1) no ambiente local; NÃO declarar 100% de sucesso |
+| Testes disponíveis | `tests/test_v9_brains.py` e regressão V8/V9.1 | Última regressão dividida documentada: **1.029 aprovados / 31 falhas preexistentes** (R2: 1.022 legados + 7 testes R2) no ambiente local; NÃO declarar 100% de sucesso |
 
 **Inspeção R0 já implementada:** `GET /api/v1/brains/environment` e a Central de Cérebros consultam os caminhos em modo leitura mesmo com flag V9 desligada. **Não valida o Windows do usuário**. Veja [`P0_TRES_PASTAS_SEM_POWERSHELL.md`](P0_TRES_PASTAS_SEM_POWERSHELL.md) e [`P0_RELATORIO_EXECUCAO.md`](../operations/P0_RELATORIO_EXECUCAO.md).
 
@@ -70,11 +70,11 @@ Legenda: `[x]` funcionalidade observada na cópia IA; `[~]` parcial; `[ ]` não 
 ### R2 — Planejador de capacidades e colaboração entre cérebros — P0
 
 - [x] `CapabilityRouter` separado do `AgentRouter`, limite estrutural de três cérebros.
-- [ ] Definir plano tipado com objetivo, entradas/saídas, pré-requisitos, justificativa, autorizações e orçamento por cérebro; validar dependências e proibir referências cíclicas.
-- [ ] Selecionar determinísticamente pedidos explícitos (documentos, planilhas, ferramentas); usar classificação por Ollama **somente** quando a ambiguidade material justificar, com fallback para pergunta esclarecedora/fluxo legado.
-- [ ] Permitir composição **sequencial e limitada** (ex.: Conhecimento → Investigação → Comunicação), sem fan-out por padrão e sem carregar múltiplos modelos desnecessariamente.
-- [ ] Passar resultado de um cérebro como dado tipado não confiável para o próximo, jamais como `system prompt`; preservar lineage de evidências, erros parciais e cache por revisão de fonte/TTL.
-- [ ] Instrumentar decisões do roteador, ferramentas invocadas, latência por etapa e custo de contexto observável; cenários de indireção e referência anafórica.
+- [~] **R2 incremental:** `BrainStep`/`BrainPlan` tipados com objetivo, contratos, escopos, motivo e dependências verificadas; orçamento total vem do executor R1.1. Pendentes: validação cruzada de pré-requisitos externos e política integrada em todas as ferramentas.
+- [~] **R2 incremental:** seleção determinística de documento, planilha e pedido explícito misto, incluindo comandos sem `?`; classificação de ambiguidade via Ollama e esclarecimento formal ainda pendentes.
+- [~] **R2 incremental:** `Conhecimento → Análise` sequenciais e read-only para consulta mista; outros seis cérebros continuam indisponíveis, sem fan-out ou múltiplos modelos adicionais. A comparação semântica não está implementada.
+- [~] **R2 incremental:** IDs tipados de evidências realmente lidas são rastreados na etapa seguinte, sem transformar conteúdo em `system prompt`; resultado composto e falhas parciais explicitados. Transferência de dados analíticos entre cérebros e cache por revisão/TTL pendentes.
+- [~] **R2 incremental:** plano, motivos, passos, operações, latência e resultado de consolidação na prévia e no debug factual; custos de contexto, anáforas complexas e métricas end-to-end pendentes.
 
 **Gate R2:** plano idempotente com no máximo 3 cérebros, sem loops, fonte/autorizações verificáveis, `AgentRouter` inalterado, e conversa cotidiana sem latência/model calls adicionais desnecessários.
 
@@ -192,7 +192,7 @@ Os lotes podem avançar parcialmente em paralelo **apenas quando não contornare
 | V9-13 | Web/desktop/mobile/call | Estado e sessão coerentes; CPU/RAM/latência medidos no hardware real |
 | V9-14 | Novos seis cérebros | Cada brain só marca `ready` com executor, testes de contrato e health-check reais |
 
-A atualização deste **roadmap é apenas documental**. Nenhum executor adicional, isolamento novo, migração adicional ou teste de integração em ambiente real foi instalado por esta alteração.
+A frase de atualização apenas documental pertencia ao patch de roadmap anterior. **R2 agora inclui código e testes locais**, descritos em `R2_PLANEJAMENTO_COLABORACAO_CEREBROS.md`; isso não homologou o Windows, o sandbox OS nem as três pastas reais.
 
 ## 6. Recuperação e decisão de rollback
 
@@ -225,4 +225,26 @@ Consultar o runbook `docs/operations/FAILSAFE_V9_CEREBROS.md`. Em caso de incide
 
 **Três pastas:** não mover a `.venv` de `CAMPANARIO-PYTHON`; worker usa `sys.executable` (Python 3.12 esperado). Não embutir venv em ZIP nem alterar arquivos em `CAMPANARIO-DATABASE/dados`; a escolha do SQLite vem do `CAMPANARIO_DATA_DIR` e `CAMPANARIO_MEMORY_ENVIRONMENT` já configurados. O SQLite da Biblioteca Conversacional V2 permanece com fallback legado documentado. Nunca executar migrations como parte de sobreposição de arquivos.
 
-**Aceitação pendente para R1 fechado:** execução Windows 3.12/EXE, sandbox OS hostil, política unificada em `/api/v1/utilities`, rede/arquivos/cancelamento auditados, R0 completo (backup/restore e contratos reais das outras duas pastas). **O próximo lote de desenvolvimento deve atacar esses itens antes de R2/R6**.
+**Aceitação pendente para R1 fechado:** execução Windows 3.12/EXE, sandbox OS hostil, política unificada em `/api/v1/utilities`, rede/arquivos/cancelamento auditados, R0 completo (backup/restore e contratos reais das outras duas pastas). **Esses itens devem ser resolvidos antes de liberar a R2 geral (além da colaboração somente leitura já testada) ou R6**.
+
+
+## Checkpoint R2 — colaboração somente leitura (19/11/2026)
+
+- [x] Plano tipado `BrainStep` com validação de dependências acíclicas, escopos e trace; seleção determinística de consulta mista documento + planilha.
+- [x] Execução sequencial dos dois cérebros de leitura já existentes; propagação limitada a IDs de evidências observadas, sem LLM intermediário.
+- [x] `CollaborationSnapshot` consolida trechos, cálculos, operações, limites e erros antes da expressão; a resposta assume explicitamente que não fez comparação semântica.
+- [x] Chat e prévia da Central exibem etapas executadas/limitações. Flag desligada não ativa cérebros. Testes sintéticos registrados em `RESULTADOS_TESTES_R2.md`.
+- [ ] Ainda faltam gates R0/R1 (três pastas/Windows/segurança), integração semântica cross-brain, cache versionado, seleção assistida por modelo em ambiguidade e futura colaboração com Investigação/Estratégia. **R2 não está homologada como fase completa.**
+
+Consulte [`R2_PLANEJAMENTO_COLABORACAO_CEREBROS.md`](R2_PLANEJAMENTO_COLABORACAO_CEREBROS.md) e [`FAILSAFE_V9_CEREBROS.md`](../operations/FAILSAFE_V9_CEREBROS.md).
+
+## Checkpoint R2.1 — dependências, proveniência e autorização opt-in (19/11/2026)
+
+- [x] `BrainStep` valida `dependency_policy=optional|required`, contratos de entrada/saída e pré-requisitos. Dependência `required` não chama o cérebro sem evidência first-party concluída; `optional` mantém cálculos independentes e reporta a ausência da outra fonte.
+- [x] `result_validation.py` rejeita trace, fonte duplicada, fonte em resultado falho, operações inválidas e divergências entre o guard first-party e os metadados de evidência; fontes de extensões não são propagadas como prova sem adaptação auditada.
+- [x] Planos compostos exigem correspondência de `trace_id` e intenção antes de executar workers. Contratos legados de um cérebro mantêm compatibilidade até sua migração.
+- [x] **Flag V9 ligada:** registro de capacidades exige `AuthorizationContext` explícito para ferramentas com `permissions`, sem fallback implícito a `internal_system`; `PermissionPolicy` ainda toma a decisão final.
+- [ ] Unificar a autenticação/confirmação da API humana `/api/v1/utilities/invoke` com a política do runtime. O endpoint direto NÃO é coberto pela mudança acima; evitar declarar R1 encerrado.
+- [ ] Homologar subprocesso, Job Objects, autorização real, `.venv` externa e Database em Windows/Python 3.12; sem esse gate não liberar ferramentas invasivas.
+
+**R2.1 é incremento parcial sobre R2**, não fase completa nem prova de isolamento OS. Não houve mudança em Alembic, modelos, `.env` ou dados. Ver [`R21_DEPENDENCIAS_PROVENIENCIA_PERMISSOES.md`](R21_DEPENDENCIAS_PROVENIENCIA_PERMISSOES.md), [`RESULTADOS_TESTES_R21.md`](../operations/RESULTADOS_TESTES_R21.md) e [`FAILSAFE_V9_CEREBROS.md`](../operations/FAILSAFE_V9_CEREBROS.md).

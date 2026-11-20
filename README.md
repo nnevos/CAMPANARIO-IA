@@ -1,3 +1,5 @@
+> **Atualização R2 (experimental):** veja [`LEIA_PRIMEIRO_R2.md`](LEIA_PRIMEIRO_R2.md), [`R2 planejamento`](docs/current/R2_PLANEJAMENTO_COLABORACAO_CEREBROS.md) e o [`FAILSAFE`](docs/operations/FAILSAFE_V9_CEREBROS.md). Código IA atualizável por cópia no Explorador, sem tocar na `.venv` ou Database externos.
+
 # CAMPANARIO-IA — projeto enxuto
 
 Campanario 0.8.0: assistente com Morgana e Todd, orquestracao de conversa, memoria, biblioteca local, Wikipedia ZIM e voz. **Esta pasta e o codigo.** O ambiente Python e as memorias pessoais ficam em duas pastas irmas.
@@ -102,3 +104,7 @@ Os dois cérebros de leitura instalados (`knowledge`, `analysis`) usam subproces
 ## R1.1 — contenção de falhas do motor de cérebros
 
 Sobre a base R1, o executor compartilha o timeout entre cérebros de um mesmo plano, interrompe a sequência quando o orçamento acaba e evita tempestades de workers após falhas repetidas. O worker de Conhecimento/Análise recebe ambiente reduzido e barreira Python para sockets; **isso não é firewall nem sandbox de segurança do Windows**. Não libera Programação ou ações arbitrárias. Veja [`LEIA_PRIMEIRO_R11.md`](LEIA_PRIMEIRO_R11.md), [`ROADMAP`](docs/current/ROADMAP_V9_CEREBROS_COMPLETO.md) e [`FAILSAFE`](docs/operations/FAILSAFE_V9_CEREBROS.md). Atualização de arquivos é por cópia no Explorador, sem PowerShell. As pastas Python/Database permanecem separadas e intactas.
+
+### Incremento experimental R2.1 — integridade do plano de cérebros
+
+Se você já instalou a R2, consulte [`LEIA_PRIMEIRO_R21.md`](LEIA_PRIMEIRO_R21.md) para atualizar o código **pelo Explorador, sem PowerShell**. Contratos de dependência obrigatória/opcional, validação de evidência e proteção de identidade explícita em ferramentas do runtime ficam descritos em [`R21_DEPENDENCIAS_PROVENIENCIA_PERMISSOES.md`](docs/current/R21_DEPENDENCIAS_PROVENIENCIA_PERMISSOES.md). O IA continua separado de `CAMPANARIO-PYTHON/.venv` e do `CAMPANARIO-DATABASE`; nenhuma migração ou dependência nova é requerida. Gates R0/R1/Windows e confirmação da API de Utilidades permanecem abertos.

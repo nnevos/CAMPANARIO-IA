@@ -1,0 +1,128 @@
+{
+  "release": "CAMPANARIO V9+V9.1 R2.1 experimental - integridade de dependencias e autorizacao",
+  "base_required": "CAMPANARIO-IA R2 instalado",
+  "installation": "extrair fora do projeto, copiar arquivos relativos para CAMPANARIO-IA pelo Explorador com o aplicativo parado",
+  "powershell_required": false,
+  "python_repository_modified": false,
+  "database_repository_modified": false,
+  "new_database_migration": false,
+  "new_dependency": false,
+  "windows_host_homologated": false,
+  "test_results": {
+    "passes": 1039,
+    "fails": 31,
+    "errors": 0,
+    "skipped": 0,
+    "known_failure_count": 31,
+    "new_failed_ids": []
+  },
+  "files": [
+    {
+      "path": "CHANGELOG_R21.md",
+      "action": "add",
+      "sha256": "47b0aada26c89c8f97996456ae567235f24e5ebba0872580c532716a637152ec",
+      "previous_sha256": null,
+      "bytes": 1403
+    },
+    {
+      "path": "LEIA_PRIMEIRO_R21.md",
+      "action": "add",
+      "sha256": "017b3fcfec38866817aa608a96d66fb99beae13645927a8e2bf9d1d83933a830",
+      "previous_sha256": null,
+      "bytes": 1407
+    },
+    {
+      "path": "README.md",
+      "action": "modify",
+      "sha256": "ea817aba2da0642b8aa8a9e2ab2ddf73388e5a5351d181debfecbeafa4c5b2b5",
+      "previous_sha256": "bfb78bfd8f019008eff3c85114bb9765052598d3eb1000faac24fd7a8565c95b",
+      "bytes": 9891
+    },
+    {
+      "path": "docs/current/R21_DEPENDENCIAS_PROVENIENCIA_PERMISSOES.md",
+      "action": "add",
+      "sha256": "bfce86417a6bd5e745ef4cbb95134f86afe5cec502d04aa5aeed6f2d7a4baebe",
+      "previous_sha256": null,
+      "bytes": 6874
+    },
+    {
+      "path": "docs/current/ROADMAP.md",
+      "action": "modify",
+      "sha256": "5b2f20cf86e2f8dc43335fb7ebbb25d79afa5720b192bf163b3bcaa854a12d1e",
+      "previous_sha256": "31d2bf6df9d8d596d69aec6d8931b46b73cdd338b270632bd674c7e09d3eae74",
+      "bytes": 21300
+    },
+    {
+      "path": "docs/current/ROADMAP_V9_CEREBROS_COMPLETO.md",
+      "action": "modify",
+      "sha256": "00d72a5fe16eb4e422010b4f354c0ffa9f73a8fa14be026d430b445c065f9c83",
+      "previous_sha256": "06253c75c5e2c1a0c5d44343ea3ee3baf901357291d7de54e64bf87e49491b9e",
+      "bytes": 31601
+    },
+    {
+      "path": "docs/operations/FAILSAFE_V9_CEREBROS.md",
+      "action": "modify",
+      "sha256": "3c1d0c55470cdf7867742c6d99a0f00f0209217a415115d72a9824acbf8278e1",
+      "previous_sha256": "fe2419949e62a6819f17dc71dab82347c4a5f9b24bd918933718df18b9b6c2e0",
+      "bytes": 28906
+    },
+    {
+      "path": "docs/operations/RESULTADOS_TESTES_R21.md",
+      "action": "add",
+      "sha256": "eaf3a143723b4e066db31219748eeb4eaac04c2b2ff4565a82c2adcd5672b8e5",
+      "previous_sha256": null,
+      "bytes": 7023
+    },
+    {
+      "path": "src/campanario/brains/executor.py",
+      "action": "modify",
+      "sha256": "44771d1c86b660ac3015e6fa9bbab022cb13470d5acf54910c152274808347e1",
+      "previous_sha256": "21d12250206324d46d7095c23d6442d898bf2403c444f567a02ca2474ec9fcb2",
+      "bytes": 10670
+    },
+    {
+      "path": "src/campanario/brains/result_validation.py",
+      "action": "add",
+      "sha256": "819b3579e9bab8539b9e7682b2a78bf05559233abcbdd0a45bca01d721c07d17",
+      "previous_sha256": null,
+      "bytes": 4161
+    },
+    {
+      "path": "src/campanario/brains/router.py",
+      "action": "modify",
+      "sha256": "d97a73c4c55cf4076a183b765170161b42ec48d2fa010e42fe3db56361b33c08",
+      "previous_sha256": "24175faf27cafbee934e62cf53920364b07c35e9ded3fd4a628d7baeabd4b8a2",
+      "bytes": 6316
+    },
+    {
+      "path": "src/campanario/composition.py",
+      "action": "modify",
+      "sha256": "fe476653664386095a3dc19801e3771414b6f11471f11ff3ef6296b65865af07",
+      "previous_sha256": "0f1472fe8d3ff4d88527ce5bb826c720a5f1260539ed02fcaa330a8ada751f34",
+      "bytes": 11928
+    },
+    {
+      "path": "src/campanario/runtime/capabilities.py",
+      "action": "modify",
+      "sha256": "676c6b707f1d4a509bb7057a3fcf5fe48afd6b5660378460867f4092602a7112",
+      "previous_sha256": "3a08cd904ec7d8eb7984bf644b7e196079a30065fe22e2f5a2e31f4133d7e12b",
+      "bytes": 16080
+    },
+    {
+      "path": "tests/test_r21_dependency_integrity.py",
+      "action": "add",
+      "sha256": "e0eabf1755bdcd3ab375be638741fde9eca65f0f86080161ea16ccbae5f3cc10",
+      "previous_sha256": null,
+      "bytes": 11378
+    }
+  ],
+  "excluded": [
+    ".env",
+    ".venv",
+    "personal SQLite",
+    "Git",
+    "private documents",
+    "models outside IA"
+  ],
+  "warning": "A copia manual nao verifica hashes automaticamente; compare arquivos personalizados e mantenha backup. Um EXE congelado antigo pode ignorar os arquivos Python novos."
+}

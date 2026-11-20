@@ -1053,8 +1053,7 @@ class ChatService:
                 return None
 
         from campanario.chat.data_intent import is_data_request, run_data_question
-        data_request = (document_intent is None and not wake_target and
-                        is_data_request(text))
+        data_request = (not wake_target and is_data_request(text))
         brain_plan = None
         brain_results = ()
         if self._brain_executor is not None and self._capability_router is not None:
@@ -1269,8 +1268,21 @@ class ChatService:
         # Canonical evidence exists BEFORE any agent generation. Same frozen instance
         # for Morgana, Todd and all later factual speakers in this turn.
         canonical = None
+        collaboration = None
+        if brain_plan is not None and len(brain_plan.steps) > 1:
+            from campanario.brains.collaboration import consolidate_read_only
+            try:
+                collaboration = consolidate_read_only(
+                    correlation_id, offline_question, brain_plan, brain_results)
+                fact_sheet = collaboration.fact_sheet
+            except ValueError as exc:
+                logger.warning('brain_collaboration_invalid error_type=%s', type(exc).__name__)
+                # Do not use a partial source as a claimed cross-source comparison.
+                research_guard = None
+                fact_sheet = build_turn_fact_sheet(
+                    correlation_id, offline_question, None, fact_lookup_requested=True)
         if fact_sheet.status != 'not_required':
-            canonical = build_canonical(
+            canonical = collaboration.canonical if collaboration is not None else build_canonical(
                 fact_sheet, research_guard,
                 mode=choose_mode(offline_question, fact_sheet),
                 brain_ids=tuple(item.brain_id for item in brain_results),
@@ -1286,8 +1298,14 @@ class ChatService:
                 'brain_plan': None if brain_plan is None else {
                     'intent': brain_plan.intent, 'selected': list(brain_plan.brain_ids),
                     'reasons': list(brain_plan.reasons), 'trace_id': str(brain_plan.trace_id),
+                    'steps': [step.public() for step in brain_plan.steps],
                 },
                 'brain_runs': [item.public() for item in brain_results],
+                'collaboration': None if collaboration is None else {
+                    'completed_steps': list(collaboration.completed_steps),
+                    'incomplete_steps': list(collaboration.incomplete_steps),
+                    'semantic_comparison_performed': False,
+                },
                 'agents': {},
             }
             if len(self._factual_debug) > 100:

@@ -48,6 +48,7 @@ def encode_result(result: BrainResult) -> bytes:
         'trace_id': str(result.trace_id),
         'evidence_refs': [asdict(ref) for ref in result.evidence_refs],
         'operations': list(result.operations), 'warnings': list(result.warnings),
+        'upstream_evidence_ids': list(result.upstream_evidence_ids),
         'error': result.error, 'guard_kind': kind,
         'guard': asdict(result.guard) if kind else None,
     }
@@ -70,10 +71,14 @@ def decode_result(raw: bytes) -> BrainResult:
             trace_id=UUID(obj['trace_id']), elapsed_ms=0,
             evidence_refs=tuple(EvidenceRef(**ref) for ref in obj['evidence_refs']),
             operations=tuple(obj['operations']), warnings=tuple(obj['warnings']),
+            upstream_evidence_ids=tuple(obj.get('upstream_evidence_ids', ())),
             error=obj.get('error'),
             guard=_guard_from_json(obj.get('guard_kind'), obj.get('guard')),
         )
-        if len(result.operations) > 8 or len(result.evidence_refs) > 25:
+        if (len(result.operations) > 8 or len(result.evidence_refs) > 25
+                or len(result.upstream_evidence_ids) > 25
+                or any(not isinstance(s, str) or not 1 <= len(s) <= 280
+                       for s in result.upstream_evidence_ids)):
             raise ValueError('invalid counts')
         return result
     except (KeyError, ValueError, TypeError, AttributeError) as exc:
@@ -145,6 +150,7 @@ async def execute_local_worker(brain_id: str, database: Path | None, request: Br
         'max_evidence': request.budget.max_evidence,
         'max_input_chars': request.budget.max_input_chars,
         'max_memory_mb': request.budget.max_memory_mb,
+        'upstream_evidence_ids': list(request.upstream_evidence_ids[:25]),
     }, ensure_ascii=False).encode('utf-8')
     if len(wire) > 24_000:
         raise WorkerFailure('worker_input_too_large')

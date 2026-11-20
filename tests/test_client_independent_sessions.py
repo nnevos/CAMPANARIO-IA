@@ -232,6 +232,7 @@ def test_message_client_provenance_survives_sqlite_roundtrip(tmp_path):
 def test_presence_ui_reuses_stable_client_id_for_http_and_realtime():
     from pathlib import Path
     html = Path("src/campanario/web/index.html").read_text(encoding="utf-8")
+    html += "\n".join(f.read_text(encoding="utf-8") for f in sorted((Path(__file__).resolve().parents[1] / "src/campanario/web/static").glob("*")) if f.suffix in {".js", ".css"})
     assert "campanario.client_id" in html
     assert "client_id=${encodeURIComponent(clientId)}" in html
     assert "'X-Campanario-Client-Id':clientId" in html

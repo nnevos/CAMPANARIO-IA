@@ -1,0 +1,189 @@
+{
+  "stage": "fase4_incremento3b_semantic_candidates",
+  "timestamp_utc": "2026-11-19T16:18:55.286975+00:00",
+  "engine": "fixture",
+  "embedding_model": "fixture_not_real_model",
+  "dataset_sha256": "fd8fbac3b278febe213b96a1879ec33695b4d5505ab6b429a8f8514041e043e2",
+  "internet_authorized": false,
+  "user_sqlite_accessed": false,
+  "temp_sqlite_unchanged": true,
+  "corpus": "eval/v1 synthetic; fixture vectors are intentionally scripted",
+  "real_embedding_accuracy": "measured_only_if_engine_ollama",
+  "semantic_entailment": "NOT_MEASURED",
+  "qwen_factual_accuracy": "NOT_MEASURED",
+  "gpu_vram_peak_mb": "NOT_MEASURED",
+  "original_fts5_benchmark": {
+    "docs_correct": 20,
+    "docs_total": 20,
+    "negative_abstentions": 5
+  },
+  "existing_docs_still_correct": 20,
+  "baseline_fts5_paraphrases": {
+    "positive_correct_source": 0,
+    "positive_total": 5,
+    "positive_semantic_candidate_only": 0,
+    "negatives_no_supported_claim": 4,
+    "negatives_no_quote": 4,
+    "negative_total": 4,
+    "positive": [
+      {
+        "id": "S001",
+        "correct_quote_and_source": false,
+        "semantic_candidate_not_promoted": false,
+        "sheet_status": "insufficient",
+        "ms": 1.198,
+        "source_name": null,
+        "excerpt": null
+      },
+      {
+        "id": "S002",
+        "correct_quote_and_source": false,
+        "semantic_candidate_not_promoted": false,
+        "sheet_status": "insufficient",
+        "ms": 0.161,
+        "source_name": null,
+        "excerpt": null
+      },
+      {
+        "id": "S003",
+        "correct_quote_and_source": false,
+        "semantic_candidate_not_promoted": false,
+        "sheet_status": "insufficient",
+        "ms": 0.212,
+        "source_name": null,
+        "excerpt": null
+      },
+      {
+        "id": "S004",
+        "correct_quote_and_source": false,
+        "semantic_candidate_not_promoted": false,
+        "sheet_status": "insufficient",
+        "ms": 0.172,
+        "source_name": null,
+        "excerpt": null
+      },
+      {
+        "id": "S005",
+        "correct_quote_and_source": false,
+        "semantic_candidate_not_promoted": false,
+        "sheet_status": "insufficient",
+        "ms": 0.174,
+        "source_name": null,
+        "excerpt": null
+      }
+    ],
+    "negative": [
+      {
+        "id": "N001",
+        "no_supported_claim": true,
+        "no_quote": true,
+        "ms": 0.052
+      },
+      {
+        "id": "N002",
+        "no_supported_claim": true,
+        "no_quote": true,
+        "ms": 0.049
+      },
+      {
+        "id": "N003",
+        "no_supported_claim": true,
+        "no_quote": true,
+        "ms": 0.062
+      },
+      {
+        "id": "N004",
+        "no_supported_claim": true,
+        "no_quote": true,
+        "ms": 0.064
+      }
+    ],
+    "query_median_ms": 0.174
+  },
+  "hybrid_semantic_paraphrases": {
+    "positive_correct_source": 5,
+    "positive_total": 5,
+    "positive_semantic_candidate_only": 5,
+    "negatives_no_supported_claim": 4,
+    "negatives_no_quote": 4,
+    "negative_total": 4,
+    "positive": [
+      {
+        "id": "S001",
+        "correct_quote_and_source": true,
+        "semantic_candidate_not_promoted": true,
+        "sheet_status": "insufficient",
+        "ms": 1.844,
+        "source_name": "guia_rumo.md",
+        "excerpt": "O intervalo padrão da revisão em Rumo é de 18 minutos."
+      },
+      {
+        "id": "S002",
+        "correct_quote_and_source": true,
+        "semantic_candidate_not_promoted": true,
+        "sheet_status": "insufficient",
+        "ms": 0.411,
+        "source_name": "protocolo_ponte.md",
+        "excerpt": "A etiqueta do Protocolo Ponte usa a cor marfim."
+      },
+      {
+        "id": "S003",
+        "correct_quote_and_source": true,
+        "semantic_candidate_not_promoted": true,
+        "sheet_status": "insufficient",
+        "ms": 1.083,
+        "source_name": "protocolo_ponte.md",
+        "excerpt": "O encontro de revisão de Ponte ocorre na sala T12."
+      },
+      {
+        "id": "S004",
+        "correct_quote_and_source": true,
+        "semantic_candidate_not_promoted": true,
+        "sheet_status": "insufficient",
+        "ms": 0.359,
+        "source_name": "manual_faro.md",
+        "excerpt": "O arquivo de referência do Projeto Faro se chama faro_referencia.md."
+      },
+      {
+        "id": "S005",
+        "correct_quote_and_source": true,
+        "semantic_candidate_not_promoted": true,
+        "sheet_status": "insufficient",
+        "ms": 0.342,
+        "source_name": "guia_rumo.md",
+        "excerpt": "Os mapas de Rumo ficam na caixa 42 do arquivo de demonstração."
+      }
+    ],
+    "negative": [
+      {
+        "id": "N001",
+        "no_supported_claim": true,
+        "no_quote": true,
+        "ms": 0.238
+      },
+      {
+        "id": "N002",
+        "no_supported_claim": true,
+        "no_quote": true,
+        "ms": 0.22
+      },
+      {
+        "id": "N003",
+        "no_supported_claim": true,
+        "no_quote": true,
+        "ms": 0.359
+      },
+      {
+        "id": "N004",
+        "no_supported_claim": true,
+        "no_quote": true,
+        "ms": 0.511
+      }
+    ],
+    "query_median_ms": 0.411
+  },
+  "semantic_cache_builds": 1,
+  "semantic_status_last": "lexical_first",
+  "fixture_provider_calls": 11,
+  "shadow_activation": "default_off; opt_in_env_only"
+}

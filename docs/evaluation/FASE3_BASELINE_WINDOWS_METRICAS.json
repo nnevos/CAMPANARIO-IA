@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_kind": "phase3_windows_observations_not_model_accuracy_score",
+  "model": "qwen3.5:9b",
+  "environment": {
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.22621-SP0",
+    "internet_opt_in": false
+  },
+  "corpus": {
+    "dataset_hash_sha256": "dba8073d0f67423883ae45f549daf840a4194064c71f2487dd7308c4b921a886",
+    "factual": 50,
+    "documents": 20,
+    "group_real": 4,
+    "group_total": 12
+  },
+  "offline": {
+    "cases": 74,
+    "factual_abstentions": 25,
+    "doc_quote_exact": 0,
+    "document_citation_verified": 0,
+    "first_visible_p50_ms": 1906.135,
+    "first_visible_p95_ms": 5634.47
+  },
+  "online_no_web": {
+    "cases": 74,
+    "internet_opt_in": false,
+    "first_visible_p50_ms": 1852.3049999999998,
+    "first_visible_p95_ms": 5187.79
+  },
+  "identity": {
+    "factual_answers_hash_equal_all": true,
+    "document_answers_hash_equal_all": true
+  },
+  "probe": {
+    "windows_confusion": {
+      "TP": 24,
+      "FN": 26,
+      "FP": 2,
+      "TN": 13
+    },
+    "reference_confusion": {
+      "TP": 48,
+      "FN": 2,
+      "FP": 1,
+      "TN": 14
+    },
+    "changed_decision_ids": [
+      "F001",
+      "F002",
+      "F005",
+      "F006",
+      "F007",
+      "F010",
+      "F011",
+      "F012",
+      "F015",
+      "F016",
+      "F017",
+      "F020",
+      "F021",
+      "F022",
+      "F025",
+      "F026",
+      "F027",
+      "F030",
+      "F032",
+      "F035",
+      "F045",
+      "F046",
+      "F047",
+      "F050"
+    ]
+  },
+  "qualitative_findings": [
+    {
+      "id": "F046",
+      "label": "fictitious_person_described_as_real",
+      "review_status": "confirmed_against_synthetic_case_definition"
+    },
+    {
+      "id": "F050",
+      "label": "fictional_work_described_as_real_with_author",
+      "review_status": "confirmed_against_synthetic_case_definition"
+    },
+    {
+      "id": "D001",
+      "label": "direct_contradiction_to_document",
+      "review_status": "confirmed_against_fixture"
+    },
+    {
+      "id": "D005",
+      "label": "direct_contradiction_to_document",
+      "review_status": "confirmed_against_fixture"
+    },
+    {
+      "id": "D016",
+      "label": "direct_contradiction_to_document",
+      "review_status": "confirmed_against_fixture"
+    }
+  ],
+  "metrics_not_scored": [
+    "real_factual_accuracy",
+    "full_invention_count",
+    "verified_credible_citations",
+    "gpu_vram_peak_mb",
+    "persona_qualitative_consistency"
+  ]
+}

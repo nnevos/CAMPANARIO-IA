@@ -12,6 +12,8 @@ class Base(DeclarativeBase):
 
 def build_engine(database_url: str | None = None) -> Engine:
     settings = get_settings()
+    if database_url is None:
+        settings.database_path.parent.mkdir(parents=True, exist_ok=True)
     url = database_url or f"sqlite:///{settings.database_path.as_posix()}"
     engine = create_engine(url, future=True)
 

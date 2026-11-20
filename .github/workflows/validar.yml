@@ -1,0 +1,49 @@
+name: Validar fundacao e registrar regressao
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    env:
+      CAMPANARIO_SEMANTIC_MEMORY_ENABLED: 'false'
+      CAMPANARIO_DATA_DIR: ${{ github.workspace }}/.ci-data
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar ambiente de teste
+        run: python -m pip install -e . 'pytest>=8,<9' 'pytest-asyncio>=0.24,<2'
+      - name: Gate da plataforma e contratos preservados
+        run: >-
+          python -m pytest -q tests/test_v08_platform.py tests/test_api_chat.py
+          tests/test_health.py tests/test_ui_v06_safety.py tests/test_realtime_gateway.py
+          tests/test_removed_factory_boundary.py tests/test_project_layout.py tests/test_manual_docs.py
+      - name: Logica mobile e sintaxe
+        run: |
+          node --test tests/mobile/*.test.mjs
+          find src/campanario/web/static apps/mobile/www -type f \( -name '*.js' -o -name '*.mjs' \) -exec node --check {} \;
+          python -m compileall -q src
+      - name: Regressao integral - inclui falhas herdadas documentadas
+        id: integral
+        continue-on-error: true
+        run: python -m pytest -q --junitxml=regressao-integral.xml
+      - name: Sinalizar falhas da suite integral
+        if: steps.integral.outcome == 'failure'
+        run: |
+          echo '::warning::A suite integral falhou. Consulte o XML e TESTES_V08.md; gate da fundacao nao equivale a homologacao integral.'
+          echo 'Suite integral com falhas: revisar antes de publicar uma versao de producao.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regressao-integral
+          path: regressao-integral.xml
+          if-no-files-found: warn

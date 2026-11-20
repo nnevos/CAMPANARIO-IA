@@ -1,0 +1,23 @@
+{
+  "created_on": "2026-11-19",
+  "dataset_is_fixed": true,
+  "docs_are_synthetic": true,
+  "document_cases": 20,
+  "factual_cases": 50,
+  "group_cases": 12,
+  "language": "pt-BR",
+  "negative_intent_cases": 15,
+  "schema_version": "1.0.0",
+  "scope": "grounding offline/online, neutral system, multiagent",
+  "sha256": {
+    "documentos.jsonl": "fd8fbac3b278febe213b96a1879ec33695b4d5505ab6b429a8f8514041e043e2",
+    "factual.jsonl": "860c25907e7f040573fa62ee907da495700375766f0987ae30610a9a2856b698",
+    "fixtures/diario_aurora.md": "2965be2ed92bd0f65b134ca35c95698a79424e14f58869961b810b177f38ae63",
+    "fixtures/guia_horizonte.md": "454b25ee0cdfd8b0a8f6828b2008fde2c5c711bdc255483bc478b264223c77fc",
+    "fixtures/guia_rumo.md": "81b39064ab59ffe14226bb6894caeedc6931edf0a3cb6e2fcd13e3941b9f73f6",
+    "fixtures/manual_faro.md": "bcfa1cb4adaab705b2f27d260dcfe4986df664702c99ad1e1b4ac3b3a4d73121",
+    "fixtures/protocolo_ponte.md": "fee71a1f5568356337e70cd785ba82511a493e21956c082cd39929691327ccac",
+    "grupo.jsonl": "f473067b6e15f072035c5439e987bba9e781e4e11c01c53dad3540c258383cda",
+    "intent_negatives.jsonl": "5ef699ff367e7af3a8f5e5cccbcf9ba057b366205b8f7605c86e2ac088776a8f"
+  }
+}

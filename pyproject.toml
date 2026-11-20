@@ -1,6 +1,6 @@
 [project]
 name = "campanario"
-version = "0.1.0"
+version = "0.8.0"
 description = "Local-first modular personal AI system"
 requires-python = ">=3.12,<3.13"
 dependencies = [
@@ -12,18 +12,19 @@ dependencies = [
   "alembic>=1.13,<2",
   "httpx>=0.27,<1",
   "platformdirs>=4.3,<5",
+  "pypdf>=5,<7",
+  "psutil>=6,<8",
   "websockets>=16,<18",
 ]
 
 [project.scripts]
 campanario-runtime = "campanario.runtime.process:main"
 campanario-mobile-proof = "campanario.mobile.proof_client:main"
-campanario-host-voice = "campanario.voice.host_client:main"
+campanario-desktop = "campanario.app.desktop:main"
 
 [project.optional-dependencies]
-voice-host = [
-  "sounddevice>=0.5,<1",
-]
+desktop = ["pywebview>=5.4,<7"]
+semantic-chroma = ["chromadb>=0.5,<2"]
 
 [dependency-groups]
 dev = [
@@ -41,6 +42,7 @@ packages = ["src/campanario"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+testpaths = ["tests"]
 asyncio_mode = "auto"
 
 [tool.ruff]

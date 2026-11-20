@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from enum import StrEnum
+import logging
 from threading import RLock
 from typing import Any, Literal, Protocol
 from uuid import UUID, uuid4
@@ -11,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 EVENT_SCHEMA_VERSION = "1.0"
+logger = logging.getLogger(__name__)
 
 
 class EventType(StrEnum):
@@ -314,7 +316,16 @@ class RuntimeEventBus:
 
         for callback, event_types in subscribers:
             if event_types is None or event.event_type in event_types:
-                callback(event)
+                try:
+                    callback(event)
+                except Exception as exc:
+                    # A browser, TTS observer or metrics subscriber is not part
+                    # of the event transaction. The committed journal and other
+                    # subscribers must remain available when one fails.
+                    logger.warning(
+                        "event_subscriber_failed type=%s sequence=%d error_type=%s",
+                        event.event_type.value, event.sequence, type(exc).__name__,
+                    )
         return event
 
     def subscribe(

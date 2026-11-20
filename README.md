@@ -1,85 +1,52 @@
-# Campanario IA
+# CAMPANARIO-IA — projeto enxuto
 
-Sistema pessoal local, persistente e model-portable. A foundation conversacional esta validada com `gemma3:12b`.
+Campanario 0.8.0: assistente com Morgana e Todd, orquestracao de conversa, memoria, biblioteca local, Wikipedia ZIM e voz. **Esta pasta e o codigo.** O ambiente Python e as memorias pessoais ficam em duas pastas irmas.
 
-## Conceito atual
+## Estrutura ativa no Windows
 
-- **Campanario** = sistema/ambiente, contexto, memoria-base, pipeline, modelos e capacidades.
-- **Morgana** = participante persistente e default primary speaker.
-- **Todd** = participante persistente.
-- Prioridade define quem normalmente fala primeiro; nunca desliga o outro.
-- O usuario expressa intencao; o Campanario coordena participacao e execucao.
+```text
+Documents/GitHub/
+  CAMPANARIO-IA/             <- codigo, agentes, interfaces, testes, documentacao
+  CAMPANARIO-PYTHON/.venv/   <- Python 3.12, Piper, Pocket TTS e PyTorch/CUDA
+  CAMPANARIO-DATABASE/dados/ <- memorias e bancos SQLite pessoais
+  CAMPANARIO-DATABASE/zim/   <- Wikipedia offline em arquivos ZIM (Kiwix local)
+```
 
-## Estado de desenvolvimento
+O `.env` fica localmente na raiz de `CAMPANARIO-IA` e aponta para as pastas externas. **Nao compartilhe o `.env`, bancos, pastas `.git`, ambientes `.venv` ou arquivos de voz pessoais.** Modelos Ollama continuam fora destas pastas.
 
-F2 Personality/Social/Long-Call esta congelada. Estamos em **F3 Platform Foundation / Runtime v2**, com PF9 Voice / Call Readiness de contratos concluido.
+## Abrir e testar
 
-Leia sempre:
+- Abrir: `CAMPANARIO.bat` ou `CAMPANARIO.vbs` no Windows (usa `../CAMPANARIO-PYTHON/.venv`).
+- Diagnosticar: `DIAGNOSTICAR_CAMPANARIO.ps1`.
+- Validar a instalacao de tres pastas: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\TESTAR_3_PASTAS.ps1 -ProjectRoot .`.
+- Testar o roteamento de chamadas: `& "..\CAMPANARIO-PYTHON\.venv\Scripts\python.exe" -m pytest tests/test_chamada_de_agente_sem_pesquisa.py -q`.
+- Testes gerais: `& "..\CAMPANARIO-PYTHON\.venv\Scripts\python.exe" -m pytest -q` (alguns testes historicos ja apresentam falhas conhecidas).
 
-1. `RECOVER_FIRST.md`
-2. `PROJECT_STATE.md`
-3. `SAFEPOINT.md`
+## Voz e pacote compartilhavel
 
-## Uso
+Os arquivos `vozes/*.onnx` sao ativos locais grandes, nao entram no **ZIP leve de codigo**. Na troca de pasta, o instalador fornecido fora do projeto copia os modelos de voz, o `.env` e o historico `.git` diretamente da pasta anterior, sem colocar dados privados em arquivos compartilhados. A pasta antiga fica preservada ate a homologacao.
 
-No Windows execute `CAMPANARIO.bat`.
+Se receber **somente** este codigo sem ter a pasta antiga, sera necessario fornecer localmente o `.env` e os modelos `.onnx` antes de usar voz. O instalador de troca se recusa a substituir um projeto sem poder preservar esses arquivos.
 
-Documentacao operacional: `docs/manual/README.md`.
+## Organizacao
 
-## Modelo
+- `src/campanario/`: codigo principal, agentes, chat, memoria, voz e UI.
+- `tests/`: regressao e verificacoes de seguranca factual.
+- `tools/`: diagnosticos, avaliadores e utilitarios.
+- `docs/manual/`: guia de operacao.
+- `docs/current/`: arquitetura atual e notas de evolucao.
+- `docs/concept/`: conceitos originais de Campanario, Morgana e Todd.
+- `apps/`: interfaces e prototipos, incluindo mobile.
+- `eval/`: bases e criterios de avaliacao, sem relatarios gerados.
 
-`gemma3:12b` e o baseline recomendado. A arquitetura continua preparada para Qwen/Gemma/outros adapters sem resetar o projeto.
+`ATIVAR_SEPARACAO.ps1` e `REVERTER_SEPARACAO.ps1` foram preservados para contingencia; **nao e necessario executar a migracao novamente** num computador ja homologado.
 
-## Build deste safepoint
+## Principios
 
-A UI/API deve informar:
-
-`Build: realtime-presence-f5c-host-voice-checkpoint`
-
-Esse identificador existe para impedir confusao com instalacoes antigas na porta 8000.
-
-
-## Continuous Presence update (v1.3.1)
-- Presence UI boots clean: no old transcript is rendered automatically.
-- A fresh technical episode is created lazily on the first new turn.
-- Previous sessions are secondary **episodic memory records** under Sistema and require deliberate access.
-- Sessions remain internal infrastructure; the user-facing concept is continuous coexistence/presence.
-- Cross-episode learned memory is **not yet claimed as implemented**; it remains part of the Experience/Learning gate before voice.
-- See `docs/adr/0039-continuous-presence-episodic-history.md`.
-
-
-## Platform Foundation
-
-Estado atual: F3 Runtime v2 congelada (ADR 0060) e F4 Experience / Learning concluida (ADR 0061). Web/PC/Mobile/Call semantica compartilham runtime, sessao e agora memoria experiencial. Proximo gate: F5 Realtime Presence / Call / Multi-client. Consulte `RECOVER_FIRST.md` antes de alterar codigo.
-
-## Platform Foundation / Runtime v2 — F3 frozen
-
-F3 foi concluida no ADR 0060. F4 foi concluida no ADR 0061 com `ExperienceLayer`, memoria experiencial compartilhada, curiosidade proporcional, correcao/esquecimento e continuidade entre reinicios. O proximo gate canonico e **F5 Realtime Presence / Call / Multi-client**.
-
-
-F4 Experience / Learning foi concluida no ADR 0061. O Campanario agora possui memoria experiencial compartilhada, curiosidade proporcional, correcao/esquecimento e continuidade entre reinicios. Proximo gate: F5 Realtime Presence / Call / Multi-client.
-
-
-## F5c Host Voice
-
-Host voice integration is ready for target-PC acceptance. See `docs/manual/29_HOST_VOICE_F5C.md` and `tools/windows/DIAGNOSTICO_VOZ_F5C.bat`. F5 is not frozen until physical microphone/speaker acceptance passes.
-
-## F5c.1 — Voice stabilization checkpoint
-
-O primeiro teste fisico confirmou o pipeline de voz e revelou baixa qualidade pt-BR/turnos de ruido. ADR 0065 adiciona idioma/prompt observaveis, teste estrutural de `-l pt`, protecao contra modelo `.en.bin`, filtro estreito de anotacoes de nao-fala, duracao minima de fala e limpeza dos launchers Windows. F5 permanece aberta ate revalidacao fisica no PC alvo.
-
-
-### F5c.4 — preparar voz em um passo
-Se Host Voice reportar `voice_stt_not_configured`, execute `tools\windows\PREPARAR_VOZ_F5C.bat`, reinicie `INICIAR_CAMPANARIO.bat` e so entao `INICIAR_VOZ_HOST_F5C.bat`. O cliente agora encerra no primeiro erro fatal de readiness em vez de imprimir o mesmo erro indefinidamente.
-
-## Current freeze — F5c.4 / ADR 0067
-
-Physical Host Voice now completes the shared Campanario runtime round trip on the target Windows PC. Portuguese STT quality is still the active blocker; F5 is open and F6 must not start yet. See `RECOVER_FIRST.md`, `SAFEPOINT.md` and ADR 0067 before continuing.
-
-### F5c.9 — velocidade de voz
-
-O TTS SAPI agora usa defaults mais rápidos (Todd 4 / Morgana 3) e pode ser ajustado sem editar código com `tools\windows\AJUSTAR_VELOCIDADE_VOZ.bat`. Os rates aceitam `-10..+10` via `CAMPANARIO_VOICE_TODD_RATE` e `CAMPANARIO_VOICE_MORGANA_RATE`.
-
-### F5c.10 — entendimento contínuo e conversa de voz natural
-
-O Host Voice agora segura apenas fragmentos STT com forte sinal de continuação por uma janela curta. Se você continuar falando, o sistema reprocessa o **áudio PCM combinado** no Whisper e só então cria o turno, em vez de mandar pedaços como `Campanario.`, `... de` ou `mais 49` separadamente aos agentes. Respostas no canal de voz recebem orientação de entrega curta/conversacional sem alterar Personality Core. Barge-in também fica mais responsivo e configurável por `CAMPANARIO_VOICE_BARGE_IN_*`.
+- Conversas e identidades de Morgana e Todd sao preservadas.
+- A verificacao factual e o cuidado com evidencias continuam ativos.
+- A integracao Kiwix/ZIM e opcional, usando exclusivamente o servidor local.
+- Com `CAMPANARIO_ZIM_ENABLED=true`, o desktop Windows inicia e encerra o Kiwix automaticamente, sem CMD; `INICIAR_WIKIPEDIA_OFFLINE.cmd` fica so para uso manual. Veja `LEIA_PRIMEIRO_KIWIX_AUTOMATICO.md`.
+- Pesquisa web automatica e opcional e desligada por padrao. Quando autorizada, a prioridade pode ser web -> ZIM -> documentos.
+- Para ativar/desativar a pesquisa online sem PowerShell, use ATIVAR_ONLINE_PRIMEIRO.cmd / DESATIVAR_PESQUISA_ONLINE.cmd.
+- Para exportar codigo sem dados pessoais, use `tools/exportar_campanario.py` (ele exclui pesos, memorias e configuracoes privadas).

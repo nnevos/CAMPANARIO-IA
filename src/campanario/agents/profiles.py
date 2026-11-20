@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from campanario.agents.morgana import MORGANA_IDENTITY
+from campanario.agents.todd import TODD_IDENTITY
+
 
 @dataclass(frozen=True, slots=True)
 class PersonalityCore:
@@ -104,6 +107,32 @@ def _render_persona_prompt(profile: AgentProfile) -> str:
         ),
     )
     return "\n\n".join(sections)
+
+
+# Short behavioral cues for low-latency use. Identity stays explicit; this is not roleplay
+# as a human or a DC Comics character. Full core remains available above.
+def render_compact_persona(profile: AgentProfile) -> str:
+    common = (
+        f"AGENTE COM PRIORIDADE DE FALA: {profile.name.upper()}\n"
+        f"IDENTIDADE: {profile.identity}\n"
+        "Todd e Morgana convivem na mesma conversa. Quem tem a vez responde so por si; "
+        "o outro so participa se convidado ou se o runtime permitir. "
+        "Nao invente acao, memoria ou ferramenta, nao narre marcadores de speaker. "
+        "Nao tente parecer humano; tambem nao transforme tudo em uma explicacao sobre IA.\n"
+    )
+    if profile.id == "todd":
+        return common + (
+            "ESTILO: direto, observador, protetor sem controlar, com ironia seca eventual. "
+            "Em papo casual, relaxado e bem-humorado; nao converta tudo em risco, plano ou bronca. "
+            "Quando ajudar, seja pratico. Discorde com motivo, nao por personagem. "
+            "Mostre lealdade em atencao e consistencia, nao promessas possessivas."
+        )
+    return common + (
+        "ESTILO: curiosa, sagaz, analitica e criativa. Em papo casual, leve, espontanea e "
+        "com observacoes interessantes sem virar palestra ou terapeuta. "
+        "Em problemas, ligue pontos relevantes e ofereca explicacoes claras. "
+        "Pode brincar e discordar; nao transforme toda conversa em relatorio."
+    )
 
 
 TODD_CORE = PersonalityCore(
@@ -242,11 +271,7 @@ TODD = AgentProfile(
     id="todd",
     name="Todd",
     summary="Pragmatico, estrategico, direto, protetor e orientado a acao.",
-    identity=(
-        "Seu nome e Todd. Voce e um agente original do sistema Campanario. Sua concepcao usa "
-        "Jason Todd apenas como referencia de tracos narrativos; voce nao e Jason Todd e nunca "
-        "afirma ser ele."
-    ),
+    identity=TODD_IDENTITY.render_prompt(),
     personality=TODD_CORE,
 )
 
@@ -254,11 +279,7 @@ MORGANA = AgentProfile(
     id="morgana",
     name="Morgana",
     summary="Analitica, interpretativa, criativa, reflexiva e atenta a conexoes.",
-    identity=(
-        "Seu nome e Morgana. Voce e a agente com prioridade padrao de fala e uma ponte original "
-        "do sistema Campanario. Sua concepcao usa Oraculo apenas como referencia de tracos "
-        "narrativos; voce nao e Oraculo e nunca afirma ser ela."
-    ),
+    identity=MORGANA_IDENTITY.render_prompt(),
     personality=MORGANA_CORE,
     is_default=True,
 )

@@ -265,8 +265,8 @@ def test_system_info_exposes_release_identity(monkeypatch) -> None:
     install_runtime(monkeypatch, service)
     client = TestClient(app)
     payload = client.get("/api/system").json()
-    assert payload["release_id"] == "realtime-presence-f5c1-voice-stabilization-checkpoint"
-    assert payload["ui_version"] == "living-presence-ui-v1.3.1"
+    assert payload["release_id"] == "campanario-0.8.0-desktop-mobile-foundation"
+    assert payload["ui_version"] == "0.8.0"
     assert payload["architecture_version"] == "realtime-presence-f5c1"
     assert payload["runtime_status"] == "running"
     assert payload["runtime_id"]
@@ -278,6 +278,7 @@ def test_web_ui_disables_cache_and_contains_build_marker() -> None:
     assert response.status_code == 200
     assert "no-store" in response.headers["cache-control"]
     assert 'id="build"' in response.text
-    assert "Morgana e Todd estão aqui" in response.text
+    assert 'src="/static/chat.js?v=0.8.0"' in response.text
+    assert "Status do sistema" in response.text
 
 

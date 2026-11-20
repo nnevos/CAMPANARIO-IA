@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "mode": "offline",
+  "engine": "ollama",
+  "timestamp_utc": "2026-11-19T13:26:00.625416+00:00",
+  "project_root_omitted_for_privacy": true,
+  "dataset_version": "1.0.0",
+  "dataset_hash_sha256": "c4d78d9ebea15c00a9626b038e0c6e97a6f793da5b5f2040841a83dc67608c1d",
+  "python": "3.13.5",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "model": "qwen3.5:9b",
+  "internet_opt_in": false,
+  "network_guard_in_process": true,
+  "blocked_external_socket_attempts": [],
+  "isolation": "temporary_test_data_no_user_sqlite",
+  "execution": {
+    "evaluation_engine": "ollama",
+    "model": "qwen3.5:9b",
+    "status": "not_executed",
+    "reason": "ollama_unavailable_ConnectError",
+    "detected_model_names": [],
+    "metric_values": null,
+    "model_outputs": "not_available"
+  }
+}

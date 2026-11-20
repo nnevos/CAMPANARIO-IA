@@ -18,3 +18,44 @@ test_reports/
 models/*.bin
 voice/models/*.bin
 voice/ggml-*.bin
+
+# Memorias locais e configuracao pessoal
+data/**/*.db
+data/**/*.sqlite*
+
+# Native builds and credentials (never publish these)
+.gradle/
+local.properties
+*.jks
+*.keystore
+*.pem
+*.key
+*.pfx
+*.p12
+*.apk
+*.aab
+credentials/
+certificates/
+
+# Backups locais da migracao - NAO versionar segredos/configuracao
+BACKUP_CODIGO_ANTES_*/
+*.separacao.tmp
+
+# Inventarios locais de pacotes; podem conter enderecos privados
+reports/inventario_venvs/
+
+# Pacote de codigo enxuto: nao versionar artefatos gerados nem backups de patches
+BACKUP_*/
+CAMPANARIO-IA_ANTES_LIMPEZA_*/
+*.rar
+*.zip
+*.7z
+*.log
+reports/
+CAMPANARIO_*.zip
+MANIFESTO_*_PATCH.json
+
+# Os pesos ONNX permanecem locais; conservar JSONs de configuracao sem incluir pesos.
+vozes/*.onnx
+vozes/*.wav
+vozes/*.mp3

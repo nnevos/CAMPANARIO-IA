@@ -8,10 +8,10 @@ from campanario.storage.database import Base
 from campanario.storage import models  # noqa: F401
 
 config = context.config
-if config.config_file_name is not None:
+if config.config_file_name is not None and config.attributes.get("configure_logging", True):
     fileConfig(config.config_file_name)
 
-settings = get_settings()
+settings = config.attributes.get("campanario_settings") or get_settings()
 config.set_main_option("sqlalchemy.url", f"sqlite:///{settings.database_path.as_posix()}")
 target_metadata = Base.metadata
 

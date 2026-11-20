@@ -106,3 +106,34 @@ class PromptLeakGuardProvider(ModelProvider):
             max_output_tokens=request.max_output_tokens,
             context_window=request.context_window,
         )
+
+
+class StreamingPromptLeakGuardProvider(PromptLeakGuardProvider):
+    """Low-latency streaming with a rolling quarantine window for internal markers.
+
+    This mode deliberately does NOT regenerate an already-streamed answer; it raises on
+    detection. The normal buffered guard remains available in conservative mode.
+    """
+
+    async def stream(self, request: ModelRequest) -> AsyncIterator[ModelChunk]:
+        hold = max(map(len, self._markers.values()), default=0)
+        pending = ""
+        async for chunk in self._inner.stream(request):
+            if chunk.text:
+                pending += chunk.text
+                marker = self._find_marker(pending)
+                if marker is not None:
+                    logger.error("streaming_prompt_leak_blocked marker=%s", marker)
+                    raise ModelResponseError("Model output contained an internal prompt marker")
+                if len(pending) > hold:
+                    ready, pending = pending[:-hold], pending[-hold:]
+                    if ready:
+                        yield ModelChunk(text=ready)
+            if chunk.done:
+                break
+        if pending:
+            marker = self._find_marker(pending)
+            if marker is not None:
+                raise ModelResponseError("Model output contained an internal prompt marker")
+            yield ModelChunk(text=pending)
+        yield ModelChunk(text="", done=True)

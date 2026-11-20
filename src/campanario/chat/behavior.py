@@ -32,7 +32,9 @@ class BehaviorContextManager:
         inner: ContextManager,
         prompt: str = BALANCED_BEHAVIOR_PROMPT,
         interpreter: ConversationTurnInterpreter | None = None,
+        compact: bool = False,
     ) -> None:
+        self._compact = compact
         self._inner = inner
         self._prompt = prompt.strip()
         self._interpreter = interpreter or ConversationTurnInterpreter()
@@ -40,6 +42,15 @@ class BehaviorContextManager:
     async def build(self, history: Sequence[Message]) -> tuple[ModelMessage, ...]:
         context = await self._inner.build(history)
         interpretation = self._interpreter.interpret(history)
+        if self._compact:
+            # One lightweight instruction instead of several overlapping behavioral contracts.
+            # Preserve any persisted summary and the selected recent history.
+            latest = f"MODO: {interpretation.mode.value}. {interpretation.guidance}"
+            system_content = f"{self._prompt}\n\n{latest}"
+            if context and context[0].role == MessageRole.SYSTEM:
+                system_content += "\n\n" + context[0].content
+                return (ModelMessage(role=MessageRole.SYSTEM, content=system_content), *context[1:])
+            return (ModelMessage(role=MessageRole.SYSTEM, content=system_content), *context)
         provenance_note, creative_assistant_texts = _context_provenance(history, self._interpreter)
         context = _sanitize_context_by_provenance(context, interpretation, creative_assistant_texts)
         behavior = (

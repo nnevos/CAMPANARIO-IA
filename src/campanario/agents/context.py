@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from campanario.agents.profiles import AgentProfile
+from campanario.agents.profiles import AgentProfile, render_compact_persona
 from campanario.agents.social import SOCIAL_PROTOCOL_PROMPT
 from campanario.chat.models import Message, MessageRole
 from campanario.model.protocol import ModelMessage
@@ -12,6 +12,8 @@ def apply_agent_profile(
     context: tuple[ModelMessage, ...],
     profile: AgentProfile,
     history: Sequence[Message],
+    *,
+    compact: bool = False,
 ) -> tuple[ModelMessage, ...]:
     """Attach the selected persona to the existing Campanario system context.
 
@@ -37,7 +39,10 @@ def apply_agent_profile(
         f"Nao comece com '{profile.name}:' e nao escreva falas, labels ou cabecalhos de Todd, Morgana ou Campanario. "
         "Se precisar se referir ao que outro participante disse, faca isso em prosa normal, sem recriar a fala dele como transcript."
     )
-    persona = profile.persona_prompt.strip() + "\n\n" + SOCIAL_PROTOCOL_PROMPT.strip() + history_note + output_contract
+    persona = (
+        render_compact_persona(profile) if compact else
+        profile.persona_prompt.strip() + "\n\n" + SOCIAL_PROTOCOL_PROMPT.strip()
+    ) + history_note + output_contract
     if context and context[0].role == MessageRole.SYSTEM:
         merged = ModelMessage(
             role=MessageRole.SYSTEM,

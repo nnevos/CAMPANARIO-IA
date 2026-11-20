@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
@@ -46,14 +47,21 @@ class ChatRequest(BaseModel):
         return cleaned
 
 
+def _utc_iso(value: datetime) -> str:
+    """SQLite returns naive datetimes; persisted chat timestamps are UTC."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone(UTC).isoformat()
+
+
 def _session_payload(session) -> dict[str, object]:
     return {
         "id": str(session.id),
         "episode_id": str(session.id),  # PF7: current technical episode is the durable chat session
         "title": session.title,
         "status": session.status,
-        "created_at": session.created_at.isoformat(),
-        "updated_at": session.updated_at.isoformat(),
+        "created_at": _utc_iso(session.created_at),
+        "updated_at": _utc_iso(session.updated_at),
         "primary_agent_id": session.primary_agent_id,
         # compatibility for old clients; remove after v1.2 adoption.
         "agent_id": session.primary_agent_id,
@@ -143,6 +151,73 @@ def forget_experience_memory_v1(memory_id: UUID, body: ForgetMemoryRequest | Non
         return _memory_payload(get_runtime().experience.forget(memory_id, reason=reason))
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Memory not found") from exc
+
+
+# Administrative destructive operations are available only on the host machine.
+# These endpoints deliberately do not accept remote clients until authentication exists.
+def _local_admin(request: Request) -> None:
+    from urllib.parse import urlsplit
+    host = request.client.host if request.client else ""
+    if host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
+        raise HTTPException(status_code=403, detail="Operação restrita ao computador local")
+    origin = request.headers.get("origin")
+    if origin and urlsplit(origin).netloc.lower() != request.headers.get("host", "").lower():
+        raise HTTPException(status_code=403, detail="Origem não autorizada")
+
+
+class ConfirmDestructiveRequest(BaseModel):
+    confirmation: str = Field(min_length=1, max_length=80)
+
+
+@v1_router.delete("/sessions/{session_id}")
+def delete_session_local_v1(session_id: UUID, request: Request, body: ConfirmDestructiveRequest) -> dict[str, object]:
+    _local_admin(request)
+    if body.confirmation != "EXCLUIR CONVERSA":
+        raise HTTPException(status_code=422, detail="Confirmação inválida")
+    from campanario.chat.service import SessionNotFoundError
+    try:
+        get_runtime().conversation.delete_session(session_id)
+    except SessionNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Conversa não encontrada") from exc
+    return {"deleted": True, "session_id": str(session_id), "scope": "messages_and_context_summary", "memory_preserved": True}
+
+
+@v1_router.post("/memory/forget-selected")
+def forget_selected_memories_local_v1(request: Request, body: dict) -> dict[str, object]:
+    _local_admin(request)
+    if body.get("confirmation") != "ESQUECER MEMORIAS":
+        raise HTTPException(status_code=422, detail="Confirmação inválida")
+    raw_ids = body.get("ids")
+    if not isinstance(raw_ids, list) or not 1 <= len(raw_ids) <= 200 or len(set(map(str,raw_ids))) != len(raw_ids):
+        raise HTTPException(status_code=422, detail="Selecione entre 1 e 200 memórias únicas")
+    try:
+        ids = [UUID(str(value)) for value in raw_ids]
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise HTTPException(status_code=422, detail="Identificador inválido") from exc
+    layer = get_runtime().experience
+    available = {item.id for item in layer.list_memories(limit=1000)}
+    if any(mid not in available for mid in ids):
+        raise HTTPException(status_code=409, detail="Uma memória não existe ou já foi esquecida. Atualize a lista")
+    for mid in ids:
+        layer.forget(mid, reason="solicitação administrativa local confirmada")
+    return {"forgotten": len(ids), "scope": "experience_memory_only", "physical_erasure": False}
+
+
+@v1_router.post("/memory/forget-all")
+def forget_all_memories_local_v1(request: Request, body: ConfirmDestructiveRequest) -> dict[str, object]:
+    _local_admin(request)
+    if body.confirmation != "ESQUECER TODAS AS MEMORIAS":
+        raise HTTPException(status_code=422, detail="Confirmação inválida")
+    layer = get_runtime().experience
+    count = 0
+    while True:
+        batch = layer.list_memories(limit=1000)
+        if not batch:
+            break
+        for item in batch:
+            layer.forget(item.id, reason="solicitação administrativa local de esquecer todas")
+            count += 1
+    return {"forgotten": count, "scope": "experience_memory_only", "physical_erasure": False}
 
 
 @v1_router.get("/capabilities")
@@ -348,7 +423,7 @@ def list_messages(session_id: UUID) -> list[dict[str, object]]:
             "episode_id": str(message.session_id),
             "role": message.role.value,
             "content": message.content,
-            "created_at": message.created_at.isoformat(),
+            "created_at": _utc_iso(message.created_at),
             "model": message.model,
             "status": message.status,
             "agent_id": message.agent_id,
@@ -422,7 +497,7 @@ async def submit_turn_v1(
     speakers: list[str] = []
     try:
         async for event in runtime.conversation.stream_turn(session_id, body.message, client=client):
-            if event.type == "speaker_start" and event.agent_id and event.agent_id not in speakers:
+            if event.type == "token" and event.text.strip() and event.agent_id and event.agent_id not in speakers:
                 speakers.append(event.agent_id)
     except SessionNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Session not found") from exc

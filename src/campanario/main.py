@@ -22,19 +22,34 @@ logging.basicConfig(
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ARG001
     host = get_runtime_host()
-    host.start()
+    try:
+        from campanario.app.schema import prepare_schema
+        prepare_schema(settings)
+        host.start()
+    except Exception:
+        logging.getLogger(__name__).exception("Runtime indisponivel; interface de diagnostico permanece acessivel")
     try:
         yield
     finally:
+        from campanario.app.remote import listener
+        listener.stop()
         host.stop()
 
 
-app = FastAPI(title="Campanario", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Campanario", version="0.8.0", lifespan=lifespan)
+from campanario.utilities.api import router as utilities_router
+app.include_router(utilities_router)
 app.include_router(router)
 app.include_router(v1_router)
 app.include_router(realtime_router)
 app.include_router(device_router)
 app.include_router(call_router)
+from campanario.voice25 import router as voice25_router
+app.include_router(voice25_router)
+from campanario.app.api import router as app_router
+from campanario.app.security import LocalOnlyBoundary
+app.include_router(app_router)
+app.add_middleware(LocalOnlyBoundary)
 _web_index = Path(__file__).with_name("web") / "index.html"
 _web_assets = Path(__file__).with_name("web") / "assets"
 
@@ -57,7 +72,7 @@ def web_ui() -> FileResponse:
 
 @app.get("/ui-assets/{filename}", include_in_schema=False)
 def web_asset(filename: str) -> FileResponse:
-    allowed = {"todd.jpg", "morgana.jpg"}
+    allowed = {f"{agent}_{state}.svg" for agent in ("morgana", "todd", "campanario") for state in ("idle", "thinking", "speaking")}
     if filename not in allowed:
         from fastapi import HTTPException
         raise HTTPException(status_code=404)
@@ -67,3 +82,24 @@ def web_asset(filename: str) -> FileResponse:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+@app.get("/ferramentas")
+def utilities_page():
+    return FileResponse(Path(__file__).with_name("web") / "ferramentas.html")
+
+@app.get("/ferramentas.css", include_in_schema=False)
+def utilities_css():
+    return FileResponse(Path(__file__).with_name("web") / "ferramentas.css", media_type="text/css")
+
+@app.get("/ferramentas.js", include_in_schema=False)
+def utilities_js():
+    return FileResponse(Path(__file__).with_name("web") / "ferramentas.js", media_type="application/javascript")
+
+
+@app.get("/health/live")
+def live():
+    from campanario.bootstrap import get_runtime_host
+    return {"app": "campanario", "version": "0.8.0", "runtime_running": get_runtime_host().is_running}
+
+from fastapi.staticfiles import StaticFiles
+app.mount("/static", StaticFiles(directory=Path(__file__).with_name("web") / "static"), name="frontend-static")

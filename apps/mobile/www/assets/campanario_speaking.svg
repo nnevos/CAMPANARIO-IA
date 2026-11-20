@@ -1,0 +1,14 @@
+<svg  class="symbol state-speaking"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" color="#a6a8b3" role="img" aria-label="Sigilo Campanario: torre sineira e sino no centro de círculos técnicos"><style>
+.geometry{fill:none;stroke:currentColor;stroke-width:1.15;vector-effect:non-scaling-stroke}
+.faint{opacity:.23}.mid{opacity:.52}.strong{opacity:.9}.center{fill:currentColor}
+.outer,.inner{transform-box:view-box;transform-origin:100px 100px}
+@keyframes turnOuter{to{transform:rotate(360deg)}}
+@keyframes idleBreath{0%,100%{opacity:.83}50%{opacity:1}}
+@keyframes voiceFade{0%,100%{opacity:.30}12%{opacity:.95}23%{opacity:.48}37%{opacity:1}48%{opacity:.36}62%{opacity:.90}73%{opacity:.53}85%{opacity:.98}94%{opacity:.42}}
+@keyframes voiceDot{0%,100%{opacity:.25}15%{opacity:.97}29%{opacity:.40}42%{opacity:.95}57%{opacity:.38}68%{opacity:1}82%{opacity:.48}92%{opacity:.90}}
+.state-idle .inner{animation:idleBreath 4s ease-in-out infinite}
+.state-thinking .outer{animation:turnOuter 16s linear infinite}
+.state-speaking .inner{animation:voiceFade 2.8s ease-in-out infinite}
+.state-speaking .center{animation:voiceDot 2.1s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style><g class="geometry"><g class="outer mid"><circle cx="100" cy="100" r="80"/><circle cx="100" cy="100" r="72" stroke-dasharray="1 8"/><path d="M100 9V19M100 181V191M9 100H19M181 100H191M36 36l8 8M156 156l8 8M36 164l8-8M156 44l8-8"/></g><g class="inner strong"><!-- Torre sineira: base, corpo e coroamento --> <path d="M56 169H144M62 161H138M67 153V91H133V153M62 91H138M69 82H131M77 72H123M84 62H116"/><path d="M72 82L100 31L128 82M88 62L100 40L112 62"/><path d="M80 153V107Q80 87 100 87Q120 87 120 107V153"/><path d="M90 153V123H110V153"/><path d="M74 169V177H126V169"/><path d="M100 24V31M94 25H106"/><!-- Sino suspenso no vão --> <path d="M100 91V98M91 116Q92 108 94 105Q100 98 106 105Q108 108 109 116L114 123H86Z"/><path d="M94 127H106"/><circle class="center" cx="100" cy="130" r="3"/><!-- Marcas técnicas e estrutura --> <path d="M48 153H58M142 153H152M48 91H58M142 91H152"/></g><g class="faint"><path d="M50 177H150M100 17V24"/><circle cx="100" cy="100" r="62" stroke-dasharray="2 12"/></g></g></svg>

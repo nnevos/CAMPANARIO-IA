@@ -1,0 +1,83 @@
+name: Compilar candidatos Windows e Android
+on:
+  workflow_dispatch:
+    inputs:
+      android_release:
+        description: 'Gerar APK release com chave permanente (exige secrets)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[desktop]' 'pyinstaller>=6,<7' 'pytest>=8,<9' 'pytest-asyncio>=0.24,<2'
+      - name: Testar fundacao
+        env:
+          CAMPANARIO_DATA_DIR: ${{ runner.temp }}/campanario-tests
+          CAMPANARIO_SEMANTIC_MEMORY_ENABLED: 'false'
+        run: python -m pytest -q tests/test_v08_platform.py tests/test_api_chat.py tests/test_health.py
+      - name: Gerar pasta de aplicativo e ZIP
+        shell: pwsh
+        run: ./packaging/build_windows.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Campanario-Windows-candidato
+          path: dist/Campanario-Windows-0.8.0.zip
+          if-no-files-found: error
+  android:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Testar logica offline
+        run: node --test tests/mobile/*.test.mjs
+      - name: Instalar SDK escolhido
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Preparar assinatura permanente
+        if: inputs.android_release
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" && test -n "$ANDROID_KEYSTORE_PASSWORD" && test -n "$ANDROID_KEY_ALIAS" && test -n "$ANDROID_KEY_PASSWORD" || { echo 'Secrets de assinatura incompletos.'; exit 1; }
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/campanario-release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/campanario-release.jks" >> "$GITHUB_ENV"
+      - name: APK release
+        if: inputs.android_release
+        run: gradle -p apps/mobile/android --no-daemon assembleRelease
+      - name: APK debug isolado (nao e canal de atualizacao)
+        if: '!inputs.android_release'
+        run: gradle -p apps/mobile/android --no-daemon assembleDebug
+      - name: Verificar assinatura release e gerar checksum
+        if: inputs.android_release
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          cd apps/mobile/android/app/build/outputs/apk/release
+          sha256sum app-release.apk > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Campanario-Android-candidato
+          path: apps/mobile/android/app/build/outputs/apk/
+          if-no-files-found: error
+      - name: Remover chave temporaria
+        if: always()
+        run: rm -f "$RUNNER_TEMP/campanario-release.jks"

@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {emptyState,newMutation,applySync,outgoing,searchItems,validateState} from '../../apps/mobile/www/store.mjs';
+import {normalizeServer,isNewer,versionTuple} from '../../apps/mobile/www/transport.mjs';
+let id=0;const uuid=()=>String(++id);
+test('offline note becomes an explicit pending mutation',()=>{const n=newMutation({},{title:'Local',body:'Offline',deleted:false},uuid);assert.equal(n.dirty,true);assert.equal(outgoing([n]).length,1);});
+test('acknowledged note no longer queued',()=>{const n=newMutation({},{title:'Local',body:'A'},uuid);const notes=applySync([n],{results:[{id:n.id,mutation_id:n.mutation_id,status:'accepted',revision:1}],notes:[{id:n.id,title:'Local',body:'A',revision:1,deleted:false}]});assert.equal(outgoing(notes).length,0);assert.equal(notes[0].base_revision,1);});
+test('conflict preserves local content and remote copy',()=>{const n=newMutation({},{title:'Local',body:'mine'},uuid);const remote={id:n.id,title:'Other',body:'theirs',revision:3};const result=applySync([n],{results:[{id:n.id,mutation_id:n.mutation_id,status:'conflict',remote}],notes:[remote]});assert.equal(result[0].body,'mine');assert.equal(result[0].conflict.body,'theirs');assert.equal(outgoing(result).length,0);});
+test('editing during network sync never loses newest local content',()=>{const old=newMutation({},{title:'Old',body:'first'},uuid),edited=newMutation(old,{body:'second'},uuid);const notes=applySync([edited],{results:[{id:old.id,mutation_id:old.mutation_id,status:'accepted',revision:1}],notes:[{id:old.id,title:'Old',body:'first',revision:1}]});assert.equal(notes[0].body,'second');assert.equal(notes[0].dirty,true);});
+test('remote tombstone is preserved',()=>{const result=applySync([],{results:[],notes:[{id:'gone',body:'',title:'',deleted:1,revision:2}]});assert.equal(result[0].deleted,true);});
+test('offline search ignores accents and handles multiple terms',()=>{const s=emptyState();s.snapshot.items=[{title:'Organiza\u00e7\u00e3o',text:'Meu projeto local'}];assert.equal(searchItems(s,'organizacao local').length,1);assert.equal(searchItems(s,'local missing').length,0);});
+test('unknown local schema rejected instead of resetting',()=>{assert.throws(()=>validateState({schema:2}));});
+test('server is an HTTPS origin',()=>{assert.equal(normalizeServer('https://my-pc:8443/'),'https://my-pc:8443');});
+for(const bad of ['http://my-pc','javascript:alert(1)','https://user:pass@pc','https://pc/path','https://pc?q=x','https://pc#x'])test('reject unsafe endpoint '+bad,()=>assert.throws(()=>normalizeServer(bad)));
+test('version ordering is numeric not lexical',()=>{assert.equal(isNewer('v0.10.0','0.9.9'),true);assert.equal(isNewer('0.8.0','0.8.0'),false);assert.equal(isNewer('0.7.9','0.8.0'),false);});
+test('main branch and prerelease are not valid stable release',()=>{assert.throws(()=>versionTuple('main'));assert.throws(()=>versionTuple('v0.8.1-beta'));});

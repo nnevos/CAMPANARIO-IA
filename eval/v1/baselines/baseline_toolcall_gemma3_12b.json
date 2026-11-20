@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "created_at": "2026-11-19T13:28:14.917989+00:00",
+  "model": "gemma3:12b",
+  "status": "not_executed_ConnectError",
+  "cases_requested": 65,
+  "cases_executed": 0,
+  "confusion": null,
+  "p50_decision_ms": null,
+  "vrAM_peak_mb": "not_measured",
+  "note": "Comparação isolada do tool-calling; não mede correção dos fatos nem biblioteca.",
+  "results": []
+}

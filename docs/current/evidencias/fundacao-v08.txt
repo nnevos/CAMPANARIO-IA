@@ -1,0 +1,12 @@
+................................................                         [100%]
+=============================== warnings summary ===============================
+tests/test_v08_platform.py::test_schema_only_upgrades_if_needed
+tests/test_v08_platform.py::test_schema_only_upgrades_if_needed
+tests/test_v08_platform.py::test_schema_only_upgrades_if_needed
+tests/test_v08_platform.py::test_schema_failure_preserves_unknown_database_and_backup
+tests/test_v08_platform.py::test_schema_failure_preserves_unknown_database_and_backup
+  /opt/pyvenv/lib/python3.13/site-packages/alembic/config.py:612: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+48 passed, 5 warnings in 2.56s

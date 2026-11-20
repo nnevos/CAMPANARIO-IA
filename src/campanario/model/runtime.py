@@ -18,6 +18,10 @@ class ModelRuntimeConfig:
     base_url: str
     timeout_seconds: float = 120.0
     temperature: float = 0.35
+    think: bool | None = None
+    context_window: int | None = None
+    max_output_tokens: int | None = None
+    keep_alive: str | None = None
 
 
 class UnsupportedModelBackendError(ValueError):
@@ -35,5 +39,9 @@ def build_model_provider(config: ModelRuntimeConfig) -> ModelProvider:
             config.base_url,
             config.timeout_seconds,
             temperature=config.temperature,
+            think=config.think,
+            context_window=config.context_window,
+            max_output_tokens=config.max_output_tokens,
+            keep_alive=config.keep_alive,
         )
     raise UnsupportedModelBackendError(f"Unsupported model backend: {config.backend}")

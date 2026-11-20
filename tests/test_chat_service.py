@@ -724,3 +724,49 @@ def test_p242_arithmetic_anchor_rejects_guard_language_even_when_numbers_are_cor
     assert anchor is not None
     assert not anchor.validates("O enunciado atribuído usa 24 vezes 6; preserve os operandos: o correto é 144.")
     assert anchor.validates("Não, 24 vezes 6 é 144.")
+
+@pytest.mark.asyncio
+async def test_empty_todd_completion_is_retried_and_not_left_blank() -> None:
+    sessions, messages = InMemorySessions(), InMemoryMessages()
+    provider = QueueProvider(["Oi, pessoal!", "", "Oi! Estou aqui também."])
+    service = ChatService(sessions, messages, provider, RecentMessagesContextManager(20), "fake-model")
+    session = service.create_session()
+    events = [e async for e in service.stream_turn(session.id, "Morgana e Todd, falem comigo")]
+    assert [e.agent_id for e in events if e.type == "speaker_start"] == ["morgana", "todd"]
+    assert [(m.agent_id, m.content) for m in service.get_messages(session.id) if m.role == MessageRole.ASSISTANT] == [
+        ("morgana", "Oi, pessoal!"), ("todd", "Oi! Estou aqui também.")
+    ]
+    assert len(provider.requests) == 3
+    assert provider.requests[-1].messages[-1].role == MessageRole.USER
+
+
+@pytest.mark.asyncio
+async def test_double_empty_todd_completion_does_not_persist_blank_message() -> None:
+    sessions, messages = InMemorySessions(), InMemoryMessages()
+    provider = QueueProvider(["Oi!", "", "", ""])
+    service = ChatService(sessions, messages, provider, RecentMessagesContextManager(20), "fake-model")
+    session = service.create_session()
+    events = [e async for e in service.stream_turn(session.id, "Morgana e Todd, oi")]
+    assert [e.agent_id for e in events if e.type == "speaker_done"] == ["morgana", "todd"]
+    assert [(m.agent_id, m.content) for m in service.get_messages(session.id) if m.role == MessageRole.ASSISTANT] == [
+        ("morgana", "Oi!")
+    ]
+
+
+@pytest.mark.asyncio
+async def test_todd_isolated_recovery_after_two_empty_completions() -> None:
+    sessions, messages = InMemorySessions(), InMemoryMessages()
+    provider = QueueProvider(["Morgana responde.", "", "", "Todd participa."])
+    service = ChatService(sessions, messages, provider, RecentMessagesContextManager(20), "fake-model")
+    session = service.create_session()
+    events = [e async for e in service.stream_turn(session.id, "Morgana e Todd, falem comigo")]
+    assert [(m.agent_id, m.content) for m in service.get_messages(session.id)
+            if m.role == MessageRole.ASSISTANT] == [
+        ("morgana", "Morgana responde."), ("todd", "Todd participa.")
+    ]
+    assert len(provider.requests) == 4
+    recovery = provider.requests[-1]
+    assert [m.role for m in recovery.messages] == [MessageRole.SYSTEM, MessageRole.USER]
+    assert "Morgana responde." in recovery.messages[-1].content
+    assert recovery.max_output_tokens == 512
+    assert any(e.agent_id == "todd" and e.type == "token" for e in events)

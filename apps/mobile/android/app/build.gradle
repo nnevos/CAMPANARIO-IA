@@ -1,0 +1,35 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'org.campanario.mobile'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'org.campanario.mobile'
+        minSdk 26
+        targetSdk 35
+        versionCode (System.getenv('ANDROID_VERSION_CODE') ?: '800').toInteger()
+        versionName '0.8.0'
+    }
+    signingConfigs {
+        release {
+            if (System.getenv('ANDROID_KEYSTORE_PATH')) {
+                storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release { signingConfig signingConfigs.release; minifyEnabled false }
+        debug { applicationIdSuffix '.dev'; versionNameSuffix '-dev' }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets.main.assets.srcDirs = ["${buildDir}/generated/campanario-assets"]
+}
+// Bundle the interface. No remote server.url or runtime download of scripts.
+tasks.register('bundleCampanario', Copy) {
+    from '../../www'
+    into "${buildDir}/generated/campanario-assets/www"
+}
+tasks.named('preBuild').configure { dependsOn 'bundleCampanario' }
+dependencies { implementation 'androidx.webkit:webkit:1.12.1' }

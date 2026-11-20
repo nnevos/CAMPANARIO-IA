@@ -66,6 +66,20 @@ class SqlAlchemyChatSessionRepository:
             ).all()
             return [_session_from_row(row) for row in rows]
 
+    def delete(self, session_id: UUID) -> bool:
+        from sqlalchemy import delete
+        from campanario.storage.models import ContextSummaryRow, MessageRow
+        with self._session_factory() as db:
+            row = db.get(ChatSessionRow, str(session_id))
+            if row is None:
+                return False
+            # Explicit ordering works across SQLite and other SQL engines.
+            db.execute(delete(ContextSummaryRow).where(ContextSummaryRow.session_id == str(session_id)))
+            db.execute(delete(MessageRow).where(MessageRow.session_id == str(session_id)))
+            db.delete(row)
+            db.commit()
+        return True
+
     def set_primary_agent(self, session_id: UUID, agent_id: str) -> ChatSession | None:
         with self._session_factory() as db:
             row = db.get(ChatSessionRow, str(session_id))

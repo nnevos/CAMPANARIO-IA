@@ -152,5 +152,7 @@ def test_legacy_api_remains_available_during_pf3_migration(monkeypatch) -> None:
 def test_pf3_launcher_remains_localhost_only() -> None:
     root = __import__("pathlib").Path(__file__).resolve().parents[1]
     launcher = (root / "tools" / "windows" / "INICIAR_CAMPANARIO.bat").read_text(encoding="utf-8")
-    assert "--host 127.0.0.1" in launcher
+    assert "CAMPANARIO.vbs" in launcher
+    desktop = (root / "src/campanario/app/desktop.py").read_text(encoding="utf-8")
+    assert 'sock.bind(("127.0.0.1", self.port))' in desktop
     assert "--host 0.0.0.0" not in launcher

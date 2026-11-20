@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: offline note becomes an explicit pending mutation
+ok 1 - offline note becomes an explicit pending mutation
+  ---
+  duration_ms: 1.578317
+  type: 'test'
+  ...
+# Subtest: acknowledged note no longer queued
+ok 2 - acknowledged note no longer queued
+  ---
+  duration_ms: 0.476486
+  type: 'test'
+  ...
+# Subtest: conflict preserves local content and remote copy
+ok 3 - conflict preserves local content and remote copy
+  ---
+  duration_ms: 0.334397
+  type: 'test'
+  ...
+# Subtest: editing during network sync never loses newest local content
+ok 4 - editing during network sync never loses newest local content
+  ---
+  duration_ms: 0.223757
+  type: 'test'
+  ...
+# Subtest: remote tombstone is preserved
+ok 5 - remote tombstone is preserved
+  ---
+  duration_ms: 0.144355
+  type: 'test'
+  ...
+# Subtest: offline search ignores accents and handles multiple terms
+ok 6 - offline search ignores accents and handles multiple terms
+  ---
+  duration_ms: 0.597873
+  type: 'test'
+  ...
+# Subtest: unknown local schema rejected instead of resetting
+ok 7 - unknown local schema rejected instead of resetting
+  ---
+  duration_ms: 0.448325
+  type: 'test'
+  ...
+# Subtest: server is an HTTPS origin
+ok 8 - server is an HTTPS origin
+  ---
+  duration_ms: 0.225984
+  type: 'test'
+  ...
+# Subtest: reject unsafe endpoint http://my-pc
+ok 9 - reject unsafe endpoint http://my-pc
+  ---
+  duration_ms: 0.365351
+  type: 'test'
+  ...
+# Subtest: reject unsafe endpoint javascript:alert(1)
+ok 10 - reject unsafe endpoint javascript:alert(1)
+  ---
+  duration_ms: 0.567297
+  type: 'test'
+  ...
+# Subtest: reject unsafe endpoint https://user:pass@pc
+ok 11 - reject unsafe endpoint https://user:pass@pc
+  ---
+  duration_ms: 0.200185
+  type: 'test'
+  ...
+# Subtest: reject unsafe endpoint https://pc/path
+ok 12 - reject unsafe endpoint https://pc/path
+  ---
+  duration_ms: 0.089675
+  type: 'test'
+  ...
+# Subtest: reject unsafe endpoint https://pc?q=x
+ok 13 - reject unsafe endpoint https://pc?q=x
+  ---
+  duration_ms: 0.075424
+  type: 'test'
+  ...
+# Subtest: reject unsafe endpoint https://pc\#x
+ok 14 - reject unsafe endpoint https://pc\#x
+  ---
+  duration_ms: 0.42383
+  type: 'test'
+  ...
+# Subtest: version ordering is numeric not lexical
+ok 15 - version ordering is numeric not lexical
+  ---
+  duration_ms: 0.319739
+  type: 'test'
+  ...
+# Subtest: main branch and prerelease are not valid stable release
+ok 16 - main branch and prerelease are not valid stable release
+  ---
+  duration_ms: 0.128298
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 111.954281

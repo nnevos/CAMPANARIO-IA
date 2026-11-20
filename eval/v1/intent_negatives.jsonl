@@ -1,0 +1,15 @@
+{"expected": "no_external_fact_lookup", "id": "N001", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Olá, tudo bem?"}
+{"expected": "no_external_fact_lookup", "id": "N002", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Bom dia, Todd!"}
+{"expected": "no_external_fact_lookup", "id": "N003", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Morgana, me ajuda a organizar a semana?"}
+{"expected": "no_external_fact_lookup", "id": "N004", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Vocês estão por aqui?"}
+{"expected": "no_external_fact_lookup", "id": "N005", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Me conte uma piada curta."}
+{"expected": "no_external_fact_lookup", "id": "N006", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Quero conversar sobre minha rotina."}
+{"expected": "no_external_fact_lookup", "id": "N007", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Como você está hoje?"}
+{"expected": "no_external_fact_lookup", "id": "N008", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Me ajude a escrever uma mensagem para meu colega."}
+{"expected": "no_external_fact_lookup", "id": "N009", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Gosto de música calma."}
+{"expected": "no_external_fact_lookup", "id": "N010", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "O que você acha da minha ideia?"}
+{"expected": "no_external_fact_lookup", "id": "N011", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Quero planejar um descanso neste fim de semana."}
+{"expected": "no_external_fact_lookup", "id": "N012", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Você conhece uma receita simples de bolo?"}
+{"expected": "no_external_fact_lookup", "id": "N013", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Quero refletir sobre uma escolha que fiz."}
+{"expected": "no_external_fact_lookup", "id": "N014", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Obrigado pela ajuda de ontem."}
+{"expected": "no_external_fact_lookup", "id": "N015", "note": "Pergunta social ou de tarefa; não deve exigir consulta enciclopédica de identidade.", "question": "Morgana e Todd, cada um dê uma opinião sobre meu plano."}

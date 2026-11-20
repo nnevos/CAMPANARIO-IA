@@ -1,0 +1,30 @@
+CAMPANARIO-IA - PROJETO LIMPO + WIKIPEDIA OFFLINE JA HABILITADA
+
+PACOTE PESSOAL: contem um .env configurado para o SEU Windows e modelos de voz.
+NAO ENVIE ESTE ZIP A OUTRAS PESSOAS. Para compartilhar codigo, use o ZIP FONTE.
+
+INSTALAR SEM POWERSHELL:
+1. Feche o Campanario, o Kiwix e quaisquer janelas usando os bancos.
+2. Abra Documentos\GitHub no Explorador de Arquivos.
+3. Renomeie CAMPANARIO-IA atual para CAMPANARIO-IA-ANTIGO. NAO APAGUE ainda.
+4. Extraia este ZIP em Documentos\GitHub, para criar uma NOVA pasta CAMPANARIO-IA.
+   Nao extraia por cima da pasta velha: renomeie-a primeiro.
+5. Abra a pasta nova CAMPANARIO-IA e execute CAMPANARIO.bat normalmente.
+6. A .env JA EXISTE na pasta nova com CAMPANARIO_ZIM_ENABLED=true,
+   e os caminhos para CAMPANARIO-DATABASE\dados e \zim. Nao renomeie .env.example.
+7. Para testar a Wikipedia, deixe o kiwix-serve com um .zim real
+   iniciado por INICIAR_WIKIPEDIA_OFFLINE.cmd e clique TESTAR_WIKIPEDIA_OFFLINE.cmd.
+8. Confirme Morgana, Todd, voz, conversas antigas e persistencia
+   de uma conversa nova apos fechar e reabrir.
+
+NAO APAGUE NEM MOVA CAMPANARIO-PYTHON ou CAMPANARIO-DATABASE!
+NAO APAGUE CAMPANARIO-IA-ANTIGO antes de confirmar tudo e se desejar
+resguardar configuracoes locais que possam ter mudado apos enviar o RAR.
+
+A Wikipedia offline exige: (a) kiwix-serve.exe na pasta irma
+CAMPANARIO-DATABASE\kiwix, (b) arquivo wikipedia_pt*.zim em
+CAMPANARIO-DATABASE\zim e (c) Kiwix iniciado.
+A internet continua desligada por padrao; Kiwix so atende 127.0.0.1.
+
+ESTE ZIP EXCLUI backups, .venv antiga, instaladores de patches
+e caches. Inclui .env local, vozes ONNX e historico .git do RAR.

@@ -125,6 +125,41 @@ class ParticipationArbiter:
         token = answer.strip().upper().split()[0] if answer.strip() else "SKIP"
         return ParticipationDecision(token == "JOIN", "semantic_arbiter")
 
+    async def decide_followup(
+        self, *, user_text: str, candidate: AgentProfile,
+        dialogue: Sequence[Message], contributions: int,
+    ) -> ParticipationDecision:
+        """Automatic conversation/conselho fusion; no artificial disagreement quota."""
+        if self._provider is None or contributions >= 4:
+            return ParticipationDecision(False, "followup_unavailable_or_limit")
+        if directly_addressed_agent(user_text) and not self.explicitly_invites_group(user_text):
+            return ParticipationDecision(False, "direct_address_exclusive")
+        recent = [m for m in dialogue if m.role == MessageRole.ASSISTANT][-4:]
+        if len(recent) < 2 or not recent[-1].content.strip():
+            return ParticipationDecision(False, "no_dialogue_to_react_to")
+        transcript = "\n".join(
+            f"{m.agent_id or 'agente'}: {m.content[:1100]}" for m in recent
+        )
+        request = ModelRequest(model=self._model, messages=(
+            ModelMessage(role=MessageRole.SYSTEM, content=(
+                "Voce coordena uma conversa natural entre Morgana e Todd. Responda SOMENTE CONTINUE ou STOP. "
+                "CONTINUE apenas se o agente indicado tiver uma ideia NOVA e util, uma pergunta relevante "
+                "ao outro, uma correcao importante, ou uma perspectiva genuinamente propria. "
+                "Concordar e permitido, discordar tambem; nunca force nenhum dos dois. "
+                "STOP se a conversa ja estiver completa, for apenas repeticao, se houver saudacao "
+                "ou se os agentes estiverem prolongando o assunto sem necessidade. "
+                "Nao invente opiniao nem crie debate artificial. O usuario tem prioridade."
+            )),
+            ModelMessage(role=MessageRole.USER, content=(
+                f"Mensagem original do usuario: {user_text[:1000]}\n"
+                f"Contribuicoes ja feitas nesta rodada: {contributions}\n"
+                f"Dialogo recente:\n{transcript}\n\n"
+                f"{candidate.name} deveria acrescentar algo agora?"
+            )),
+        ))
+        answer = (await self._collect(request)).strip().upper().split()
+        return ParticipationDecision(bool(answer and answer[0] == "CONTINUE"), "automatic_dialogue_followup")
+
     async def _collect(self, request: ModelRequest) -> str:
         chunks: list[str] = []
         async for chunk in self._provider.stream(request):

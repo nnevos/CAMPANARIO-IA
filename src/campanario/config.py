@@ -22,7 +22,21 @@ class Settings(BaseSettings):
     model_name: str = ""
     model_base_url: str = "http://127.0.0.1:11434"
     model_timeout_seconds: float = 120.0
-    model_temperature: float = Field(default=0.35, ge=0.0, le=2.0)
+    model_temperature: float = Field(default=0.55, ge=0.0, le=2.0)
+    # Low latency is opt-in for existing callers; the packaged Windows profile enables it.
+    model_think: bool | None = False
+    model_context_window: int = Field(default=4096, ge=1024, le=131072)
+    model_max_output_tokens: int = Field(default=320, ge=16, le=8192)
+    model_keep_alive: str = "20m"
+    low_latency_mode: bool = True
+    live_streaming: bool = True
+    context_auto_summarize: bool = False
+    participation_arbiter_enabled: bool = False
+    # Local chat may consult public internet on ordinary factual questions. Disable to stay offline.
+    web_auto_search: bool = False
+    # When web access is authorized, try public sources first, then local ZIM
+    # and imported documents. Offline requests keep the legacy local-first order.
+    research_priority: str = Field(default='web_first', pattern=r'^(web_first|local_first)$')
 
     # Legacy aliases kept for existing .env files. Generic values above take precedence when set.
     ollama_base_url: str = "http://127.0.0.1:11434"
@@ -33,36 +47,43 @@ class Settings(BaseSettings):
     context_max_messages: int = Field(default=20, ge=1)
     context_summary_max_chars: int = Field(default=4000, ge=500, le=20000)
     data_dir: Path = Field(default_factory=lambda: user_data_path("Campanario", appauthor=False))
+    # No automatic directory movement. Set CAMPANARIO_DATA_DIR in the local .env after verified copy.
+    # Optional archive directory for future offline Kiwix/ZIM integration.
+    zim_dir: Path | None = None
+    # Wikipedia in a local ZIM, served by a separately installed kiwix-serve.
+    # OFF by default, no internet; the desktop starts a local process only if enabled.
+    zim_enabled: bool = False
+    # Desktop only: start the local Kiwix service with no console window.
+    # Disable explicitly to use a manually managed server.
+    zim_auto_start: bool = True
+    zim_base_url: str = 'http://127.0.0.1:8181'
+    zim_book_name: str = ''  # optional explicit book name when different from filename
+    zim_timeout_seconds: float = Field(default=3.0, ge=0.5, le=8.0)
+    # Explicitly isolate test history from the eventual Point Zero production history.
+    memory_environment: str = Field(default="desenvolvimento", pattern=r"^(desenvolvimento|producao)$")
 
-    # F5c host voice integration. Defaults stay disabled so server startup never pretends that
-    # microphone/STT/TTS are ready. The Windows target baseline is whisper.cpp + local SAPI.
-    voice_stt_backend: str = "unconfigured"
-    voice_tts_backend: str = "unconfigured"
-    voice_whisper_cpp_path: str = "whisper-cli.exe"
-    voice_whisper_model_path: Path | None = None
-    # Optional external model store. Keeps multi-hundred-MB Whisper weights outside project handoffs.
-    voice_models_dir: Path | None = None
-    voice_language: str = "pt"
-    voice_whisper_prompt: str = "Campanario. Todd. Morgana."
-    voice_whisper_no_speech_threshold: float = Field(default=0.50, ge=0.0, le=1.0)
-    # Physical F5 pt-BR favors recognition quality when multiple local weights are available.
-    voice_whisper_prefer_accuracy: bool = True
-    voice_powershell_path: str = "powershell.exe"
-    voice_todd_voice: str = ""
-    voice_morgana_voice: str = ""
-    voice_todd_rate: int = Field(default=4, ge=-10, le=10)
-    voice_morgana_rate: int = Field(default=3, ge=-10, le=10)
-    voice_vad_threshold: int = Field(default=450, ge=1, le=32767)
-    voice_silence_frames_to_finalize: int = Field(default=45, ge=1, le=100)
-    voice_preroll_frames: int = Field(default=6, ge=0, le=25)
-    voice_min_speech_ms: int = Field(default=300, ge=80, le=5000)
-    # Short grace window only for STT fragments that look linguistically unfinished.
-    voice_fragment_hold_ms: int = Field(default=1200, ge=0, le=4000)
-    voice_stt_timeout_seconds: float = Field(default=45.0, gt=0)
-    voice_tts_timeout_seconds: float = Field(default=30.0, gt=0)
-    voice_barge_in_threshold: int = Field(default=1600, ge=100, le=32767)
-    voice_barge_in_frames: int = Field(default=2, ge=1, le=10)
-    voice_barge_in_preroll_frames: int = Field(default=6, ge=1, le=25)
+    # Fase 4 Inc.3B: optional read-only semantic document candidates.
+    # Default OFF until a real Windows+embeddinggemma benchmark is reviewed.
+    # Different from personal-memory semantic embeddings; no persistent index.
+    library_semantic_enabled: bool = False
+    library_semantic_model: str = 'embeddinggemma'
+    library_semantic_timeout_seconds: float = Field(default=5.0, ge=1.0, le=20.0)
+    library_semantic_min_similarity: float = Field(default=0.72, ge=0.0, le=1.0)
+    library_semantic_max_segments: int = Field(default=96, ge=8, le=256)
+
+    # G2: local Ollama embeddings + SQLite index, no Qwen chat call for retrieval.
+    # Install once: ollama pull embeddinggemma. When unavailable, lexical search remains.
+    semantic_memory_enabled: bool = True
+    semantic_memory_backend: str = "memoryllm_chroma"  # memoryllm_chroma | sqlite
+    semantic_memory_model: str = "embeddinggemma"
+    semantic_memory_timeout_seconds: float = Field(default=7.0, ge=1.0, le=60.0)
+    semantic_memory_min_similarity: float = Field(default=0.43, ge=0.0, le=1.0)
+    semantic_memory_batch_size: int = Field(default=32, ge=1, le=64)
+
+
+    # Optional providers are not installed or started by the desktop launcher.
+    update_repository: str = ""
+    desktop_port: int = Field(default=8000, ge=1024, le=65535)
 
     @property
     def effective_model_name(self) -> str:
@@ -79,7 +100,7 @@ class Settings(BaseSettings):
                 base_url = self.ollama_base_url
             if self.model_timeout_seconds == 120.0 and self.ollama_timeout_seconds != 120.0:
                 timeout = self.ollama_timeout_seconds
-            if self.model_temperature == 0.35 and self.ollama_temperature != 0.35:
+            if self.model_temperature in (0.35, 0.55) and self.ollama_temperature != 0.35:
                 temperature = self.ollama_temperature
         return ModelRuntimeConfig(
             backend=self.model_provider,
@@ -87,15 +108,19 @@ class Settings(BaseSettings):
             base_url=base_url,
             timeout_seconds=timeout,
             temperature=temperature,
+            think=self.model_think,
+            context_window=self.model_context_window,
+            max_output_tokens=self.model_max_output_tokens,
+            keep_alive=self.model_keep_alive,
         )
 
     @property
     def database_path(self) -> Path:
-        return self.data_dir / "campanario.db"
+        return self.data_dir / self.memory_environment / "campanario.db"
 
 
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
-    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    settings.database_path.parent.mkdir(parents=True, exist_ok=True)
     return settings

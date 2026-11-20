@@ -1,0 +1,405 @@
+{
+  "stage": "fase4_incremento3a_busca_local",
+  "timestamp_utc": "2026-11-19T15:57:25.022751+00:00",
+  "dataset": "eval/v1/documentos.jsonl",
+  "dataset_sha256": "fd8fbac3b278febe213b96a1879ec33695b4d5505ab6b429a8f8514041e043e2",
+  "method": "FTS5-in-memory vs exact lexical baseline, identical test fixtures",
+  "model_factual_accuracy": "NOT_MEASURED_no_Ollama",
+  "semantic_entailment": "NOT_MEASURED_and_known_false_relevance",
+  "kiwix": "NOT_INTEGRATED",
+  "embeddings": "NOT_INTEGRATED",
+  "internet_attempts": "blocked_during_retrieval_and_chat",
+  "user_sqlite_accessed": false,
+  "source_sqlite_byte_identical": true,
+  "no_persistent_index_created": true,
+  "chat_exact_quotes_and_citations": 20,
+  "chat_model_calls": 0,
+  "baseline_legacy": {
+    "docs_exact_and_cited": 20,
+    "docs_total": 20,
+    "plural_variants_grounded": 0,
+    "plural_variants_total": 6,
+    "negative_tests_abstained": 5,
+    "negative_tests_total": 5,
+    "known_partial_overlap_false_relevance_still_present": true,
+    "first_query_ms_including_index_build": 1.011,
+    "warm_queries_median_ms_stub_only": 0.445,
+    "index_builds": 0,
+    "last_backend_used": "legacy",
+    "documents": [
+      {
+        "id": "D001",
+        "source_and_exact_quote": true,
+        "source": "manual_faro.md",
+        "ms": 1.011
+      },
+      {
+        "id": "D002",
+        "source_and_exact_quote": true,
+        "source": "manual_faro.md",
+        "ms": 0.658
+      },
+      {
+        "id": "D003",
+        "source_and_exact_quote": true,
+        "source": "manual_faro.md",
+        "ms": 0.65
+      },
+      {
+        "id": "D004",
+        "source_and_exact_quote": true,
+        "source": "manual_faro.md",
+        "ms": 0.445
+      },
+      {
+        "id": "D005",
+        "source_and_exact_quote": true,
+        "source": "guia_rumo.md",
+        "ms": 0.514
+      },
+      {
+        "id": "D006",
+        "source_and_exact_quote": true,
+        "source": "guia_rumo.md",
+        "ms": 0.432
+      },
+      {
+        "id": "D007",
+        "source_and_exact_quote": true,
+        "source": "guia_rumo.md",
+        "ms": 0.545
+      },
+      {
+        "id": "D008",
+        "source_and_exact_quote": true,
+        "source": "guia_rumo.md",
+        "ms": 0.427
+      },
+      {
+        "id": "D009",
+        "source_and_exact_quote": true,
+        "source": "protocolo_ponte.md",
+        "ms": 0.481
+      },
+      {
+        "id": "D010",
+        "source_and_exact_quote": true,
+        "source": "protocolo_ponte.md",
+        "ms": 0.416
+      },
+      {
+        "id": "D011",
+        "source_and_exact_quote": true,
+        "source": "protocolo_ponte.md",
+        "ms": 0.561
+      },
+      {
+        "id": "D012",
+        "source_and_exact_quote": true,
+        "source": "protocolo_ponte.md",
+        "ms": 0.425
+      },
+      {
+        "id": "D013",
+        "source_and_exact_quote": true,
+        "source": "diario_aurora.md",
+        "ms": 0.481
+      },
+      {
+        "id": "D014",
+        "source_and_exact_quote": true,
+        "source": "diario_aurora.md",
+        "ms": 0.51
+      },
+      {
+        "id": "D015",
+        "source_and_exact_quote": true,
+        "source": "diario_aurora.md",
+        "ms": 0.467
+      },
+      {
+        "id": "D016",
+        "source_and_exact_quote": true,
+        "source": "diario_aurora.md",
+        "ms": 0.414
+      },
+      {
+        "id": "D017",
+        "source_and_exact_quote": true,
+        "source": "guia_horizonte.md",
+        "ms": 0.438
+      },
+      {
+        "id": "D018",
+        "source_and_exact_quote": true,
+        "source": "guia_horizonte.md",
+        "ms": 0.415
+      },
+      {
+        "id": "D019",
+        "source_and_exact_quote": true,
+        "source": "guia_horizonte.md",
+        "ms": 0.445
+      },
+      {
+        "id": "D020",
+        "source_and_exact_quote": true,
+        "source": "guia_horizonte.md",
+        "ms": 0.414
+      }
+    ],
+    "variants": [
+      {
+        "id": "M001",
+        "source_and_quote": false,
+        "ms": 0.393
+      },
+      {
+        "id": "M002",
+        "source_and_quote": false,
+        "ms": 0.543
+      },
+      {
+        "id": "M003",
+        "source_and_quote": false,
+        "ms": 0.546
+      },
+      {
+        "id": "M004",
+        "source_and_quote": false,
+        "ms": 0.415
+      },
+      {
+        "id": "M005",
+        "source_and_quote": false,
+        "ms": 0.395
+      },
+      {
+        "id": "M006",
+        "source_and_quote": false,
+        "ms": 0.424
+      }
+    ],
+    "negatives": [
+      {
+        "question": "Quem foi Ada Lovelace?",
+        "no_unsupported_quote": true,
+        "ms": 0.401
+      },
+      {
+        "question": "Quem foi Célia Vornacz?",
+        "no_unsupported_quote": true,
+        "ms": 0.415
+      },
+      {
+        "question": "Os assinantes de Rumo?",
+        "no_unsupported_quote": true,
+        "ms": 0.389
+      },
+      {
+        "question": "Quem criou o Projeto Rumo no século XII?",
+        "no_unsupported_quote": true,
+        "ms": 0.456
+      },
+      {
+        "question": "Onde fica a marca secreta de Ponte?",
+        "no_unsupported_quote": true,
+        "ms": 0.424
+      }
+    ]
+  },
+  "updated_fts5": {
+    "docs_exact_and_cited": 20,
+    "docs_total": 20,
+    "plural_variants_grounded": 6,
+    "plural_variants_total": 6,
+    "negative_tests_abstained": 5,
+    "negative_tests_total": 5,
+    "known_partial_overlap_false_relevance_still_present": true,
+    "first_query_ms_including_index_build": 1.755,
+    "warm_queries_median_ms_stub_only": 0.163,
+    "index_builds": 1,
+    "last_backend_used": "fts5_memory",
+    "documents": [
+      {
+        "id": "D001",
+        "source_and_exact_quote": true,
+        "source": "manual_faro.md",
+        "ms": 1.755
+      },
+      {
+        "id": "D002",
+        "source_and_exact_quote": true,
+        "source": "manual_faro.md",
+        "ms": 0.172
+      },
+      {
+        "id": "D003",
+        "source_and_exact_quote": true,
+        "source": "manual_faro.md",
+        "ms": 0.217
+      },
+      {
+        "id": "D004",
+        "source_and_exact_quote": true,
+        "source": "manual_faro.md",
+        "ms": 0.201
+      },
+      {
+        "id": "D005",
+        "source_and_exact_quote": true,
+        "source": "guia_rumo.md",
+        "ms": 0.122
+      },
+      {
+        "id": "D006",
+        "source_and_exact_quote": true,
+        "source": "guia_rumo.md",
+        "ms": 0.163
+      },
+      {
+        "id": "D007",
+        "source_and_exact_quote": true,
+        "source": "guia_rumo.md",
+        "ms": 0.095
+      },
+      {
+        "id": "D008",
+        "source_and_exact_quote": true,
+        "source": "guia_rumo.md",
+        "ms": 0.298
+      },
+      {
+        "id": "D009",
+        "source_and_exact_quote": true,
+        "source": "protocolo_ponte.md",
+        "ms": 0.175
+      },
+      {
+        "id": "D010",
+        "source_and_exact_quote": true,
+        "source": "protocolo_ponte.md",
+        "ms": 0.123
+      },
+      {
+        "id": "D011",
+        "source_and_exact_quote": true,
+        "source": "protocolo_ponte.md",
+        "ms": 0.117
+      },
+      {
+        "id": "D012",
+        "source_and_exact_quote": true,
+        "source": "protocolo_ponte.md",
+        "ms": 0.127
+      },
+      {
+        "id": "D013",
+        "source_and_exact_quote": true,
+        "source": "diario_aurora.md",
+        "ms": 0.111
+      },
+      {
+        "id": "D014",
+        "source_and_exact_quote": true,
+        "source": "diario_aurora.md",
+        "ms": 0.26
+      },
+      {
+        "id": "D015",
+        "source_and_exact_quote": true,
+        "source": "diario_aurora.md",
+        "ms": 0.166
+      },
+      {
+        "id": "D016",
+        "source_and_exact_quote": true,
+        "source": "diario_aurora.md",
+        "ms": 0.139
+      },
+      {
+        "id": "D017",
+        "source_and_exact_quote": true,
+        "source": "guia_horizonte.md",
+        "ms": 0.152
+      },
+      {
+        "id": "D018",
+        "source_and_exact_quote": true,
+        "source": "guia_horizonte.md",
+        "ms": 0.181
+      },
+      {
+        "id": "D019",
+        "source_and_exact_quote": true,
+        "source": "guia_horizonte.md",
+        "ms": 0.124
+      },
+      {
+        "id": "D020",
+        "source_and_exact_quote": true,
+        "source": "guia_horizonte.md",
+        "ms": 0.317
+      }
+    ],
+    "variants": [
+      {
+        "id": "M001",
+        "source_and_quote": true,
+        "ms": 0.141
+      },
+      {
+        "id": "M002",
+        "source_and_quote": true,
+        "ms": 0.092
+      },
+      {
+        "id": "M003",
+        "source_and_quote": true,
+        "ms": 0.094
+      },
+      {
+        "id": "M004",
+        "source_and_quote": true,
+        "ms": 0.164
+      },
+      {
+        "id": "M005",
+        "source_and_quote": true,
+        "ms": 0.108
+      },
+      {
+        "id": "M006",
+        "source_and_quote": true,
+        "ms": 0.149
+      }
+    ],
+    "negatives": [
+      {
+        "question": "Quem foi Ada Lovelace?",
+        "no_unsupported_quote": true,
+        "ms": 0.049
+      },
+      {
+        "question": "Quem foi Célia Vornacz?",
+        "no_unsupported_quote": true,
+        "ms": 0.036
+      },
+      {
+        "question": "Os assinantes de Rumo?",
+        "no_unsupported_quote": true,
+        "ms": 0.082
+      },
+      {
+        "question": "Quem criou o Projeto Rumo no século XII?",
+        "no_unsupported_quote": true,
+        "ms": 0.162
+      },
+      {
+        "question": "Onde fica a marca secreta de Ponte?",
+        "no_unsupported_quote": true,
+        "ms": 0.097
+      }
+    ]
+  }
+}

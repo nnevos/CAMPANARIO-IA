@@ -1,0 +1,1433 @@
+{
+  "comparison_schema": "1.0.0",
+  "provenance": {
+    "dataset_version": "1.0.0",
+    "dataset_sha256": "dba8073d0f67423883ae45f549daf840a4194064c71f2487dd7308c4b921a886",
+    "model": "qwen3.5:9b",
+    "mode": "offline",
+    "before_timestamp_utc": "2026-11-19T13:46:04.435676+00:00",
+    "after_timestamp_utc": "2026-11-19T14:43:15.543584+00:00",
+    "before_internet_opt_in": false,
+    "after_internet_opt_in": false
+  },
+  "summary": {
+    "cases_per_run": 74,
+    "factual_cases": 50,
+    "factual_abstentions_before": 25,
+    "factual_abstentions_after": 48,
+    "new_abstentions": [
+      "F001",
+      "F002",
+      "F005",
+      "F006",
+      "F007",
+      "F010",
+      "F011",
+      "F012",
+      "F015",
+      "F016",
+      "F017",
+      "F020",
+      "F021",
+      "F022",
+      "F025",
+      "F026",
+      "F027",
+      "F030",
+      "F032",
+      "F035",
+      "F046",
+      "F047",
+      "F050"
+    ],
+    "changed_factual_responses": [
+      "F001",
+      "F002",
+      "F005",
+      "F006",
+      "F007",
+      "F010",
+      "F011",
+      "F012",
+      "F015",
+      "F016",
+      "F017",
+      "F020",
+      "F021",
+      "F022",
+      "F025",
+      "F026",
+      "F027",
+      "F030",
+      "F032",
+      "F035",
+      "F045",
+      "F046",
+      "F047",
+      "F050"
+    ],
+    "factual_non_abstentions_after": [
+      "F038",
+      "F041"
+    ],
+    "factual_grounded_after": 0,
+    "document_cases": 20,
+    "unchanged_document_responses": 20,
+    "document_citations_verified_before": 0,
+    "document_citations_verified_after": 0,
+    "group_cases": 4,
+    "group_semantic_status": [
+      "not_evaluable_without_shared_factsheet"
+    ],
+    "reported_p50_ms_before": 1906.135,
+    "reported_p50_ms_after": 0.2,
+    "reported_p95_ms_before": 5634.47,
+    "reported_p95_ms_after": 3634.01,
+    "non_abstention_first_visible_median_after_ms": 7130.45,
+    "factual_response_truth_not_scored": true,
+    "vram_not_measured": true,
+    "external_web_not_authorized": true
+  },
+  "by_case": {
+    "factual": [
+      {
+        "id": "F001",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 4225.22,
+        "first_visible_ms_after": 5.68,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F002",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 6679.26,
+        "first_visible_ms_after": 0.4,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F003",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.55,
+        "first_visible_ms_after": 0.21,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F004",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.72,
+        "first_visible_ms_after": 0.19,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F005",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2771.42,
+        "first_visible_ms_after": 0.2,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F006",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 4519.39,
+        "first_visible_ms_after": 0.19,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F007",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 5634.47,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F008",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.25,
+        "first_visible_ms_after": 0.17,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F009",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.18,
+        "first_visible_ms_after": 0.16,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F010",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 7323.2,
+        "first_visible_ms_after": 0.2,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F011",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 4185.34,
+        "first_visible_ms_after": 0.16,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F012",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 5328.21,
+        "first_visible_ms_after": 0.19,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F013",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.27,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F014",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.19,
+        "first_visible_ms_after": 0.17,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F015",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 4097.84,
+        "first_visible_ms_after": 0.2,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F016",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2584.9,
+        "first_visible_ms_after": 0.17,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F017",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 5874.31,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F018",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.32,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F019",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.36,
+        "first_visible_ms_after": 0.2,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F020",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1936.67,
+        "first_visible_ms_after": 0.22,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F021",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2688.94,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F022",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 4593.85,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F023",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.24,
+        "first_visible_ms_after": 0.16,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F024",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.16,
+        "first_visible_ms_after": 0.17,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F025",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1975.37,
+        "first_visible_ms_after": 0.19,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F026",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2979.41,
+        "first_visible_ms_after": 0.16,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F027",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2018.49,
+        "first_visible_ms_after": 0.17,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F028",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.26,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F029",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.19,
+        "first_visible_ms_after": 0.17,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F030",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 4273.2,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F031",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.44,
+        "first_visible_ms_after": 0.17,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F032",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 4777.68,
+        "first_visible_ms_after": 0.19,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F033",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.42,
+        "first_visible_ms_after": 0.19,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F034",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.32,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F035",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 5780.13,
+        "first_visible_ms_after": 0.17,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F036",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.29,
+        "first_visible_ms_after": 0.2,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F037",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.2,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F038",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 3335.13,
+        "first_visible_ms_after": 9661.47,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": false,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F039",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.26,
+        "first_visible_ms_after": 0.27,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F040",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.2,
+        "first_visible_ms_after": 0.2,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F041",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 4403.77,
+        "first_visible_ms_after": 4599.43,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": false,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F042",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.25,
+        "first_visible_ms_after": 0.28,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F043",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.22,
+        "first_visible_ms_after": 0.23,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F044",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.2,
+        "first_visible_ms_after": 0.21,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F045",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2064.35,
+        "first_visible_ms_after": 0.2,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F046",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2461.69,
+        "first_visible_ms_after": 0.16,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F047",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2924.6,
+        "first_visible_ms_after": 0.21,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F048",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.4,
+        "first_visible_ms_after": 0.2,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F049",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.18,
+        "first_visible_ms_after": 0.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": true,
+        "abstention_after": true,
+        "response_changed": false,
+        "grounded_before": false,
+        "grounded_after": false
+      },
+      {
+        "id": "F050",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 4952.28,
+        "first_visible_ms_after": 0.2,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "abstention_before": false,
+        "abstention_after": true,
+        "response_changed": true,
+        "grounded_before": false,
+        "grounded_after": false
+      }
+    ],
+    "documents": [
+      {
+        "id": "D001",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2327.77,
+        "first_visible_ms_after": 2536.91,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D002",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 3989.6,
+        "first_visible_ms_after": 4489.1,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D003",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1479.3,
+        "first_visible_ms_after": 1590.18,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D004",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2311.51,
+        "first_visible_ms_after": 2631.68,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D005",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1822.98,
+        "first_visible_ms_after": 2049.4,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D006",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 3196.66,
+        "first_visible_ms_after": 3634.01,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D007",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2708.42,
+        "first_visible_ms_after": 3005.26,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D008",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 3089.28,
+        "first_visible_ms_after": 3372.55,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D009",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1954.15,
+        "first_visible_ms_after": 2245.24,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D010",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1200.18,
+        "first_visible_ms_after": 1372.78,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D011",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1540.05,
+        "first_visible_ms_after": 1753.91,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D012",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1374.85,
+        "first_visible_ms_after": 1531.4,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D013",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.28,
+        "first_visible_ms_after": 0.43,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D014",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1485.42,
+        "first_visible_ms_after": 1708.77,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D015",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1877.55,
+        "first_visible_ms_after": 2121.53,
+        "speakers_before": [
+          "morgana",
+          "todd"
+        ],
+        "speakers_after": [
+          "morgana",
+          "todd"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D016",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1224.91,
+        "first_visible_ms_after": 1327.46,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D017",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1858.91,
+        "first_visible_ms_after": 2007.57,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D018",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1934.72,
+        "first_visible_ms_after": 2057.04,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D019",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1547.98,
+        "first_visible_ms_after": 1647.07,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      },
+      {
+        "id": "D020",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 5177.01,
+        "first_visible_ms_after": 5641.42,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "response_changed": false,
+        "citation_verified_before": false,
+        "citation_verified_after": false,
+        "exact_quote_before": false,
+        "exact_quote_after": false
+      }
+    ],
+    "group": [
+      {
+        "id": "G001",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 3838.95,
+        "first_visible_ms_after": 0.35,
+        "speakers_before": [
+          "morgana",
+          "todd"
+        ],
+        "speakers_after": [
+          "morgana",
+          "todd"
+        ],
+        "perspective_distinction_before": "pending_manual_review",
+        "perspective_distinction_after": "pending_manual_review",
+        "factual_consistency_before": "not_evaluable_without_shared_factsheet",
+        "factual_consistency_after": "not_evaluable_without_shared_factsheet"
+      },
+      {
+        "id": "G002",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 1742.37,
+        "first_visible_ms_after": 0.25,
+        "speakers_before": [
+          "morgana",
+          "todd"
+        ],
+        "speakers_after": [
+          "morgana",
+          "todd"
+        ],
+        "perspective_distinction_before": "pending_manual_review",
+        "perspective_distinction_after": "pending_manual_review",
+        "factual_consistency_before": "not_evaluable_without_shared_factsheet",
+        "factual_consistency_after": "not_evaluable_without_shared_factsheet"
+      },
+      {
+        "id": "G006",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 0.63,
+        "first_visible_ms_after": 0.68,
+        "speakers_before": [
+          "todd"
+        ],
+        "speakers_after": [
+          "todd"
+        ],
+        "perspective_distinction_before": "pending_manual_review",
+        "perspective_distinction_after": "pending_manual_review",
+        "factual_consistency_before": "not_evaluable_without_shared_factsheet",
+        "factual_consistency_after": "not_evaluable_without_shared_factsheet"
+      },
+      {
+        "id": "G007",
+        "status_before": "completed",
+        "status_after": "completed",
+        "first_visible_ms_before": 2644.29,
+        "first_visible_ms_after": 2868.14,
+        "speakers_before": [
+          "morgana"
+        ],
+        "speakers_after": [
+          "morgana"
+        ],
+        "perspective_distinction_before": "pending_manual_review",
+        "perspective_distinction_after": "pending_manual_review",
+        "factual_consistency_before": "not_evaluable_without_shared_factsheet",
+        "factual_consistency_after": "not_evaluable_without_shared_factsheet"
+      }
+    ]
+  }
+}

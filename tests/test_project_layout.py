@@ -11,20 +11,14 @@ def test_root_is_intentionally_small_and_operational() -> None:
     }
     assert not any((root / name).exists() for name in forbidden)
     assert (root / "CAMPANARIO.bat").exists()
-    assert (root / "RECOVER_FIRST.md").exists()
-    assert (root / "PROJECT_STATE.md").exists()
+    assert (root / "docs/history/checkpoints/RECOVER_FIRST.md").exists()
+    assert (root / "docs/history/checkpoints/PROJECT_STATE.md").exists()
 
 
 def test_windows_root_contains_only_current_operational_launchers() -> None:
     root = Path(__file__).resolve().parents[1]
     windows = root / "tools" / "windows"
-    expected = {
-        "ABRIR_MANUAL.bat", "AJUSTAR_VELOCIDADE_VOZ.bat", "COMPARAR_MODELOS.bat", "CONSULTAR_ULTIMO_TESTE.bat",
-        "DIAGNOSTICO_VOZ_F5C.bat", "INICIAR_CAMPANARIO.bat", "INICIAR_RUNTIME_HEADLESS.bat",
-        "INICIAR_VOZ_HOST_F5C.bat", "PAREAR_VOZ_HOST_F5C.bat", "PREPARAR_VOZ_F5C.bat",
-        "TESTAR_CONVERSA_HUMANA.bat", "TESTAR_LONG_CALL.bat",
-        "TESTAR_REALTIME_F5.bat", "TESTAR_VOZ_F5C.bat", "TROCAR_MODELO.bat",
-    }
+    expected = {'INICIAR_RUNTIME_HEADLESS.bat', 'ABRIR_MANUAL.bat', 'TESTAR_CONVERSA_HUMANA.bat', 'TESTAR_COMPORTAMENTO.bat', 'DIAGNOSTICAR_QWEN.bat', 'INICIAR_CAMPANARIO.bat', 'TESTAR_REALTIME_F5.bat', 'TESTAR_COMPORTAMENTO_MEGA.bat', 'TESTAR_LONG_CALL.bat', 'TESTAR_PERSONALIDADES.bat', 'CONSULTAR_ULTIMO_TESTE.bat', 'TESTAR_PERSONALIDADES_MEGA.bat', 'COMPARAR_MODELOS.bat', 'PREPARAR_MEMORIA_SEMANTICA.bat', 'TROCAR_MODELO.bat', 'TESTAR_AGENTES.bat'}
     assert expected == {p.name for p in windows.glob("*.bat")}
     assert (windows / "regression" / "platform" / "TESTAR_RUNTIME_PF9.bat").exists()
     assert (windows / "regression" / "conversation" / "TESTAR_CONVERSA_MULTIAGENTE.bat").exists()
@@ -38,9 +32,14 @@ def test_transient_artifacts_are_ignored_by_project_policy() -> None:
         assert marker in ignored
 
 
-def test_presence_ui_boots_without_reopening_old_transcript():
+def test_presence_ui_starts_new_and_only_opens_archives_explicitly():
     html = Path('src/campanario/web/index.html').read_text(encoding='utf-8')
-    assert "await selectSession(ss[0])" not in html
-    assert "sessionId=null;$('conversation').innerHTML=''" in html
-    assert 'Memória de episódios' in html
-    assert 'viewingArchive=true' in html
+    js = Path('src/campanario/web/static/chat.js').read_text(encoding='utf-8')
+    boot = js.split('async function boot()', 1)[1].split('function renderParticipants', 1)[0]
+    assert "await selectSession(ss[0])" not in js
+    assert "localStorage.getItem('campanario.active_session')" not in js
+    assert "localStorage.removeItem('campanario.active_session')" in boot
+    assert "sessionId=null;$('conversation').innerHTML=''" in boot
+    assert 'id="chatSidebar"' in html
+    assert 'id="sidebarNew"' in html
+    assert 'b.onclick=()=>selectSession(s)' in js

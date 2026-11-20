@@ -205,8 +205,8 @@ def test_capability_api_lists_contracts_but_does_not_expose_execute_endpoint(mon
 
     response = client.get("/api/v1/capabilities")
     assert response.status_code == 200
-    item = response.json()[0]
-    assert item["name"] == "device.status"
+    item = next(x for x in response.json() if x["name"] == "device.status")
+    assert any(x["name"] == "notes.save" for x in response.json())
     assert item["provider_id"] == "provider-api"
     assert item["permissions"] == ["example.read"]
     assert item["available"] is True

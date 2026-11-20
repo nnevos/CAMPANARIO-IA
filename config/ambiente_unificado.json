@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "python": "3.12.10",
+  "old_environment": "../.venv",
+  "current_environment": ".venv",
+  "target_environment": "../CAMPANARIO-PYTHON/.venv",
+  "purpose": "Preserve optional Piper/Pocket voice functionality from ANTIGA and the application/tests from ATUAL.",
+  "runtime_requirements": [
+    "piper-tts==1.8.0",
+    "pocket-tts==4.0.1",
+    "torch==2.14.1+cu130",
+    "torchaudio==2.11.0+cu130",
+    "torchvision==0.29.1+cu130"
+  ],
+  "indexes": {
+    "primary": "https://pypi.org/simple",
+    "pytorch_cuda": "https://download.pytorch.org/whl/cu130"
+  },
+  "packages_to_verify": {
+    "piper-tts": "1.8.0",
+    "pocket-tts": "4.0.1",
+    "torch": "2.14.1+cu130",
+    "torchaudio": "2.11.0+cu130",
+    "torchvision": "0.29.1+cu130",
+    "pytest-asyncio": "1.5.0"
+  },
+  "observations": [
+    "Exact local legacy CUDA package versions have been captured, but their remote availability and dependency compatibility still require verification on Windows.",
+    "The existing uv.lock is not modified. uv sync in exact mode removes voice packages, so use --inexact for subsequent syncs.",
+    "pytest 9.2.0 in ATUAL differs from the uv.lock (pytest 8.4.2). The new installation uses the existing lock and must pass regression tests.",
+    "TTS / XTTS and faster-whisper were not listed in either environment, and are not silently installed."
+  ]
+}

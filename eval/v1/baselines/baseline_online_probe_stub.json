@@ -1,0 +1,1220 @@
+{
+  "schema_version": "1.0.0",
+  "mode": "online",
+  "engine": "probe",
+  "timestamp_utc": "2026-11-19T13:27:26.008893+00:00",
+  "project_root_omitted_for_privacy": true,
+  "dataset_version": "1.0.0",
+  "dataset_hash_sha256": "dba8073d0f67423883ae45f549daf840a4194064c71f2487dd7308c4b921a886",
+  "python": "3.13.5",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "model": null,
+  "internet_opt_in": false,
+  "network_guard_in_process": true,
+  "blocked_external_socket_attempts": [],
+  "isolation": "temporary_test_data_no_user_sqlite",
+  "execution": {
+    "evaluation_engine": "probe_instrumented_stub",
+    "model_accuracy": "not_measured",
+    "group_dispositions": [
+      {
+        "id": "G001",
+        "status": "machine_probe_executed",
+        "observed": {
+          "id": "G001",
+          "category": "dois_agentes_fato",
+          "status": "completed",
+          "speakers": [
+            "morgana",
+            "todd"
+          ],
+          "first_visible_ms": 0.54,
+          "total_ms": 0.73,
+          "expected_two": true,
+          "speaker_count_ok": true,
+          "semantic_quality": "not_measured_stub"
+        },
+        "semantic_score": "not_measured_stub"
+      },
+      {
+        "id": "G002",
+        "status": "machine_probe_executed",
+        "observed": {
+          "id": "G002",
+          "category": "dois_agentes_inexistente",
+          "status": "completed",
+          "speakers": [
+            "morgana",
+            "todd"
+          ],
+          "first_visible_ms": 0.24,
+          "total_ms": 0.6,
+          "expected_two": true,
+          "speaker_count_ok": true,
+          "semantic_quality": "not_measured_stub"
+        },
+        "semantic_score": "not_measured_stub"
+      },
+      {
+        "id": "G003",
+        "status": "pending_real_multi_turn_semantics",
+        "reason": "Independent correction to BOTH speakers requires meaningful model outputs."
+      },
+      {
+        "id": "G004",
+        "status": "machine_probe_executed",
+        "default_second_context_contains_unverified_first_reply": true,
+        "independent_second_context_contains_unverified_first_reply": false,
+        "second_agent_believed_claim": "not_measured_stub"
+      },
+      {
+        "id": "G005",
+        "status": "pending_real_semantic_review",
+        "reason": "Synthetic provider does not generate opinions."
+      },
+      {
+        "id": "G006",
+        "status": "machine_probe_executed",
+        "observed": {
+          "id": "G006",
+          "category": "todd_cotidiano",
+          "status": "completed",
+          "speakers": [
+            "todd"
+          ],
+          "first_visible_ms": 0.27,
+          "total_ms": 0.3,
+          "expected_two": false,
+          "speaker_count_ok": true,
+          "semantic_quality": "not_measured_stub"
+        },
+        "semantic_score": "not_measured_stub"
+      },
+      {
+        "id": "G007",
+        "status": "machine_probe_executed",
+        "observed": {
+          "id": "G007",
+          "category": "um_agente",
+          "status": "completed",
+          "speakers": [
+            "morgana"
+          ],
+          "first_visible_ms": 0.3,
+          "total_ms": 0.33,
+          "expected_two": false,
+          "speaker_count_ok": true,
+          "semantic_quality": "not_measured_stub"
+        },
+        "semantic_score": "not_measured_stub"
+      },
+      {
+        "id": "G008",
+        "status": "machine_probe_executed",
+        "neutral_chat_supported": false,
+        "neutral_library_supported": true
+      },
+      {
+        "id": "G009",
+        "status": "machine_probe_executed",
+        "in_memory_third_profile_supported": false,
+        "file_only_profile_supported": "not_implemented_or_not_exercisable"
+      },
+      {
+        "id": "G010",
+        "status": "injected_failure_probe_executed",
+        "turn_completed": true,
+        "real_mid_stream_drop": "not_tested"
+      },
+      {
+        "id": "G011",
+        "status": "structural_gap",
+        "shared_factsheet_available": false,
+        "persona_factual_consistency": "not_measured_stub"
+      },
+      {
+        "id": "G012",
+        "status": "pending_real_model_latency",
+        "reason": "Stub millisecond values cannot represent real LLM latency."
+      }
+    ],
+    "factual_intent": {
+      "cases": [
+        {
+          "id": "F001",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Ada Lovelace"
+        },
+        {
+          "id": "F002",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Alan Turing"
+        },
+        {
+          "id": "F003",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Marie Curie"
+        },
+        {
+          "id": "F004",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Santos Dumont"
+        },
+        {
+          "id": "F005",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Machado de Assis"
+        },
+        {
+          "id": "F006",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Chiquinha Gonzaga"
+        },
+        {
+          "id": "F007",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Nikola Tesla"
+        },
+        {
+          "id": "F008",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Frida Kahlo"
+        },
+        {
+          "id": "F009",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Albert Einstein"
+        },
+        {
+          "id": "F010",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Carolina Maria de Jesus"
+        },
+        {
+          "id": "F011",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Charles Darwin"
+        },
+        {
+          "id": "F012",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Nise da Silveira"
+        },
+        {
+          "id": "F013",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Lima Barreto"
+        },
+        {
+          "id": "F014",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Katherine Johnson"
+        },
+        {
+          "id": "F015",
+          "category": "pessoa_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Hipátia de Alexandria"
+        },
+        {
+          "id": "F016",
+          "category": "pessoa_menos_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Mary Anning"
+        },
+        {
+          "id": "F017",
+          "category": "pessoa_menos_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Mário Schenberg"
+        },
+        {
+          "id": "F018",
+          "category": "pessoa_menos_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Antonieta de Barros"
+        },
+        {
+          "id": "F019",
+          "category": "pessoa_menos_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Bertha Lutz"
+        },
+        {
+          "id": "F020",
+          "category": "pessoa_menos_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Jaqueline Goes de Jesus"
+        },
+        {
+          "id": "F021",
+          "category": "pessoa_menos_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "Emmy Noether"
+        },
+        {
+          "id": "F022",
+          "category": "pessoa_menos_conhecida",
+          "regex_would_search": true,
+          "actual_subject": "José Leite Lopes"
+        },
+        {
+          "id": "F023",
+          "category": "homonimo",
+          "regex_would_search": true,
+          "actual_subject": "João Silva"
+        },
+        {
+          "id": "F024",
+          "category": "homonimo",
+          "regex_would_search": true,
+          "actual_subject": "Ana Costa"
+        },
+        {
+          "id": "F025",
+          "category": "homonimo",
+          "regex_would_search": true,
+          "actual_subject": "Marcos Vieira"
+        },
+        {
+          "id": "F026",
+          "category": "homonimo",
+          "regex_would_search": true,
+          "actual_subject": "Maria Santos"
+        },
+        {
+          "id": "F027",
+          "category": "homonimo",
+          "regex_would_search": true,
+          "actual_subject": "Pedro Rocha"
+        },
+        {
+          "id": "F028",
+          "category": "homonimo",
+          "regex_would_search": true,
+          "actual_subject": "José Almeida"
+        },
+        {
+          "id": "F029",
+          "category": "homonimo",
+          "regex_would_search": true,
+          "actual_subject": "Vera Lúcia"
+        },
+        {
+          "id": "F030",
+          "category": "homonimo",
+          "regex_would_search": true,
+          "actual_subject": "Miguel Pereira"
+        },
+        {
+          "id": "F031",
+          "category": "obra",
+          "regex_would_search": true,
+          "actual_subject": "obra Dom Casmurro"
+        },
+        {
+          "id": "F032",
+          "category": "obra",
+          "regex_would_search": true,
+          "actual_subject": "obra O Alienista"
+        },
+        {
+          "id": "F033",
+          "category": "obra",
+          "regex_would_search": true,
+          "actual_subject": "obra A Hora da Estrela"
+        },
+        {
+          "id": "F034",
+          "category": "obra",
+          "regex_would_search": true,
+          "actual_subject": "obra O Cortiço"
+        },
+        {
+          "id": "F035",
+          "category": "obra",
+          "regex_would_search": true,
+          "actual_subject": "obra O Quinze"
+        },
+        {
+          "id": "F036",
+          "category": "obra",
+          "regex_would_search": true,
+          "actual_subject": "obra Memórias Póstumas de Brás Cubas"
+        },
+        {
+          "id": "F037",
+          "category": "obra",
+          "regex_would_search": true,
+          "actual_subject": "obra Auto da Compadecida"
+        },
+        {
+          "id": "F038",
+          "category": "obra",
+          "regex_would_search": false,
+          "actual_subject": null
+        },
+        {
+          "id": "F039",
+          "category": "conceito",
+          "regex_would_search": true,
+          "actual_subject": "efeito estufa"
+        },
+        {
+          "id": "F040",
+          "category": "conceito",
+          "regex_would_search": true,
+          "actual_subject": "software de código aberto"
+        },
+        {
+          "id": "F041",
+          "category": "conceito",
+          "regex_would_search": false,
+          "actual_subject": null
+        },
+        {
+          "id": "F042",
+          "category": "conceito",
+          "regex_would_search": true,
+          "actual_subject": "criptografia simétrica"
+        },
+        {
+          "id": "F043",
+          "category": "conceito",
+          "regex_would_search": true,
+          "actual_subject": "recuperação aumentada por geração (RAG)"
+        },
+        {
+          "id": "F044",
+          "category": "nome_ficticio_inventado",
+          "regex_would_search": true,
+          "actual_subject": "Dra. Cirena Flaus de Altamira"
+        },
+        {
+          "id": "F045",
+          "category": "nome_ficticio_inventado",
+          "regex_would_search": true,
+          "actual_subject": "Ariovaldo Frentis do Vale"
+        },
+        {
+          "id": "F046",
+          "category": "nome_ficticio_inventado",
+          "regex_would_search": true,
+          "actual_subject": "Célia Vornacz"
+        },
+        {
+          "id": "F047",
+          "category": "nome_ficticio_inventado",
+          "regex_would_search": true,
+          "actual_subject": "Instituto Bruma de Tarvânia"
+        },
+        {
+          "id": "F048",
+          "category": "nome_ficticio_inventado",
+          "regex_would_search": true,
+          "actual_subject": "Cartógrafo de Miralume"
+        },
+        {
+          "id": "F049",
+          "category": "nome_ficticio_inventado",
+          "regex_would_search": true,
+          "actual_subject": "Professor Zarkiel Norvat"
+        },
+        {
+          "id": "F050",
+          "category": "nome_ficticio_inventado",
+          "regex_would_search": true,
+          "actual_subject": "Livro O Eclipse de Pinavé"
+        }
+      ],
+      "negative_cases": [
+        {
+          "id": "N001",
+          "regex_would_search": false
+        },
+        {
+          "id": "N002",
+          "regex_would_search": false
+        },
+        {
+          "id": "N003",
+          "regex_would_search": false
+        },
+        {
+          "id": "N004",
+          "regex_would_search": false
+        },
+        {
+          "id": "N005",
+          "regex_would_search": false
+        },
+        {
+          "id": "N006",
+          "regex_would_search": false
+        },
+        {
+          "id": "N007",
+          "regex_would_search": true
+        },
+        {
+          "id": "N008",
+          "regex_would_search": false
+        },
+        {
+          "id": "N009",
+          "regex_would_search": false
+        },
+        {
+          "id": "N010",
+          "regex_would_search": false
+        },
+        {
+          "id": "N011",
+          "regex_would_search": false
+        },
+        {
+          "id": "N012",
+          "regex_would_search": false
+        },
+        {
+          "id": "N013",
+          "regex_would_search": false
+        },
+        {
+          "id": "N014",
+          "regex_would_search": false
+        },
+        {
+          "id": "N015",
+          "regex_would_search": false
+        }
+      ],
+      "regex_coverage": 48,
+      "regex_confusion": {
+        "TP": 48,
+        "FN": 2,
+        "FP": 1,
+        "TN": 14
+      },
+      "always_local": {
+        "status": "design_simulation_not_integrated",
+        "confusion_if_all_turns_consulted": {
+          "TP": 50,
+          "FN": 0,
+          "FP": 15,
+          "TN": 0
+        }
+      },
+      "tool_calling": {
+        "status": "not_executed_requires_local_model_and_native_tool_interface"
+      }
+    },
+    "factual_turns": [
+      {
+        "id": "F001",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F002",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F003",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F004",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F005",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F006",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F007",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F008",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F009",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F010",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F011",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F012",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F013",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F014",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F015",
+        "category": "pessoa_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F016",
+        "category": "pessoa_menos_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F017",
+        "category": "pessoa_menos_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F018",
+        "category": "pessoa_menos_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F019",
+        "category": "pessoa_menos_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F020",
+        "category": "pessoa_menos_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F021",
+        "category": "pessoa_menos_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F022",
+        "category": "pessoa_menos_conhecida",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F023",
+        "category": "homonimo",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F024",
+        "category": "homonimo",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F025",
+        "category": "homonimo",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F026",
+        "category": "homonimo",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F027",
+        "category": "homonimo",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F028",
+        "category": "homonimo",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F029",
+        "category": "homonimo",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F030",
+        "category": "homonimo",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F031",
+        "category": "obra",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F032",
+        "category": "obra",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F033",
+        "category": "obra",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F034",
+        "category": "obra",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F035",
+        "category": "obra",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F036",
+        "category": "obra",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F037",
+        "category": "obra",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F038",
+        "category": "obra",
+        "chat_status": "completed",
+        "provider_called": true,
+        "abstained_in_rule_path": false,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F039",
+        "category": "conceito",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F040",
+        "category": "conceito",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F041",
+        "category": "conceito",
+        "chat_status": "completed",
+        "provider_called": true,
+        "abstained_in_rule_path": false,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F042",
+        "category": "conceito",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F043",
+        "category": "conceito",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F044",
+        "category": "nome_ficticio_inventado",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F045",
+        "category": "nome_ficticio_inventado",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F046",
+        "category": "nome_ficticio_inventado",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F047",
+        "category": "nome_ficticio_inventado",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F048",
+        "category": "nome_ficticio_inventado",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F049",
+        "category": "nome_ficticio_inventado",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      },
+      {
+        "id": "F050",
+        "category": "nome_ficticio_inventado",
+        "chat_status": "completed",
+        "provider_called": false,
+        "abstained_in_rule_path": true,
+        "raw_model_factual_accuracy": "not_measured_stub"
+      }
+    ],
+    "document_turns": [
+      {
+        "id": "D001",
+        "document": "manual_faro.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D002",
+        "document": "manual_faro.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D003",
+        "document": "manual_faro.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D004",
+        "document": "manual_faro.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D005",
+        "document": "guia_rumo.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D006",
+        "document": "guia_rumo.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D007",
+        "document": "guia_rumo.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D008",
+        "document": "guia_rumo.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D009",
+        "document": "protocolo_ponte.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D010",
+        "document": "protocolo_ponte.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D011",
+        "document": "protocolo_ponte.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D012",
+        "document": "protocolo_ponte.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D013",
+        "document": "diario_aurora.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D014",
+        "document": "diario_aurora.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D015",
+        "document": "diario_aurora.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D016",
+        "document": "diario_aurora.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D017",
+        "document": "guia_horizonte.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D018",
+        "document": "guia_horizonte.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D019",
+        "document": "guia_horizonte.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      },
+      {
+        "id": "D020",
+        "document": "guia_horizonte.md",
+        "imported_fixture": true,
+        "library_exact_excerpt_retrievable": true,
+        "source_quote_in_model_prompt": false,
+        "chat_status": "completed",
+        "response_model": "stub_not_evaluated"
+      }
+    ],
+    "group_turns": [
+      {
+        "id": "G001",
+        "category": "dois_agentes_fato",
+        "status": "completed",
+        "speakers": [
+          "morgana",
+          "todd"
+        ],
+        "first_visible_ms": 0.54,
+        "total_ms": 0.73,
+        "expected_two": true,
+        "speaker_count_ok": true,
+        "semantic_quality": "not_measured_stub"
+      },
+      {
+        "id": "G002",
+        "category": "dois_agentes_inexistente",
+        "status": "completed",
+        "speakers": [
+          "morgana",
+          "todd"
+        ],
+        "first_visible_ms": 0.24,
+        "total_ms": 0.6,
+        "expected_two": true,
+        "speaker_count_ok": true,
+        "semantic_quality": "not_measured_stub"
+      },
+      {
+        "id": "G007",
+        "category": "um_agente",
+        "status": "completed",
+        "speakers": [
+          "morgana"
+        ],
+        "first_visible_ms": 0.3,
+        "total_ms": 0.33,
+        "expected_two": false,
+        "speaker_count_ok": true,
+        "semantic_quality": "not_measured_stub"
+      },
+      {
+        "id": "G006",
+        "category": "todd_cotidiano",
+        "status": "completed",
+        "speakers": [
+          "todd"
+        ],
+        "first_visible_ms": 0.27,
+        "total_ms": 0.3,
+        "expected_two": false,
+        "speaker_count_ok": true,
+        "semantic_quality": "not_measured_stub"
+      },
+      {
+        "id": "P_HISTORY_DEFAULT",
+        "status": "completed",
+        "speaker_count": 2,
+        "first_agent_unverified_text_in_second_prompt": true,
+        "independent_group_turn": false,
+        "note": "Prompt contamination is NOT proof of belief adoption."
+      },
+      {
+        "id": "P_HISTORY_ISOLATED",
+        "status": "completed",
+        "speaker_count": 2,
+        "first_agent_unverified_text_in_second_prompt": false,
+        "independent_group_turn": true,
+        "note": "Prompt contamination is NOT proof of belief adoption."
+      },
+      {
+        "id": "P_THIRD_PROFILE",
+        "status": "exception",
+        "error_type": "ValueError",
+        "in_memory_profile_supported": false,
+        "file_only_profile_supported": "not_tested_no_profile_file_loader",
+        "note": "In-memory registry is stronger than file-only loader; if this fails, file-only cannot work."
+      },
+      {
+        "id": "P_NO_AGENT",
+        "chat_without_agent_supported": false,
+        "actual_primary": "morgana",
+        "library_without_agent_supported": true
+      },
+      {
+        "id": "P_NETWORK_DOWN",
+        "status": "completed",
+        "speakers": [
+          "morgana",
+          "todd"
+        ],
+        "exception_type": null,
+        "injection": "research_entity_raises_OSError_before_response",
+        "note": "Not a real mid-stream disconnection."
+      }
+    ],
+    "summary": {
+      "factual_cases": 50,
+      "docs_cases": 20,
+      "docs_search_exact_excerpts": 20,
+      "docs_source_in_model_context": 0,
+      "regex_search_triggered": 48,
+      "factual_guard_abstentions": 48,
+      "group_cases_from_dataset": 12,
+      "group_scenarios_automated": 4,
+      "group_scenarios_not_automated": 3,
+      "group_scenarios_with_machine_evidence": 9
+    }
+  }
+}

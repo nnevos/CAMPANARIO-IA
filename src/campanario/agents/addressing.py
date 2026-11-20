@@ -27,3 +27,30 @@ def directly_addressed_agent(text: str) -> str | None:
     if trailing:
         return trailing.group("agent")
     return None
+
+
+def standalone_wake_target(text: str, registered_agents=()) -> str | None:
+    """Recognize a short *call* to this system or a configured chat agent.
+
+    Unlike a factual question about a name, a bare vocative (``Todd?``)
+    needs conversational routing, not retrieval. Matching the complete
+    utterance prevents bypassing source checks in ``Todd, quem foi X?``.
+    The registry, not an internet-entity catalogue, supplies agent names.
+    """
+    utterance = fold_text(text).strip().strip('?!.,:; \t\r\n')
+    if not utterance:
+        return None
+    # Spoken vocatives may begin with one greeting; never strip arbitrary
+    # prefixes such as "e" (which can be a factual follow-up about a name).
+    for prefix in ('oi', 'ola', 'ei', 'alo', 'hey'):
+        if utterance.startswith(prefix) and utterance[len(prefix):len(prefix)+1] in (' ', ',', ':', ';'):
+            utterance = utterance[len(prefix):].lstrip(' ,:;')
+            break
+    if utterance == 'campanario':
+        return 'campanario'  # System wake, not a fabricated third persona.
+    for profile in registered_agents:
+        agent_id = getattr(profile, 'id', '')
+        agent_name = getattr(profile, 'name', '')
+        if utterance in {fold_text(agent_id), fold_text(agent_name)}:
+            return agent_id
+    return None

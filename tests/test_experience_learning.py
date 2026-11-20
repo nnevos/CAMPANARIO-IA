@@ -118,11 +118,17 @@ async def test_memory_context_is_shared_and_keeps_inference_separate_from_fact(m
 
     _ = [event async for event in runtime.conversation.stream_turn(session.id, "responda curto com um exemplo de terminal")]
     system_prompt = provider.requests[-1].messages[0].content
-    assert "Nao invente fatos sobre o usuario" in system_prompt
-    assert "respostas curtas" in system_prompt
-    assert "INFERENCIA" in system_prompt
-    memory_section = system_prompt.split("CONTEXTO APRENDIDO RELEVANTE", 1)[1].split("AGENTE COM PRIORIDADE", 1)[0]
-    assert "source_agent" not in memory_section.lower()  # shared store, not an agent-owned fact bank
+    assert "nao invente eventos nem memoria ausente" in system_prompt
+    assert "respostas curtas" in system_prompt  # user facts are available to both agents
+    assert "talvez goste de exemplos de terminal" not in system_prompt  # Todd-only inference
+
+    _ = [event async for event in runtime.conversation.stream_turn(session.id, "Todd, responda curto com exemplo de terminal")]
+    todd_prompt = provider.requests[-1].messages[0].content
+    assert "respostas curtas" in todd_prompt
+    assert "INFERENCIA / HIPOTESE" in todd_prompt
+    assert "talvez goste de exemplos de terminal" in todd_prompt
+    memory_section = todd_prompt.split("CONTEXTO APRENDIDO RELEVANTE", 1)[1].split("AGENTE COM PRIORIDADE", 1)[0]
+    assert "source_agent" not in memory_section.lower()
 
 
 def test_memory_admin_api_lists_corrects_and_forgets(monkeypatch, tmp_path) -> None:

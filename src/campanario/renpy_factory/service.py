@@ -71,11 +71,20 @@ def _normalize_title(value: str) -> str:
     return re.sub(r"\s+", " ", value.casefold().strip())
 
 
+def _default_renpy_output_root() -> Path:
+    """Keep the legacy location unless the user explicitly configured a data directory."""
+    from campanario.config import Settings
+    config = Settings()
+    if "data_dir" in config.model_fields_set:
+        return config.data_dir / "renpy_factory"
+    return user_data_path("Campanario", "Campanario") / "renpy_factory"
+
+
 class RenPyFactoryService:
     def __init__(self, provider: ModelProvider, model: str, output_root: Path | None = None) -> None:
         self.provider = provider
         self.model = model
-        self.output_root = output_root or (user_data_path("Campanario", "Campanario") / "renpy_factory")
+        self.output_root = output_root or _default_renpy_output_root()
 
     async def generate_gdd(self, filename: str, payload: bytes) -> dict[str, object]:
         """Stage 1: ebook -> validated, reviewable GDD only.

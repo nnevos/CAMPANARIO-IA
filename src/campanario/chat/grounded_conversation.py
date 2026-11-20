@@ -19,6 +19,7 @@ def can_synthesize(sheet: TurnFactSheet | None) -> bool:
         sheet is not None and sheet.status == 'supported'
         and sheet.extractive_answer and sheet.sources and sheet.claims
         and sheet.origin in {'zim', 'library', 'web'}
+        and not any(source.kind == 'computed_analysis' for source in sheet.sources)
     )
 
 

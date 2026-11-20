@@ -69,4 +69,7 @@ def test_pdf_import_uses_reader_from_path_not_entire_bytes(monkeypatch, tmp_path
     result = utility.run('library.import', {'path': str(target), 'confirm': True})
     assert result['status'] == 'success'
     assert result['result']['requires_ocr']
-    assert not list(utility.docs.glob('*.pdf'))
+    # V8: scanned originals are retained for a future local OCR retry.
+    assert len(list(utility.docs.glob('*.pdf'))) == 1
+    info = utility.run('library.document', {'document_id': result['result']['id']})['result']
+    assert info['state'] == 'partial'

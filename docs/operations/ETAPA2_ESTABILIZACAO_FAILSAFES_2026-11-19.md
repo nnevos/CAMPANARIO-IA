@@ -89,3 +89,12 @@ As falhas já existentes nesse recorte abrangem auditoria semântica G2 de afirm
 - `docs/operations/ETAPA2_ESTABILIZACAO_FAILSAFES_2026-11-19.md`
 
 **Conclusão:** as falhas de observers, interrupção após início, fechamento encadeado e parser malformado foram corrigidas e testadas em ambiente simulado. A arquitetura foi preservada; a homologação completa e os riscos de grounding semântico/streaming incremental permanecem explicitamente abertos.
+
+
+---
+
+## Referência posterior — continuidade dos failsafes para V9 + V9.1
+
+Os testes e correções **da Etapa 2** permanecem registros históricos. Para a implementação dos cérebros compartilhados V9, consultar o novo [`FAILSAFE_V9_CEREBROS.md`](FAILSAFE_V9_CEREBROS.md) e o roadmap por fases [`../current/ROADMAP_V9_CEREBROS_COMPLETO.md`](../current/ROADMAP_V9_CEREBROS_COMPLETO.md).
+
+**Gates de não-regressão complementares:** preservar `AgentRouter`; tratar ferramentas/retornos de cérebros como dados; não citar documento sem `evidence_refs` executado; impedir talento/arquétipo de modificar segurança ou fatos; interromper de verdade work externo (timeout atual só limita espera); evitar downgrade automático da migração `0010`; falhas não devem duplicar respostas nem deixar cliente/voz presos em estado ativo. A V9 é opt-in pela flag e não elimina os bloqueios históricos de streaming seguro, política de ferramentas e homologação F5. Este acréscimo é **documental**, não uma correção nova de runtime.

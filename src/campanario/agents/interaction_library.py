@@ -11,6 +11,24 @@ import sqlite3
 from pathlib import Path
 
 DEFAULT_PATH = Path(__file__).resolve().parents[3] / 'data' / 'interaction_library_v2.sqlite'
+
+
+def _reference_db_path() -> Path:
+    """Prefer separate Database for authored V2 reference; keep legacy fallback.
+
+    Neither this lookup nor the read-only query copies or migrates files.
+    """
+    override = os.getenv('CAMPANARIO_INTERACTION_DB')
+    if override:
+        return Path(override)
+    try:
+        from campanario.config import Settings
+        external = Settings().data_dir / 'reference' / 'interaction_library_v2.sqlite'
+        if external.is_file():
+            return external
+    except (ValueError, OSError):
+        pass
+    return DEFAULT_PATH
 _STOP = {'para','como','com','uma','que','isso','essa','esse','estou','voce','você','preciso','quero','aqui','sobre','mais','muito','pode','fazer','qual','quando','agora','entao','então','meu','minha','tem','não','nao'}
 
 
@@ -25,7 +43,7 @@ def render_interaction_examples(agent_id: str, user_text: str, *, patrol_mode: b
         return ''
     if agent_id not in {'morgana','todd'} or not user_text.strip() or limit < 1:
         return ''
-    path = Path(db_path) if db_path is not None else Path(os.getenv('CAMPANARIO_INTERACTION_DB', str(DEFAULT_PATH)))
+    path = Path(db_path) if db_path is not None else _reference_db_path()
     if not path.is_file():
         return ''
     query = _tokens(user_text)

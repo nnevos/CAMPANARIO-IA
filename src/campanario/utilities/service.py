@@ -20,6 +20,11 @@ OPERATIONS = {
  'web.search':'Pesquisar na web (acesso autorizado)','web.read':'Ler página pública e guardar fonte','web.research':'Pesquisa multirresultados com fontes','web.save':'Salvar página consultada na biblioteca offline','web.history':'Histórico de fontes lidas',
  'files.list':'Listar arquivos autorizados','files.search':'Buscar nomes de arquivos','files.read':'Ler arquivo textual','files.find_text':'Pesquisar texto em arquivos','files.duplicates':'Detectar duplicados por SHA-256','files.mkdir':'Criar pasta','files.copy':'Copiar arquivo','files.move':'Mover arquivo','files.delete':'Mover arquivo para lixeira interna',
  'library.import':'Importar TXT, MD ou PDF','library.search':'Pesquisar biblioteca offline','library.list':'Listar documentos','library.delete':'Remover documento','library.export':'Exportar biblioteca em ZIP',
+ 'library.retrieve':'Recuperar trechos documentais com evidências de página ou seção',
+ 'library.document':'Inspecionar metadados e Markdown de documento importado',
+ 'library.compare':'Comparar duas versões importadas sem inventar divergências',
+ 'data.inspect':'Inspecionar colunas, tipos e ausências de planilha importada',
+ 'data.analyze':'Calcular estatísticas, agrupamentos, tendências e filtros de planilha',
  'notes.save':'Criar ou editar nota','notes.list':'Listar ou pesquisar notas','notes.delete':'Excluir nota','tasks.save':'Criar ou editar tarefa','tasks.list':'Listar tarefas','tasks.delete':'Excluir tarefa','planning.export':'Exportar notas e tarefas','planning.import':'Importar notas e tarefas',
  'calc.evaluate':'Calcular expressão aritmética','calc.percent':'Calcular porcentagem','calc.convert':'Converter unidades','calc.dates':'Intervalo de datas','calc.electricity':'Estimar consumo elétrico','calc.battery':'Estimar autonomia de bateria','calc.supplies':'Calcular suprimentos','calc.storage':'Calcular armazenamento',
  'diagnostics.system':'Diagnóstico local','diagnostics.connection':'Verificar conectividade local','emergency.save':'Salvar contato, plano, checklist, suprimento ou ocorrência','emergency.list':'Consultar central de emergência','emergency.delete':'Excluir registro de emergência',
@@ -71,7 +76,10 @@ class UtilityService:
   from campanario.utilities.web_research import WebResearch
   self.web=None
   self.db=self.base/'utilidades.sqlite3';self.docs=self.base/'documentos';self.docs.mkdir(exist_ok=True)
-  with self.connect() as db:db.executescript(SCHEMA)
+  with self.connect() as db:
+   db.executescript(SCHEMA)
+   from campanario.utilities.document_v8 import ensure_schema
+   ensure_schema(db)
   self.web=WebResearch(self)
  def connect(self):
   db=sqlite3.connect(self.db,timeout=15);db.row_factory=sqlite3.Row;return db
@@ -188,65 +196,44 @@ class UtilityService:
     return {'reversible':True,'trash_path':str(dst),'original':str(src)}
   if op.startswith('library.'):
    if op=='library.import':
-    p=self.path(required(a,'path'),True)
-    if not p.is_file() or p.stat().st_size>MAX_LIBRARY_FILE_BYTES or p.suffix.lower() not in ('.txt','.md','.pdf'):raise ValueError('Arquivo ausente, acima de 500 MB ou não suportado')
-    digest=hashlib.sha256()
-    with p.open('rb') as input_file:
-     for chunk in iter(lambda:input_file.read(1024*1024),b''):
-      digest.update(chunk)
-    h=digest.hexdigest();pages=[]
-    with self.connect() as db:
-     duplicate=db.execute('SELECT id FROM documents WHERE sha256=?',(h,)).fetchone()
-     if duplicate:return {'imported':False,'duplicate_id':duplicate['id']}
-    if p.suffix.lower()=='.pdf':
-     try:
-      from pypdf import PdfReader
-     except ImportError:raise RuntimeError('Instale pypdf para importar PDF')
-     pdf=PdfReader(str(p))
-     if len(pdf.pages)>MAX_LIBRARY_PAGES:
-      raise ValueError('PDF acima do limite de 3000 páginas')
-     total_text=0
-     for i,page in enumerate(pdf.pages,1):
-      extracted=page.extract_text() or ''
-      total_text+=len(extracted)
-      if total_text>MAX_LIBRARY_TEXT_CHARS:
-       raise ValueError('PDF com texto extraído acima de 8 milhões de caracteres; divida o livro em volumes')
-      pages.append({'page':i,'text':extracted})
-     if not any(x['text'].strip() for x in pages):return {'imported':False,'requires_ocr':True,'source':str(p)}
-    else:
-     text=p.read_text(encoding='utf-8-sig')
-     if len(text)>MAX_LIBRARY_TEXT_CHARS:
-      raise ValueError('Texto acima de 8 milhões de caracteres; divida em volumes')
-     pages=[{'page':None,'text':text}]
-    uid=str(uuid4());category=str(a.get('category','geral'))[:100]
-    copy=self.docs/(uid+p.suffix.lower())
-    shutil.copyfile(p,copy)
-    with self.connect() as db:
-     try:
-      db.execute('INSERT INTO documents VALUES (?,?,?,?,?,?,?,?)',(uid,p.name,category,h,'\n'.join(x['text'] for x in pages),json.dumps(pages,ensure_ascii=False),str(p),now()))
-     except BaseException:
-      copy.unlink(missing_ok=True)
-      raise
-    return {'imported':True,'id':uid,'pages':len(pages),'sha256':h}
+    from campanario.utilities.document_v8 import import_file
+    return import_file(self,a)
    if op in ('library.search','library.list'):
     found=[];term=required(a,'query',200).casefold() if op=='library.search' else ''
     with self.connect() as db:
-     for doc in db.execute('SELECT * FROM documents ORDER BY created DESC LIMIT 1000'):
-      item={'id':doc['id'],'name':doc['name'],'category':doc['category'],'source':doc['source'],'sha256':doc['sha256'],'created':doc['created']}
+     for doc in db.execute('SELECT d.*, x.state, x.method, x.errors, x.byte_size FROM documents d LEFT JOIN document_details x ON d.id=x.document_id ORDER BY d.created DESC LIMIT 1000'):
+      item={'id':doc['id'],'name':doc['name'],'category':doc['category'],'source':doc['source'],'sha256':doc['sha256'],'created':doc['created'], 'state':doc['state'] or 'available', 'method':doc['method'] or 'legacy', 'bytes':doc['byte_size']}
       if term:
        hits=[]
        for page in json.loads(doc['pages']):
         text=page['text'];loc=text.casefold().find(term)
         if loc>=0:hits.append({'page':page['page'],'excerpt':text[max(0,loc-100):loc+len(term)+180]})
-       if not hits:continue
+       if not hits and term not in doc['name'].casefold():continue
        item['matches']=hits[:10]
       found.append(item)
     return {'documents':found[:100],'count':len(found)}
+   if op=='library.retrieve':
+    from campanario.utilities.document_v8 import retrieve
+    return retrieve(self,required(a,'query',500),
+                    document_id=str(a.get('document_id') or '')[:100],
+                    document_hint=str(a.get('document_hint') or '')[:160],
+                    limit=a.get('limit',6))
+   if op=='library.document':
+    from campanario.utilities.document_v8 import document_info
+    return document_info(self,required(a,'document_id',100),
+                         markdown=a.get('include_markdown') is True)
+   if op=='library.compare':
+    from campanario.utilities.document_v8 import compare
+    return compare(self,required(a,'document_a',100),required(a,'document_b',100))
    if op=='library.delete':
     uid=required(a,'id',100)
     with self.connect() as db:
      d=db.execute('SELECT name FROM documents WHERE id=?',(uid,)).fetchone()
      if not d:return {'deleted':False}
+     try:db.execute('DELETE FROM document_fts WHERE document_id=?',(uid,))
+     except sqlite3.OperationalError:pass
+     db.execute('DELETE FROM document_sections WHERE document_id=?',(uid,))
+     db.execute('DELETE FROM document_details WHERE document_id=?',(uid,))
      db.execute('DELETE FROM documents WHERE id=?',(uid,))
     (self.docs/(uid+Path(d['name']).suffix.lower())).unlink(missing_ok=True)
     return {'deleted':True}
@@ -258,6 +245,10 @@ class UtilityService:
      for f in self.docs.iterdir():
       if f.is_file():z.write(f,'documents/'+f.name)
     return {'path':str(path),'documents':len(docs)}
+  if op.startswith('data.'):
+   from campanario.utilities.data_v8 import inspect, analyze
+   if op=='data.inspect':return inspect(self,a)
+   if op=='data.analyze':return analyze(self,a)
   if op.startswith('calc.'):
    if op=='calc.evaluate':
     expression=required(a,'expression',180);return {'expression':expression,'result':safe_math(expression)}

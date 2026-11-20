@@ -39,6 +39,8 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
 app = FastAPI(title="Campanario", version="0.8.0", lifespan=lifespan)
 from campanario.utilities.api import router as utilities_router
 app.include_router(utilities_router)
+from campanario.brains.api import router as brains_router
+app.include_router(brains_router)
 app.include_router(router)
 app.include_router(v1_router)
 app.include_router(realtime_router)

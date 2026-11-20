@@ -199,3 +199,54 @@ F6 continua bloqueada ate o freeze de F5.
 - [ ] freeze playback/barge-in/perceived-latency acceptance.
 
 **F5 remains the only active gate. F6 remains blocked.**
+
+
+## Trilha V9 + V9.1 — Integração completa dos cérebros (experimental / opt-in)
+
+**Documento executável de planejamento:** [`ROADMAP_V9_CEREBROS_COMPLETO.md`](ROADMAP_V9_CEREBROS_COMPLETO.md).  
+**Runbook de contingência:** [`../operations/FAILSAFE_V9_CEREBROS.md`](../operations/FAILSAFE_V9_CEREBROS.md).
+
+**NÃO altera o gate canônico:** F5/aceite físico de voz continua aberto; liberação formal de F6 e F7 exige os respectivos critérios já descritos acima. A trilha V9 pode avançar em código/testes isolados, sem declarar F6 concluída, com a flag `CAMPANARIO_BRAINS_V9_ENABLED=false` por padrão.
+
+| Trilha | Prioridade | Situação documentada em 19/11/2026 | Condição de encerramento |
+|---|---|---|---|
+| R0 — Baseline das 3 pastas e host | P0 | [~] Base IA auditada; Python/Database reais não disponíveis | Backup/restore de cópia + Python 3.12/Windows/Ollama + contratos das 3 pastas |
+| R1 — Sandbox e permissão única | P0 | [~] Worker separado para Conhecimento/Análise com kill em timeout e limite RSS monitorado; leitura ligada à PermissionPolicy. **Não é sandbox de segurança**; APIs de utilidades ainda distintas | Isolamento OS de diretórios/rede/processos, política unificada em todas as rotas, aceite Windows e fault injection real |
+| R2 — Planejador colaborativo | P0 | [~] Router determinístico separado, no máximo 3 IDs; sem composição real | DAG limitado, trace, orçamento, sem loops e sem mexer no `AgentRouter` |
+| R3/R4 — Conhecimento e Análise sólidos | P0/P1 | [~] Dois executores reais reutilizam V8 | Evidências/páginas reais, planilha reproduzível, citações e fallback corretos |
+| R5 — Investigação e Estratégia | P1 | [ ] Catálogo apenas, sem executor | Executors tipados, health-check e testes independentes |
+| R6 — Programação | P1 | [ ] Indisponível | Sandbox R1 + diffs/autorização/rollback testados |
+| R7 — Percepção | P1/P2 | [ ] Indisponível | Modelo local, provenance/consentimento; mídia segue F5 |
+| R8 — Comunicação e Criação | P1/P2 | [ ] Indisponíveis | Executors integrados ao validador V9.1; sem novas alegações |
+| R9 — Forja, talentos e `.campagent` | P1/P2 | [~] MVP de fichas, 8 arquétipos e 6 talentos | Preconditions completas, UI/mobile e pacote hostil testados |
+| R10 — Homologação integrada | P0 release | [ ] 1.004 testes passaram, 31 falhas conhecidas; sem host real | 8 cérebros comprovados + falhas triadas + SLIs medidos + F5/F6/F7 |
+
+**Regras inegociáveis:** política/permissões > integridade factual > pedido > tarefa > talento > estilo; memórias e personalidade não migram para cérebros; ferramenta sem execução não gera fonte; falha de validação retorna resposta canônica/limitação. Arquétipos não bloqueiam capacidades, e registro no catálogo não substitui implementação. O roadmap detalhado define subtarefas, testes de aceite, dependências, entregáveis, métricas e rollback por fase. **Acrescentar esta trilha aos documentos não implementa as pendências.**
+
+
+### Checkpoint P0 da trilha V9 (19/11/2026) — parcial
+
+- [x] Diagnóstico de layout de `CAMPANARIO-IA` + `.venv` externa em `CAMPANARIO-PYTHON` + `CAMPANARIO-DATABASE/dados`/`zim` e SQLite, acessível pela Central de Cérebros com flag desligada; somente leitura.
+- [x] Testes sintéticos e defesas no executor contra escopo de permissão não concedido e `trace_id`/`brain_id` falsos.
+- [x] Procedimento de atualização por cópia via Explorador, sem PowerShell para substituir arquivos de código.
+- [ ] Homologação das **pastas reais** Python/Database, backup/restore em cópia, Python 3.12/Windows e Ollama/voz/mobile.
+- [ ] Sandbox isolado e política única com permissões reais; **P0 não está concluído e F5/F6 seguem bloqueados**.
+
+Veja [`P0_TRES_PASTAS_SEM_POWERSHELL.md`](P0_TRES_PASTAS_SEM_POWERSHELL.md), [`ROADMAP_V9_CEREBROS_COMPLETO.md`](ROADMAP_V9_CEREBROS_COMPLETO.md) e [`FAILSAFE_V9_CEREBROS.md`](../operations/FAILSAFE_V9_CEREBROS.md) para a arquitetura, as dependências, as instruções sem console e os gates restantes.
+
+**Exceção de banco identificada no P0:** a Biblioteca Conversacional V2 ainda tem fallback de SQLite de referência em `IA/data/interaction_library_v2.sqlite`. O código agora prefere o arquivo em `DATABASE/dados/reference/` quando disponível, sem mover dados automaticamente; a cópia/homologação no host está pendente. Consulte o roadmap V9 e FAILSAFE para não confundir isso com `campanario.db` pessoal.
+
+
+### Checkpoint R1 incremental (19/11/2026) — processo controlado, gate ainda aberto
+
+- [x] `brains/worker.py` executa apenas Conhecimento/Análise existentes em subprocesso Python da instalação (sem shell, código de usuário, serialização pickle ou modelo extra). `brains/isolation.py` limita a espera e **encerra o processo** no timeout, monitora RSS por `psutil`, valida JSON/tamanhos e devolve dados estruturados ao chat. Limites de memória observados por amostragem, não quota OS infalível.
+- [x] O executor consulta a `PermissionPolicy` compartilhada do runtime para leitura de biblioteca quando inicializado pela composição canônica. Contexto ausente falha fechado. O endpoint de prévia usa contexto criado no backend local; builds e talentos não são fonte de autorização. Testes de recusa e subprocesso travado adicionados.
+- [ ] Faltam integração uniforme de `utilities/api.py` à política central, autorização real de clientes pareados, sandbox OS sem rede/fora da pasta, job-object no Windows, cancelamento de árvores não confiáveis, comportamento do EXE congelado com interpreter sidecar e teste em Python 3.12/Windows real. **Programação, rede e ações sensíveis permanecem proibidas como cérebros**.
+- [ ] R0 continua pendente na instalação real: acesso a `CAMPANARIO-PYTHON/.venv`, `CAMPANARIO-DATABASE/dados/{desenvolvimento|producao}/campanario.db` e ZIM/referência, backup/restore em cópia, migração e Ollama.
+
+Atualizações do código continuam por **cópia manual de arquivos pelo Explorador**, com Campanário fechado e backup; PowerShell é opcional somente para instalar/reparar dependências, migrações planejadas e diagnósticos técnicos. Ver `docs/current/R1_ISOLAMENTO_CEREBROS.md` e `docs/operations/FAILSAFE_V9_CEREBROS.md`.
+
+
+## Trilha experimental V9 — checkpoint R1.1 (não promove F5/F6)
+
+A R1.1 implementa orçamento total de tempo para o plano de cérebros, contenção de falhas sucessivas, higiene de ambiente e cancelamento de worker de leitura. **A R1 ainda não está homologada:** sem sandbox OS/Job Objects, autorização unificada das utilidades ou teste nas três pastas reais. A sequência R1 pendente → R2 tipada permanece em [`ROADMAP_V9_CEREBROS_COMPLETO.md`](ROADMAP_V9_CEREBROS_COMPLETO.md), com procedimentos de falha no [`FAILSAFE_V9_CEREBROS.md`](../operations/FAILSAFE_V9_CEREBROS.md). As fases F5/F6 permanecem com seus gates próprios.

@@ -14,7 +14,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_FOLDERS = ('src', 'apps', 'config', 'docs', 'eval', 'migrations', 'models', 'packaging', 'tests', 'tools', 'vozes')
 SOURCE_FILES = {'pyproject.toml', 'uv.lock', '.python-version', '.gitignore', '.env.example',
-                'README.md', 'LEIA_PRIMEIRO_3_PASTAS.md', 'CAMPANARIO.bat', 'CAMPANARIO.vbs', 'PREPARAR_PC.bat',
+                'README.md', 'LEIA_PRIMEIRO_3_PASTAS.md', 'LEIA_PRIMEIRO_V9_INTEGRADA.md', 'CAMPANARIO.bat', 'CAMPANARIO.vbs', 'PREPARAR_PC.bat',
                 'DIAGNOSTICAR_CAMPANARIO.ps1', 'TESTAR_3_PASTAS.ps1', 'VERSAO.json',
                 'PREPARAR_PYTHON_UNIFICADO.ps1', 'TESTAR_PYTHON_UNIFICADO.ps1', 'ATIVAR_SEPARACAO.ps1',
                 'REVERTER_SEPARACAO.ps1',
@@ -79,11 +79,11 @@ def export(root: Path, destination: Path):
         'full_runtime_not_included': True,
     }
     state = ('# CAMPANARIO-IA - estado do projeto\n\n'
-             'Base: Campanario com tres pastas ativas, Windows homologado (63/63 testes de estrutura).\n'
-             'Ambiente Python externo com Piper, Pocket TTS e CUDA validado; voces reais confirmadas.\n'
+             'Base: CAMPANARIO-IA; validar no host a separacao entre IA, Python externo e Database.\n'
+             'Python externo, voz e CUDA dependem de verificacao na instalacao real.\n'
              'O export nao inclui dados privados, ambiente Python, modelos e vozes ONNX.\n'
              'A consulta factual segue exigindo evidencias locais verificadas.\n'
-             'Proxima fase: Kiwix/ZIM opcional; ainda nao implementado.\n')
+             'P0: ver docs/current/P0_TRES_PASTAS_SEM_POWERSHELL.md; integracao completa ainda pendente.\n')
     with zipfile.ZipFile(destination, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=8) as archive:
         for p in candidates:
             archive.write(p, p.relative_to(root).as_posix())

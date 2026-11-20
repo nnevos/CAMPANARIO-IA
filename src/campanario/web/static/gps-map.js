@@ -6,6 +6,17 @@ function mount(){
  const frame=document.getElementById('gpsMap'),canvas=document.getElementById('gpsCanvas');if(!frame||!canvas)return;
  const ctx=canvas.getContext('2d');let lat=-25.4284,lon=-49.2733,z=12,marker=null,track=[],route=[],offline=false,alive=true,down=null;
  const cache=new Map();let width=1,height=1,redrawQueued=false,requested=0,loaded=0;
+ let cartoKey=localStorage.getItem('campanario.map.cartoKey')||'';
+ let mapStyle=localStorage.getItem('campanario.map.style')||'dark';
+ if(mapStyle==='carto'&&!cartoKey)mapStyle='dark';
+ const tileUrl=(zz,xx,yy)=>mapStyle==='carto'&&cartoKey?`https://basemaps.cartocdn.com/rastertiles/dark_all/${zz}/${xx}/${yy}.png?key=${encodeURIComponent(cartoKey)}`:`https://tile.openstreetmap.org/${zz}/${xx}/${yy}.png`;
+ const mapAttribution=document.getElementById('mapAttribution');
+ const mapStyleSelect=document.getElementById('mapStyleSelect');
+ const mapCartoKey=document.getElementById('mapCartoKey');
+ const mapSource=document.getElementById('mapSource');
+ function refreshMapStyle(){if(mapStyleSelect)mapStyleSelect.value=mapStyle;if(mapCartoKey)mapCartoKey.value=cartoKey;if(mapAttribution)mapAttribution.textContent='© OpenStreetMap contributors'+(!offline&&mapStyle==='carto'?' · © CARTO':'');if(mapSource&&!offline)mapSource.textContent=mapStyle==='carto'?'Mapa online: CARTO Dark Matter (chave configurada)':'Mapa online: OpenStreetMap em modo escuro (sem chave). Para Dark Matter original, informe uma chave CARTO.';cache.clear();requestDraw()}
+ if(mapStyleSelect)mapStyleSelect.onchange=()=>{mapStyle=mapStyleSelect.value;if(mapStyle==='carto'&&!cartoKey){mapStyle='dark';mapSource.textContent='Informe uma chave CARTO e clique em Aplicar para usar o Dark Matter original.';}localStorage.setItem('campanario.map.style',mapStyle);refreshMapStyle()};
+ const applyKey=document.getElementById('mapApplyKey');if(applyKey)applyKey.onclick=()=>{cartoKey=(mapCartoKey?.value||'').trim();localStorage.setItem('campanario.map.cartoKey',cartoKey);mapStyle=cartoKey?'carto':'dark';localStorage.setItem('campanario.map.style',mapStyle);refreshMapStyle()};
  const rad=Math.PI/180;
  const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
  const world=(la,lo)=>{const n=256*2**z;return [(lo+180)/360*n,(1-Math.log(Math.tan(clamp(la,-85,85)*rad)+1/Math.cos(clamp(la,-85,85)*rad))/Math.PI)/2*n]};
@@ -16,10 +27,10 @@ function mount(){
   const x0=Math.floor((cx-width/2)/256),x1=Math.floor((cx+width/2)/256),y0=Math.floor((cy-height/2)/256),y1=Math.floor((cy+height/2)/256);
   for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){
    const px=Math.round(x*256-cx+width/2),py=Math.round(y*256-cy+height/2);if(y<0||y>=count)continue;
-   const tx=((x%count)+count)%count,key=`${offline?'offline':'online'}:${z}:${tx}:${y}`;let item=cache.get(key);
-   if(item?.state==='ready')ctx.drawImage(item.img,px,py,256,256);else{
+   const tx=((x%count)+count)%count,key=`${offline?'offline':mapStyle}:${z}:${tx}:${y}`;let item=cache.get(key);
+   if(item?.state==='ready'){if(!offline&&mapStyle==='dark')ctx.filter='invert(1) hue-rotate(180deg) brightness(0.75) contrast(0.9)';ctx.drawImage(item.img,px,py,256,256);ctx.filter='none';}else{
     missing++;ctx.strokeStyle='#343c42';ctx.strokeRect(px,py,256,256);
-    if(!item){const img=new Image();item={img,state:'loading'};cache.set(key,item);img.onload=()=>{item.state='ready';requestDraw()};img.onerror=()=>{item.state='error';requestDraw()};img.src=offline?`/api/app/maps/tiles/${z}/${tx}/${y}.png`:`https://tile.openstreetmap.org/${z}/${tx}/${y}.png`;
+    if(!item){const img=new Image();item={img,state:'loading'};cache.set(key,item);img.onload=()=>{item.state='ready';requestDraw()};img.onerror=()=>{item.state='error';requestDraw()};img.src=offline?`/api/app/maps/tiles/${z}/${tx}/${y}.png`:tileUrl(z,tx,y);
     }
    }
   }
@@ -136,8 +147,8 @@ function mount(){
  };
  window.addEventListener('campanario:navigation-request',fromChat);
 
- const ro=new ResizeObserver(resize);ro.observe(frame);resize();
- fetch('/api/app/maps/status',{cache:'no-store'}).then(r=>r.json()).then(s=>{if(!alive)return;offline=!!s.offline_available&&s.format==='png';document.getElementById('mapSource').textContent=offline?`Mapa offline: ${s.name||'MBTiles PNG'} (sem internet)`:'Mapa online (OpenStreetMap). Offline: instale MBTiles PNG.';cache.clear();requestDraw()}).catch(()=>{document.getElementById('mapSource').textContent='Mapa online; status offline indisponível'});
+ const ro=new ResizeObserver(resize);ro.observe(frame);resize();refreshMapStyle();
+ fetch('/api/app/maps/status',{cache:'no-store'}).then(r=>r.json()).then(s=>{if(!alive)return;offline=!!s.offline_available&&s.format==='png';document.getElementById('mapSource').textContent=offline?`Mapa offline: ${s.name||'MBTiles PNG'} (sem internet)`:'Carregando mapa online…';refreshMapStyle()}).catch(()=>{offline=false;refreshMapStyle()});
  controller={destroy(){window.removeEventListener('campanario:navigation-request',fromChat);stopGuide();alive=false;ro.disconnect();cache.clear()}};
  }
  window.CampanarioMap={mount};

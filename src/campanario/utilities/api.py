@@ -10,7 +10,7 @@ from campanario.utilities.service import OPERATIONS, WRITE
 # PDFs maiores devem ser enviados diretamente do navegador, em fluxo, nunca
 # transformados em uma string Base64 inteira na memoria do processo.
 MAX_UPLOAD_BYTES = 200_000_000
-_ALLOWED_UPLOAD_EXT = frozenset(('.txt', '.md', '.pdf', '.csv', '.json', '.log'))
+_ALLOWED_UPLOAD_EXT = frozenset(('.txt', '.md', '.pdf', '.csv', '.json', '.log', '.docx', '.xlsx'))
 
 router=APIRouter(prefix='/api/v1/utilities',tags=['utilidades'])
 
@@ -122,3 +122,20 @@ def upload(request:Request,body:Upload):
   target.unlink(missing_ok=True)
   raise
  return {'path':str(target),'bytes':len(contents)}
+
+
+@router.get('/documents/{document_id}/original')
+def document_original(request: Request, document_id: str):
+    """Read-only original preview/download, restricted to the user's local machine."""
+    local(request)
+    from fastapi.responses import FileResponse
+    from campanario.utilities.document_v8 import document_info
+    util = service()
+    try:
+        info = document_info(util, document_id)
+    except ValueError:
+        raise HTTPException(404, 'Documento não encontrado') from None
+    original = util.docs / (info['id'] + Path(info['name']).suffix.lower())
+    if not original.is_file() or not original.resolve().is_relative_to(util.docs.resolve()):
+        raise HTTPException(404, 'Arquivo original não encontrado')
+    return FileResponse(original, filename=info['name'], media_type=info['type'])

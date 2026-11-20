@@ -68,7 +68,7 @@ async function selectSession(s){
   primary=s.primary_agent_id||system.default_primary_agent_id||'morgana';renderParticipants();
   $('conversation').replaceChildren();followingLatest=false;history.forEach(m=>addTurn(m.role,m.content,m.agent_id,m.created_at));goLatest();
   if(!history.length)setState('present','Esta conversa ainda não possui mensagens.');else $('ambient').style.display='grid';
-  $('statusline').textContent='';
+  $('statusline').textContent='';$('groundingDebugButton').hidden=true;window.lastGroundingTrace=null;
   $('systemPanel').classList.remove('open');closeSidebar();renderSessions();
   await connectRealtime(true);$('prompt').focus();
 }
@@ -79,15 +79,39 @@ function newConversation(){
   // in the archive; learned memories remain in the development memory store.
   closeRealtime();sessionId=null;localStorage.removeItem('campanario.active_session');lastSequence=0;viewingArchive=false;
   primary=system.default_primary_agent_id||'morgana';renderParticipants();updateSigilActivity('present');
-  $('conversation').replaceChildren();followingLatest=true;goLatest();$('prompt').value='';
+  $('conversation').replaceChildren();followingLatest=true;goLatest();$('prompt').value='';resizeComposerPrompt();
   $('systemPanel').classList.remove('open');closeSidebar();renderSessions();
   setState('present');
-  $('statusline').textContent='';
+  $('statusline').textContent='';$('groundingDebugButton').hidden=true;window.lastGroundingTrace=null;
   void refreshSessions().catch(err=>addError(`Não foi possível atualizar os episódios: ${err.message}`));
   $('prompt').focus();
 }
 async function createSession(refresh=true){const s=await api('/api/v1/sessions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});sessionId=s.id;localStorage.setItem('campanario.active_session',sessionId);lastSequence=0;primary=s.primary_agent_id;renderParticipants();await connectRealtime();if(refresh)await refreshSessions();return s}
-async function stream(text){await ensureRealtime();await api(`/api/v1/sessions/${sessionId}/turn`,{method:'POST',headers:{'Content-Type':'application/json','X-Campanario-Client-Id':clientId},body:JSON.stringify({message:text})});const ss=await refreshSessions(),s=ss.find(x=>x.id===sessionId);if(s){primary=s.primary_agent_id||primary;renderParticipants()}setState('attentive','Conversa aberta. Continue sem precisar chamar de novo.');$('statusline').textContent=''}
+async function updateGroundingTrace(){
+ const button=$('groundingDebugButton');if(!button)return;
+ button.hidden=true;window.lastGroundingTrace=null;
+ if(!sessionId)return;
+ try{
+  const reply=await api(`/api/v1/sessions/${sessionId}/grounding-debug`);
+  if(!reply.available||!reply.trace)return;
+  const trace=reply.trace;
+  window.lastGroundingTrace=trace;
+  button.hidden=false;
+  const label=trace.status==='not_found'?'FONTE NÃO ENCONTRADA':
+    trace.status==='conflicting'?'FONTES DIVERGENTES':
+    trace.status==='tool_error'?'FALHA NA CONSULTA':
+    trace.status==='verified'?'RESPOSTA FUNDAMENTADA / CÁLCULO VERIFICADO':
+    trace.status==='partially_verified'?'RESPOSTA COM FONTE DOCUMENTAL':'EVIDÊNCIA INSUFICIENTE';
+  $('toolState').textContent=label;
+ }catch(_err){/* Remote clients are intentionally denied access to local debug. */}
+}
+$('groundingDebugButton').onclick=()=>{
+ const trace=window.lastGroundingTrace;if(!trace)return;
+ $('groundingDebugContent').textContent=JSON.stringify(trace,null,2);
+ $('groundingDebugDialog').showModal();
+};
+$('groundingDebugClose').onclick=()=>$('groundingDebugDialog').close();
+async function stream(text){await ensureRealtime();await api(`/api/v1/sessions/${sessionId}/turn`,{method:'POST',headers:{'Content-Type':'application/json','X-Campanario-Client-Id':clientId},body:JSON.stringify({message:text})});const ss=await refreshSessions(),s=ss.find(x=>x.id===sessionId);if(s){primary=s.primary_agent_id||primary;renderParticipants()}setState('attentive','Conversa aberta. Continue sem precisar chamar de novo.');$('statusline').textContent='';await updateGroundingTrace()}
 // Navigation requests are UI commands, not model-generated claims about real routes.
 function navigationDestination(text){
  // Explicit route requests only; never turn ordinary discussion into GPS tracking.
@@ -109,11 +133,23 @@ $('form').addEventListener('submit',async e=>{e.preventDefault();const text=$('p
  const destination=navigationDestination(text);
  if(destination){
   if(/^(?:sair|fugir|escapar|ir embora|deixar|afastar(?:-se)?)\s+(?:da|do|de)\s+(?:cidade|regi[aã]o|bairro|local)|^(?:um|algum)\s+lugar\s+seguro$/i.test(destination)){
-    $('prompt').value='';addTurn('user',text);addError('Todd: Entendi que você quer sair da cidade, mas isso não é um destino específico. Para calcular uma rota real, diga para qual cidade, bairro ou local deseja ir. Não vou escolher um lugar aleatório.');return;
+    $('prompt').value='';resizeComposerPrompt();addTurn('user',text);addError('Todd: Entendi que você quer sair da cidade, mas isso não é um destino específico. Para calcular uma rota real, diga para qual cidade, bairro ou local deseja ir. Não vou escolher um lugar aleatório.');return;
   }
-  $('prompt').value='';addTurn('user',text);addError('Navegação: solicitando origem autorizada e calculando rota real para “'+destination+'”.');window.CampanarioNavigation?.open(destination,{auto:true,voice:localStorage.getItem('campanario.nav.voice')==='true',agent:/\btodd\b/i.test(text)?'todd':/\bmorgana\b/i.test(text)?'morgana':'todd'});return;}
+  $('prompt').value='';resizeComposerPrompt();addTurn('user',text);addError('Navegação: solicitando origem autorizada e calculando rota real para “'+destination+'”.');window.CampanarioNavigation?.open(destination,{auto:true,voice:localStorage.getItem('campanario.nav.voice')==='true',agent:/\btodd\b/i.test(text)?'todd':/\bmorgana\b/i.test(text)?'morgana':'todd'});return;}
  if(/\brota\s+no\s+mapa\b/i.test(text)){addError('Para abrir uma rota real, informe o destino. Exemplo: “Todd, rota para a Prefeitura de Maringá”. Também será necessária uma origem confirmada.');return;}
-try{setBusy(true);if(!sessionId)await createSession();followingLatest=true;addTurn('user',text);goLatest();$('prompt').value='';await stream(text)}catch(err){addError(`Falha: ${err.message}`)}finally{setBusy(false);$('prompt').focus()}});$('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('form').requestSubmit()}});$('mic').onclick=()=>{setState('attentive','Estrutura de voz preparada; captura contínua/wake word ainda não está conectada.');$('statusline').textContent='voz ainda não conectada'};$('newConversation').onclick=newConversation;$('sidebarNew').onclick=newConversation;$('sessionSearch').addEventListener('input',renderSessions);$('sidebarToggle').onclick=()=>{const opened=$('mainLayout').classList.toggle('sidebar-open');$('sidebarToggle').setAttribute('aria-expanded',String(opened))};$('sidebarScrim').onclick=closeSidebar;$('newSessionPanel').onclick=newConversation;$('systemOpen').onclick=()=>$('systemPanel').classList.add('open');$('systemClose').onclick=()=>$('systemPanel').classList.remove('open');window.addEventListener('beforeunload',closeRealtime);
+try{setBusy(true);if(!sessionId)await createSession();followingLatest=true;addTurn('user',text);goLatest();$('prompt').value='';resizeComposerPrompt();await stream(text)}catch(err){addError(`Falha: ${err.message}`)}finally{setBusy(false);$('prompt').focus()}});// Crescimento automático do campo de escrita, sem rolagem interna enquanto houver espaço.
+function resizeComposerPrompt(){
+ const field=$('prompt');if(!field)return;
+ field.style.height='auto';
+ const maxHeight=parseFloat(getComputedStyle(field).maxHeight)||300;
+ const desired=Math.max(42,Math.min(field.scrollHeight,maxHeight));
+ field.style.height=desired+'px';
+ field.style.overflowY=field.scrollHeight>maxHeight+1?'auto':'hidden';
+}
+$('prompt').addEventListener('input',resizeComposerPrompt);
+window.addEventListener('resize',resizeComposerPrompt);
+resizeComposerPrompt();
+$('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('form').requestSubmit()}});$('mic').onclick=()=>{setState('attentive','Estrutura de voz preparada; captura contínua/wake word ainda não está conectada.');$('statusline').textContent='voz ainda não conectada'};$('newConversation').onclick=newConversation;$('sidebarNew').onclick=newConversation;$('sessionSearch').addEventListener('input',renderSessions);$('sidebarToggle').onclick=()=>{const opened=$('mainLayout').classList.toggle('sidebar-open');$('sidebarToggle').setAttribute('aria-expanded',String(opened))};$('sidebarScrim').onclick=closeSidebar;$('newSessionPanel').onclick=newConversation;$('systemOpen').onclick=()=>$('systemPanel').classList.add('open');$('systemClose').onclick=()=>$('systemPanel').classList.remove('open');window.addEventListener('beforeunload',closeRealtime);
 let systemStatus='loading';
 function updateSystemStatus(next){systemStatus=next;const value=$('statusValue'),led=$('statusLed');if(value)value.textContent=({online:'Online',degraded:'Parcial - IA indisponivel',loading:'Carregando',offline:'Offline',error:'Fora de funcionamento'})[next]||'Indisponível';if(led)led.dataset.status=next;document.body.dataset.systemStatus=next;}
 async function checkSystemStatus(){try{const response=await fetch('/api/app/status',{cache:'no-store',signal:AbortSignal.timeout(5000)});if(!response.ok){updateSystemStatus('error');return;}const value=await response.json();updateSystemStatus(value.can_chat?'online':'degraded')}catch{updateSystemStatus('offline')}}

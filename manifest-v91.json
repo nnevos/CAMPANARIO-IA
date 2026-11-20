@@ -1,0 +1,102 @@
+{
+  "version": "9.1.0-ia",
+  "base": "CAMPANARIO V8 incremental 8.0.1 (IA)",
+  "scope": "CAMPANARIO-IA only; no data, Python environment, or database modifications",
+  "files": [
+    {
+      "path": ".env.example",
+      "sha256": "1160e6e679d527b5284aa6eb2f46a19aed55321cd272b5f7935fa05a72964acc",
+      "base_sha256": "7174f29c3335b944a1be865c36186e47a748c822d62a16216aab45ffe68dc58c"
+    },
+    {
+      "path": "README.md",
+      "sha256": "38235a363a29b86d41dc24234a6e98cad216c6a3322c2d7515f3ce67ae1457ab",
+      "base_sha256": "fad69b8485e9cf201f3c0d7036fca3e801f28bcfe8de7a5cabc05c6db435fb3f"
+    },
+    {
+      "path": "docs/current/RELATORIO_V91_ENTREGA.md",
+      "sha256": "f01d163549e43b6e5f6e1c614c78b414c85a54f8fe9fe9f021233d5bcc9d4894",
+      "base_sha256": null
+    },
+    {
+      "path": "docs/current/V91_EXPRESSAO_FUNDAMENTADA.md",
+      "sha256": "7e0a797cd1a18f3ede1062a6aff13e95c20ae3b3c6a138ad32b70236cd4d3ac9",
+      "base_sha256": null
+    },
+    {
+      "path": "src/campanario/agents/profiles.py",
+      "sha256": "085477c4dfc3cbe367f111641d8442f604807995031b95937edb352940261a91",
+      "base_sha256": "0a89eda7c369e885d06ab961f0b2cd58deca85033586e17d1f5588b73904c558"
+    },
+    {
+      "path": "src/campanario/api.py",
+      "sha256": "626e05fee88f5412cd0730cf5c8022cb0195030577715ac94e0c0a351a73480d",
+      "base_sha256": "7aff1653b4500138b8df3200bbca464c615ce66b4e03f7c8aa4dcc38b5b18172"
+    },
+    {
+      "path": "src/campanario/chat/canonical_answer.py",
+      "sha256": "f1bffc589c9a49ab4bf99d62ecde6b8c2f586b7325bfb2a08248853dc5fd2dd2",
+      "base_sha256": null
+    },
+    {
+      "path": "src/campanario/chat/data_intent.py",
+      "sha256": "80061c8a8dabaece3130d15ad510679b16fd2644cc27997f6f9ece73a4b5ffcc",
+      "base_sha256": "f4cf4b24947f78bfdc79ce5e9dcda583223ee3bf2c89014dcf7d49efe4f52bb0"
+    },
+    {
+      "path": "src/campanario/chat/grounded_expression.py",
+      "sha256": "3c53e0e89f3271f836e4860754e55380c3dc00f68880d3bc6903b1e3efa6bb8a",
+      "base_sha256": null
+    },
+    {
+      "path": "src/campanario/chat/service.py",
+      "sha256": "a195a9448a2988a3ea1e681fced16d68c1ebcdf352b848e626694874c1ed4274",
+      "base_sha256": "0b469eb4f0a8258609f3ce41e13f5e48b092457f8719a6c21ba8313685515c54"
+    },
+    {
+      "path": "src/campanario/composition.py",
+      "sha256": "0cdb6bad7935f39133894b98b6ef836ee5c52231e228fc6e0d03f835f07cce7f",
+      "base_sha256": "d512de144a1fa5fa85388be4dbdb36b8e2ea24416e4e5a60bd45d3af74e659af"
+    },
+    {
+      "path": "src/campanario/config.py",
+      "sha256": "5ce0405b1dcd57a1c9e1354e8957a503e4c4c259542c8168897be13041d8eb45",
+      "base_sha256": "4063f84bcbeba3e1238c52c210ce5b93839aecff517be35aa586c8897035c02e"
+    },
+    {
+      "path": "src/campanario/utilities/data_v8.py",
+      "sha256": "0c508b2d637ffe49bf9f10f28a7caba91c4fdd4319ca860fdc7894c2c3ad062d",
+      "base_sha256": "1b3d6a79253bffe50a59a68db70b9128691103f416e430fe3f85d34342e98789"
+    },
+    {
+      "path": "src/campanario/web/index.html",
+      "sha256": "7e1b53be3a54ca71d99ceb0c370d84dd00cc4294b60f9b5cc546b36bdfa2eb38",
+      "base_sha256": "b5aa24a2fdd8d7d586fb4c267f1dfa7cff76effaab01552378b9113d4b670325"
+    },
+    {
+      "path": "src/campanario/web/static/chat.js",
+      "sha256": "f846d76e7eb691953270b42946d771a45ac2c7c9ce3df518e73b09119af73abb",
+      "base_sha256": "b06d99e99643a4ef118e17545bdfdb7f3fcc0f6e865a376945935e1d9577ae34"
+    },
+    {
+      "path": "src/campanario/web/static/dark-matter-v7.css",
+      "sha256": "624a300ff829d4493086f529a3941bdee6d2863a02d0c000a317ba63ff377db6",
+      "base_sha256": "35031b961928874c1629375403e5f924b1c40f707b6d044522e43bb3687f65fc"
+    },
+    {
+      "path": "tests/test_resposta_conversacional_com_evidencia.py",
+      "sha256": "5a2c49990f72445a67304b6a12f09a7bde003a028c7e728a59143bbed218adf3",
+      "base_sha256": "267e3d700a71e3eeb4e2f4c7c2ccdbfdb435636b9375c6894c8d58fe770cf2ed"
+    },
+    {
+      "path": "tests/test_v8_knowledge.py",
+      "sha256": "f40a02ee008604ab2d37b2ecf5e8de4e4911ba9fa5f51690bad577cd7133c2ec",
+      "base_sha256": "a3c2160926de707a47f065f7779fe0a2ffa01acc209907bf855349fecf78b820"
+    },
+    {
+      "path": "tests/test_v91_expression.py",
+      "sha256": "97046a82b55931c4e8b82b12321d5916bed4d574e0a282789dafc3b96ad87216",
+      "base_sha256": null
+    }
+  ]
+}

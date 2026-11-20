@@ -1,0 +1,72 @@
+/* CAMPANÁRIO V7 / DARK MATTER — matte, flat, high-contrast operational interface.
+   Visual-only overrides. No changes to agents, memory, tools or map sources. */
+:root{color-scheme:dark;--bg:#090a0c;--surface:#111316;--surface-2:#171a1e;--line:#292e34;--text:#e0e4e8;--muted:#9ba4ad;--soft:#c3c9ce;--hud-cyan:#67c8cd;--hud-cyan-dim:#2d5155;--hud-red:#c96066;--hud-gold:#c5a35f;--hud-edge:#30363c;--hud-glass:#111316;--gold:#c5a35f;--theme-accent:#67c8cd;--morgana:#c5a35f;--todd:#c96066}
+html,body,.app,main,.presence-space,.stage{background:#090a0c!important}
+body::before,body:before,.ambient:before,.ambient::before,.ambient::after{background:none!important;box-shadow:none!important}
+header{background:#101215!important;border-bottom:1px solid #30353a!important;box-shadow:none!important;backdrop-filter:none!important}
+.brand-copy strong,.brand strong{color:#e2e4e6!important}.brand-copy small,.brand small{color:#919ba4!important}
+.navbtn,.settings-icon,.sidebar-toggle,.header-new,.sidebar-new{background:#14171a!important;border-color:#30363c!important;color:#c7cdd2!important;box-shadow:none!important}
+.navbtn.active{background:#1c2528!important;color:#8cd9db!important;border-color:#45666a!important;box-shadow:inset 0 -2px #67c8cd!important}
+.navbtn:hover,.settings-icon:hover,.header-new:hover{background:#1c2024!important;border-color:#52616a!important;color:#f0f3f4!important}
+.chat-sidebar,.system-panel,.workspace-view,.workspace-nav,.workspace-card,.metric,.panel-head,.section,.chat-sidebar-bottom{background:#111316!important;background-image:none!important;box-shadow:none!important;backdrop-filter:none!important}
+.workspace-view{background:#090a0c!important}
+.workspace-card,.workspace-nav,.metric,.chat-sidebar,.system-panel,.section{border-color:#2d3238!important;border-radius:3px!important}
+.workspace-card,.metric,.workspace-nav{box-shadow:none!important}
+.workspace-card::before,.metric::before{border-color:#3d6265!important;border-width:1px!important;width:11px!important;height:11px!important}
+.workspace-header{border-bottom-color:#2b3036!important}.workspace-header h1,.workspace-card h2{color:#e1e5e8!important}.workspace-header p,.level-detail{color:#a7afb7!important}
+.workspace-topline,.smallcap{color:#85b7ba!important}
+.workspace-nav button{background:transparent!important;color:#aeb6bc!important;border-color:transparent!important}
+.workspace-nav button.selected{background:#1b2426!important;color:#91d5d7!important;border-left-color:#67c8cd!important}
+.workspace-input,.workspace-select,.chat-search,input:not([type=checkbox]):not([type=radio]),textarea,select{background:#0d0f11!important;color:#e1e5e8!important;border-color:#353a40!important;box-shadow:none!important}
+.ui-btn,.round,.new-session,.sidebar-new,.header-new{background:#1a1e21!important;color:#dce1e5!important;border:1px solid #363c42!important;box-shadow:none!important}
+.ui-btn.gold,.send{background:#203237!important;color:#b9e5e6!important;border-color:#446a6e!important}
+.ui-btn:hover,.round:hover,.sidebar-new:hover{background:#252b30!important;border-color:#59656c!important}
+.ui-btn:focus-visible,.navbtn:focus-visible,.round:focus-visible,button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid #77c9cd!important;outline-offset:2px!important}
+.metric strong{color:#e2e7e9!important}.metric small{color:#a5afb7!important}
+.notice,.inline-status,.tool-state,.upload-feedback{background:#171a1d!important;border-color:#333a40!important;color:#bfc7cc!important}
+/* Central de conversação */
+.ambient-sigils .bg-campanario,.background-sigil.bg-campanario{opacity:.18!important;filter:grayscale(1)!important;animation:none!important}
+.deck-telemetry{color:#89969e!important}.deck-telemetry-line{background:#353e44!important}
+.participant{background:#141619!important;backdrop-filter:none!important;border:1px solid #363b40!important;box-shadow:none!important;border-radius:2px!important}
+.participant[data-activity=thinking],.participant[data-activity=speaking]{box-shadow:none!important}
+.participant[data-activity=speaking]{background:#1a2527!important;border-color:#538589!important}
+.participant.morgana{border-left-color:#c5a35f!important}.participant.todd{border-left-color:#c96066!important}
+.system-status{background:#15181a!important;border:1px solid #373e44!important;box-shadow:none!important;backdrop-filter:none!important;color:#c4cbd0!important}
+.status-led,.presence i{box-shadow:none!important}
+.composer{background:#15181b!important;border:1px solid #3c444a!important;box-shadow:none!important;backdrop-filter:none!important;border-radius:4px!important}
+.composer:focus-within{border-color:#68b6ba!important;box-shadow:0 0 0 1px #476c6f!important}
+.composer textarea{background:transparent!important;border:0!important}
+.turn .utterance{color:#dce0e4!important}.turn.user .utterance{background:#1b2024!important;border-color:#363d43!important;box-shadow:none!important}
+.turn.morgana .speaker{color:#c5a35f!important}.turn.todd .speaker{color:#c96066!important}
+.agent-avatar,.participant .mini-avatar{box-shadow:none!important}
+.chat-history .session.active{background:#1d2527!important;border-color:#456266!important}.chat-history .session:hover{background:#1b1e22!important}
+/* Database: uniform, scannable rows */
+#dbResults .file-item,.file-item{background:#15181b!important;border:1px solid #30363c!important;box-shadow:none!important;border-radius:2px!important}
+#dbResults .file-item:hover,.file-item:hover{background:#202529!important;border-color:#537477!important}
+#dbResults .file-item strong{color:#e0e4e7!important}#dbResults .file-item small{color:#a0aab3!important}
+/* Patrulha: map remains the primary content */
+#patrulhaView .patrol-grid>.workspace-card:last-child{background:#111316!important}
+#patrulhaView .gps-map-frame,.gps-map-frame,.patrol-map{background:#0b0d0f!important;border-color:#353e44!important;box-shadow:none!important;border-radius:2px!important}
+#patrulhaView .gps-map-frame::after{border-color:#8fb7b91c!important;opacity:.65!important}
+#patrulhaView .gps-map-controls button{background:#181c1f!important;border-color:#404a50!important;color:#dce2e6!important;box-shadow:none!important}
+/* Other screens and dialogs */
+.settings-modal,.modal,.confirm-dialog,.boot-splash,.dialog,.popover,.dropdown,.toast{background:#121518!important;background-image:none!important;border-color:#363c42!important;box-shadow:none!important}
+.boot-splash{background:#090a0c!important}
+/* No synthetic glow, gradients or glass effects on controls and surfaces */
+.composer,.participant,.workspace-card,.metric,.workspace-nav,.chat-sidebar,.system-panel,.navbtn,.ui-btn,.header-new,.settings-icon,.file-item,.sidebar-new,.sidebar-toggle{background-image:none!important;text-shadow:none!important}
+/* Mobile: no lateral overflow, accessible tap targets, safe area */
+@media(max-width:700px){html,body,.app{max-width:100%;overflow-x:hidden!important}.workspace-view{background:#090a0c!important}.workspace-card,.metric{border-radius:2px!important}.navbtn,.settings-icon,.round,.workspace-nav button,.ui-btn{min-height:44px}.deck-telemetry{opacity:.7!important}.participant{padding:7px 9px!important}.composer{border-radius:3px!important}#patrulhaView .gps-map-frame{min-height:260px!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* V9.1: minimal, source-backed factual debugger (never synthetic telemetry). */
+.v91-evidence-button { background:#0d1719; color:#73d7df; border:1px solid #38484d;
+  border-radius:6px; padding:4px 10px; margin:3px 8px; font:12px 'JetBrains Mono',monospace; cursor:pointer }
+.v91-evidence-button[hidden] { display:none!important }
+.v91-evidence-dialog { color:#e6ebed; background:#0d1013; border:1px solid #455057;
+  border-radius:10px; width:min(92vw,820px); max-height:85vh; padding:20px }
+.v91-evidence-dialog::backdrop { background:rgba(0,0,0,.76) }
+.v91-evidence-dialog h2 { color:#87dce0; margin:0 0 8px }
+.v91-evidence-dialog pre { overflow:auto; max-height:55vh; border:1px solid #3a4148;
+  background:#11161b; padding:12px; font:12px 'JetBrains Mono',monospace; white-space:pre-wrap; overflow-wrap:anywhere }
+.v91-evidence-dialog button { color:#e6ebed; background:#20262a; border:1px solid #545d65;
+  padding:8px 14px; border-radius:6px }

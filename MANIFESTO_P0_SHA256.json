@@ -1,0 +1,118 @@
+{
+  "release": "CAMPANARIO P0 checkpoint R0/R1 parcial",
+  "base": "CAMPANARIO-IA V9 + V9.1 integrados, incluindo atualizacao documental ROADMAP/FAILSAFE",
+  "apply": "Fechar app, fazer backup, extrair em pasta temporaria e copiar conteudo com Explorador na raiz CAMPANARIO-IA",
+  "no_powershell_needed_to_copy": true,
+  "writes_to_external_python_or_database": false,
+  "files": [
+    {
+      "path": "CHANGELOG_P0.md",
+      "sha256": "67e5aac2371640e1f106ea3e0473095c401d34884e0b9fae18cb91b5b6c44510",
+      "previous_sha256": null
+    },
+    {
+      "path": "LEIA_PRIMEIRO_3_PASTAS.md",
+      "sha256": "eefcb262bce589cb4232756a8552cb00b3f8b7bb815efe6c9cbf21ba216c8bd4",
+      "previous_sha256": "02e7b545b0cc1961d056226ab1fa60d02d055a355a2c18c8524f6a9e7f46acb3"
+    },
+    {
+      "path": "LEIA_PRIMEIRO_P0.md",
+      "sha256": "a9be2142646e589b673402bb67e38bb723c5e23389931cd99d62cd5976475269",
+      "previous_sha256": null
+    },
+    {
+      "path": "LEIA_PRIMEIRO_V9_INTEGRADA.md",
+      "sha256": "6800a72dfc42951067b58ef3d707ee41c534cf867471dba740a3972468bdcb0d",
+      "previous_sha256": "78782ec90dc150bb79baacb6307c68d7240be7a70a590a6be01cbed048a0a509"
+    },
+    {
+      "path": "README.md",
+      "sha256": "a2147437a3afb1901d6b2e956364d77270428d4134bcc958b1ba9cea0358ea7b",
+      "previous_sha256": "a638ab41786da543bed51cb1c2bcad1ea353c9433eb68f170ed72ed0cb0f3459"
+    },
+    {
+      "path": "docs/current/P0_TRES_PASTAS_SEM_POWERSHELL.md",
+      "sha256": "629633f750987c5832f13f49f29d8533fb32349293735cfeee315556faaae3a5",
+      "previous_sha256": null
+    },
+    {
+      "path": "docs/current/ROADMAP.md",
+      "sha256": "9907e8bc366e5cea7be2cb27f4ca52f987fbe6d553a9f85f51dff29d11f67919",
+      "previous_sha256": "a42a59e829772b9261ce3d435ae242ca0a9a032b2c75d3a05cfb362893e0fae0"
+    },
+    {
+      "path": "docs/current/ROADMAP_V9_CEREBROS_COMPLETO.md",
+      "sha256": "0793b6b29659059a90041f39a7d8baa10b6944c9225892aa3c02ac03a21fdf7a",
+      "previous_sha256": "ccc549dd8914558cf7257164e9db21a3f777f10039ce48b6069cc102af3fdf43"
+    },
+    {
+      "path": "docs/current/V9_BRAINS_ARQUETIPOS_TALENTOS.md",
+      "sha256": "aa7ae68aa241de47f497e7376fce284414df5eb6e0b4357054849a8c3d2edb4d",
+      "previous_sha256": "890abe422ff8ff37bb4a14e92b25dfe24452000656c7348d84875eb7aa45bc44"
+    },
+    {
+      "path": "docs/operations/FAILSAFE_V9_CEREBROS.md",
+      "sha256": "fa7fd4671bb5eed08a46a4017e85bccb86f540a4087492f1a8ed48ecb1d53f64",
+      "previous_sha256": "9823b74e05322ec9df6e3c22ba48d75b4f0b632df7df4d96c06a154c127b57ca"
+    },
+    {
+      "path": "docs/operations/P0_RELATORIO_EXECUCAO.md",
+      "sha256": "bc270421c46fca5ab1fab6e111a688a456da391a42a3171c42263904547cb52f",
+      "previous_sha256": null
+    },
+    {
+      "path": "docs/operations/RESULTADOS_TESTES_P0.md",
+      "sha256": "fa8fa5996fe3df7dd2f52343add3b205477d1a91ed85193912a66e0d5703535e",
+      "previous_sha256": null
+    },
+    {
+      "path": "src/campanario/agents/interaction_library.py",
+      "sha256": "97473f7f3f99c27588736f28e1fd0c7e5620ccb24e1f6a6070e8a29d5f2c18ca",
+      "previous_sha256": "ddf2536a1481a1678521a4250876ce4bfa060300b34d0dbb61feb6773a8ddab4"
+    },
+    {
+      "path": "src/campanario/brains/api.py",
+      "sha256": "e8393d2dcca2a4018cce63f7bda5b3ba946f04f75c6cc3b8b370be361222d4ac",
+      "previous_sha256": "8f6d158cd17a8fc270bc1a06b6529eb637c871861dd5b835f6d055a84d07ad19"
+    },
+    {
+      "path": "src/campanario/brains/environment.py",
+      "sha256": "0031e09fb10f8749d99ac10e3bf75580107650e829ffe6c17c00a2a9da2afb6b",
+      "previous_sha256": null
+    },
+    {
+      "path": "src/campanario/brains/executor.py",
+      "sha256": "56da032fcc07580568235854654c3bcf5082827913a117e9fbf926901af1573a",
+      "previous_sha256": "4981dbb7a37dafd4ba4bfbee7ccc833102cd3a816fa0b6a653f199c28f3c12b7"
+    },
+    {
+      "path": "src/campanario/web/ferramentas.js",
+      "sha256": "6ac8e6a5849425671f7e45ee2df4708929e5df5d1325765a16b68630a1a90412",
+      "previous_sha256": "2da3e3beb736d32d092c9d8db7143bc674eb170b7d1cfc24a7d9b79d2c4b5f2d"
+    },
+    {
+      "path": "tests/test_p0_three_folders.py",
+      "sha256": "b633a0bf30a8974476c201573a0f64fed8e3a8bf7d2a958ac32bede8cd34ae67",
+      "previous_sha256": null
+    },
+    {
+      "path": "tools/exportar_campanario.py",
+      "sha256": "595f7a1d4ac8dd12980724a8247f8ee61264b4bc61305f300c51cd80bd44c017",
+      "previous_sha256": "7cd7d69a3e9e3d2692298086980dcaada27f51bac867e039257f1aeeb9651c11"
+    },
+    {
+      "path": "tools/verificar_3_pastas_p0.py",
+      "sha256": "cb4f6f59e5535b74cc8cf57397cfed997b7c4c78197e33ca7ef4f601d0132ba9",
+      "previous_sha256": null
+    }
+  ],
+  "excluded": [
+    ".env",
+    ".venv",
+    "CAMPANARIO-DATABASE privado",
+    "modelos Ollama",
+    ".git",
+    "__pycache__"
+  ],
+  "warning": "Copiar via Explorador nao compara hashes de origem nem faz rollback automatico. Se codigo local foi modificado, comparar antes."
+}

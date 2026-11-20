@@ -408,6 +408,17 @@ def list_session_calls_v1(session_id: UUID) -> list[dict[str, object]]:
     return [item.model_dump(mode="json") for item in runtime.calls.list(session_id=session_id)]
 
 
+@v1_router.get("/sessions/{session_id}/grounding-debug")
+def grounding_debug_local_v91(session_id: UUID, request: Request) -> dict[str, object]:
+    """V9.1 operational trace (no model chain of thought); local host only."""
+    _local_admin(request)
+    try:
+        trace = get_runtime().conversation.get_factual_debug(session_id)
+    except SessionNotFoundError as exc:
+        raise HTTPException(status_code=404, detail='Conversa não encontrada') from exc
+    return {'available': trace is not None, 'trace': trace}
+
+
 @v1_router.get("/sessions/{session_id}/messages")
 @router.get("/sessions/{session_id}/messages")
 def list_messages(session_id: UUID) -> list[dict[str, object]]:

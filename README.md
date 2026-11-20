@@ -50,3 +50,55 @@ Se receber **somente** este codigo sem ter a pasta antiga, sera necessario forne
 - Pesquisa web automatica e opcional e desligada por padrao. Quando autorizada, a prioridade pode ser web -> ZIM -> documentos.
 - Para ativar/desativar a pesquisa online sem PowerShell, use ATIVAR_ONLINE_PRIMEIRO.cmd / DESATIVAR_PESQUISA_ONLINE.cmd.
 - Para exportar codigo sem dados pessoais, use `tools/exportar_campanario.py` (ele exclui pesos, memorias e configuracoes privadas).
+
+## Incremento CAMPANÁRIO V8 — conhecimento e análise
+
+Foi adicionado um pipeline documental compatível com a biblioteca legada, com
+metadados, seções/FTS5, OCR local opcional, DOCX/CSV/XLSX/JSON, recuperação de
+evidências compartilhadas pelos agentes e análises numéricas locais. Não modifica
+as pastas irmãs `CAMPANARIO-PYTHON` e `CAMPANARIO-DATABASE` diretamente.
+
+**Leia [`docs/current/V8_MOTOR_CONHECIMENTO.md`](docs/current/V8_MOTOR_CONHECIMENTO.md)**
+antes da atualização. O documento explica comandos, backups, limitações,
+instalação dos extras de análise e o teste fictício de Ordem Paranormal.
+
+## Incremento CAMPANARIO V9.1 - expressao fundamentada
+
+Sobre a base V8 foi introduzida uma resposta factual canonica **antes** da
+reformulacao por Morgana/Todd, validacao conservadora de numeros, condicoes,
+negacoes e referencias, alem de fallback extrativo e visor local de evidencias.
+Reutiliza a infraestrutura de Ollama e as consultas documentais V8.
+
+Veja [`docs/current/V91_EXPRESSAO_FUNDAMENTADA.md`](docs/current/V91_EXPRESSAO_FUNDAMENTADA.md)
+e [`docs/current/RELATORIO_V91_ENTREGA.md`](docs/current/RELATORIO_V91_ENTREGA.md).
+Este incremento nao inclui codigo externo dos cerebros V9 nem altera as pastas
+`CAMPANARIO-PYTHON` e `CAMPANARIO-DATABASE`.
+
+## V9 (cérebros) + V9.1 (expressão fundamentada)
+
+O incremento de cérebros compartilhados e fichas heroicas preserva a arquitetura de chat e integra-se à validação factual V9.1. Ativação opt-in via `CAMPANARIO_BRAINS_V9_ENABLED=true`, após migração aditiva `0010` e backup do Database. Guia completo: [`docs/current/V9_BRAINS_ARQUETIPOS_TALENTOS.md`](docs/current/V9_BRAINS_ARQUETIPOS_TALENTOS.md) e [`LEIA_PRIMEIRO_V9_INTEGRADA.md`](LEIA_PRIMEIRO_V9_INTEGRADA.md).
+
+
+## Roadmap de conclusão V9 — cérebros e failsafes
+
+O incremento V9/V9.1 é uma base funcional, **não** o sistema de oito cérebros concluído. Conhecimento e Análise têm executores; os seis demais ainda estão indisponíveis. A sequência de integração, os gates P0/P1/P2, dependências das três pastas e os testes de aceite estão no [`roadmap completo V9`](docs/current/ROADMAP_V9_CEREBROS_COMPLETO.md). Procedimentos para conter falhas, desativar a V9 pela flag, proteger evidências e recuperar a instalação estão em [`FAILSAFE V9`](docs/operations/FAILSAFE_V9_CEREBROS.md). Essas referências são planejamento/documentação e não introduzem novas capacidades no runtime.
+
+
+## P0 — verificação integrada e atualização do código SEM PowerShell
+
+A Central de Cérebros agora inclui uma verificação **somente leitura** da topologia das três pastas e do SQLite esperado, mesmo com a flag V9 desativada. Não move dados, não cria venv e não executa migrações. O executor bloqueia escopos ausentes e resultados com IDs de execução inválidos. Isso ainda **não** homologa as três pastas reais nem fornece sandbox com interrupção física.
+
+**Atualização normal:** use o ZIP de arquivos alterados e copie pelo Explorador para dentro de `CAMPANARIO-IA` (depois de backup, com o aplicativo fechado). **Não precisa de PowerShell para substituir arquivos.** Comandos ficam reservados a dependências, migrações ou testes técnicos. Veja [`P0_TRES_PASTAS_SEM_POWERSHELL.md`](docs/current/P0_TRES_PASTAS_SEM_POWERSHELL.md), [`roadmap V9`](docs/current/ROADMAP_V9_CEREBROS_COMPLETO.md) e [`FAILSAFE V9`](docs/operations/FAILSAFE_V9_CEREBROS.md).
+
+
+**Exceção documentada:** `data/interaction_library_v2.sqlite` é uma biblioteca estática de exemplos, consultada em leitura, não o banco pessoal. O P0 prefere uma cópia em `CAMPANARIO-DATABASE/dados/reference/interaction_library_v2.sqlite`, mas preserva fallback legado. Não apague o original sem validar a cópia externa e o FAILSAFE.
+
+
+## Checkpoint R1 — contenção de falhas dos cérebros (incremental, não homologado)
+
+Os dois cérebros de leitura instalados (`knowledge`, `analysis`) usam subprocesso Python terminável ao exceder timeout/RSS. A leitura é autorizada por `PermissionPolicy` na composição canônica; a resposta factual V9.1 e a flag continuam preservadas. **Não é sandbox de segurança contra código hostil**, nem substitui autorização/isolamento das rotas de utilidades. Um `Campanario.exe` congelado pode precisar de Python sidecar; consulte [`R1_ISOLAMENTO_CEREBROS.md`](docs/current/R1_ISOLAMENTO_CEREBROS.md), [`ROADMAP`](docs/current/ROADMAP_V9_CEREBROS_COMPLETO.md) e [`FAILSAFE`](docs/operations/FAILSAFE_V9_CEREBROS.md). Atualizações de código: copiar os arquivos do ZIP de overlay pelo Explorador, sem PowerShell.
+
+
+## R1.1 — contenção de falhas do motor de cérebros
+
+Sobre a base R1, o executor compartilha o timeout entre cérebros de um mesmo plano, interrompe a sequência quando o orçamento acaba e evita tempestades de workers após falhas repetidas. O worker de Conhecimento/Análise recebe ambiente reduzido e barreira Python para sockets; **isso não é firewall nem sandbox de segurança do Windows**. Não libera Programação ou ações arbitrárias. Veja [`LEIA_PRIMEIRO_R11.md`](LEIA_PRIMEIRO_R11.md), [`ROADMAP`](docs/current/ROADMAP_V9_CEREBROS_COMPLETO.md) e [`FAILSAFE`](docs/operations/FAILSAFE_V9_CEREBROS.md). Atualização de arquivos é por cópia no Explorador, sem PowerShell. As pastas Python/Database permanecem separadas e intactas.

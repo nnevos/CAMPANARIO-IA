@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     # When web access is authorized, try public sources first, then local ZIM
     # and imported documents. Offline requests keep the legacy local-first order.
     research_priority: str = Field(default='web_first', pattern=r'^(web_first|local_first)$')
+    # V9.1: bounded factual expression attempts; fallback always keeps canonical facts.
+    grounded_expression_enabled: bool = True
+    grounded_expression_retries: int = Field(default=1, ge=0, le=2)
+    # V9: disabled by default. Off = exact legacy routing and chat behavior.
+    brains_v9_enabled: bool = False
+    brains_v9_timeout_seconds: float = Field(default=8.0, ge=0.5, le=30.0)
+    brains_v9_max_memory_mb: int = Field(default=1024, ge=128, le=4096)
 
     # Legacy aliases kept for existing .env files. Generic values above take precedence when set.
     ollama_base_url: str = "http://127.0.0.1:11434"

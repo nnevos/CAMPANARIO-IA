@@ -1,0 +1,11 @@
+/* CAMPANÁRIO V7.1 — tela inicial sem moldura e mensagens responsivas */
+/* O retângulo era desenhado pelo pseudo-elemento .ambient::after da V5. */
+.ambient::after,.ambient:after{content:none!important;display:none!important;border:0!important;outline:0!important;box-shadow:none!important}
+/* Mensagens do usuário: largura natural e crescimento vertical sem scroll interno. */
+.conversation .turn.user{display:flex!important;flex-direction:column!important;align-items:flex-end!important;align-self:flex-end!important;width:fit-content!important;max-width:min(90%,690px)!important;min-width:0!important;padding:0!important;margin-left:auto!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;text-align:left!important}
+.conversation .turn.user .message-meta{align-self:flex-end!important;justify-content:flex-end!important;gap:9px!important;margin:0 3px 5px!important}
+.conversation .turn.user .utterance{display:block!important;box-sizing:border-box!important;width:fit-content!important;max-width:100%!important;min-width:0!important;height:auto!important;max-height:none!important;overflow:visible!important;overflow-wrap:anywhere!important;word-break:normal!important;white-space:pre-wrap!important;padding:11px 14px!important;margin:0!important;background:#191c20!important;border:1px solid #33383e!important;border-radius:14px 4px 14px 14px!important;color:#e1e5e8!important;line-height:1.55!important;text-align:left!important}
+/* O campo de escrita acompanha as linhas até um limite confortável. */
+.composer{align-items:flex-end!important}
+.composer textarea#prompt{box-sizing:border-box!important;display:block!important;flex:1 1 auto!important;width:100%!important;min-width:0!important;min-height:42px!important;height:42px;max-height:min(40dvh,300px)!important;overflow-y:hidden;resize:none!important;line-height:1.5!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;padding:10px 5px!important}
+@media(max-width:700px){.conversation .turn.user{max-width:94%!important}.conversation .turn.user .utterance{font-size:14px!important;padding:10px 12px!important}.composer textarea#prompt{max-height:min(34dvh,220px)!important}}

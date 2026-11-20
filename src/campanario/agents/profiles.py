@@ -28,6 +28,15 @@ class PersonalityCore:
 
 
 @dataclass(frozen=True, slots=True)
+class ExpressionProfile:
+    """Optional V9 expression parameters; complements rather than replaces core persona."""
+    tone: str = 'natural'
+    formality: str = 'moderada'
+    detail_level: str = 'contextual'
+    preferred_structure: str = 'explicativa'
+
+
+@dataclass(frozen=True, slots=True)
 class AgentProfile:
     id: str
     name: str
@@ -35,6 +44,9 @@ class AgentProfile:
     identity: str
     personality: PersonalityCore
     is_default: bool = False
+    expression_profile: ExpressionProfile = ExpressionProfile()
+    archetypes: tuple[str, ...] = ()  # V9 adapters may populate real IDs
+    talents: tuple[str, ...] = ()     # Does not grant factual privileges
 
     @property
     def persona_prompt(self) -> str:
@@ -58,6 +70,12 @@ class AgentRegistry:
 
     def list(self) -> tuple[AgentProfile, ...]:
         return tuple(self._profiles.values())
+
+    def register(self, profile: AgentProfile) -> None:
+        """Optional locally defined V9 agent, with no change to built-in profiles."""
+        if profile.id in {'morgana', 'todd'} or profile.id in self._profiles:
+            raise ValueError('Agent ID is already registered')
+        self._profiles[profile.id] = profile
 
     def get(self, agent_id: str | None) -> AgentProfile:
         key = (agent_id or self._default_id).strip().lower()
@@ -273,6 +291,9 @@ TODD = AgentProfile(
     summary="Pragmatico, estrategico, direto, protetor e orientado a acao.",
     identity=TODD_IDENTITY.render_prompt(),
     personality=TODD_CORE,
+    expression_profile=ExpressionProfile(tone='direto e pragmatico',
+                                          formality='casual', detail_level='objetivo',
+                                          preferred_structure='resposta primeiro'),
 )
 
 MORGANA = AgentProfile(
@@ -282,6 +303,9 @@ MORGANA = AgentProfile(
     identity=MORGANA_IDENTITY.render_prompt(),
     personality=MORGANA_CORE,
     is_default=True,
+    expression_profile=ExpressionProfile(tone='acolhedor e reflexivo',
+                                          formality='moderada', detail_level='contextual',
+                                          preferred_structure='explicativa'),
 )
 
 

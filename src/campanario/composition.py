@@ -86,6 +86,8 @@ def build_chat_stack(
         low_latency_mode=settings.low_latency_mode,
         live_streaming=settings.live_streaming,
         web_auto_search=settings.web_auto_search,
+        grounded_synthesis=settings.grounded_expression_enabled,
+        grounded_expression_retries=settings.grounded_expression_retries,
         local_library=(HybridLocalLibrary(
             settings.data_dir / settings.memory_environment / 'utilidades' / 'utilidades.sqlite3',
             embeddings=LoopbackOllamaEmbeddings(
@@ -108,6 +110,28 @@ def build_chat_stack(
         telemetry=telemetry,
         experience=experience,
     )
+    if settings.brains_v9_enabled:
+        from campanario.brains import BrainRegistry, CapabilityRouter, BrainExecutor
+        from campanario.brains.store import BuildStore
+        # Use the existing local library Database, never a parallel ingestion store.
+        db_path = (service._local_library.database if service._local_library is not None
+                   else None)
+        builds = BuildStore(session_factory)
+        from campanario.brains.agents import make_agent_profile
+        from sqlalchemy.exc import SQLAlchemyError
+        try:
+            for build in builds.list_builds():
+                if build.agent_id not in {'morgana', 'todd'}:
+                    service._agents.register(make_agent_profile(build))
+        except SQLAlchemyError:
+            # The existing chat still starts if V9 tables need migration.
+            pass
+        service.configure_brains(
+            BrainExecutor(BrainRegistry.local(db_path), audit=builds.record_run),
+            CapabilityRouter(), builds,
+            timeout_seconds=settings.brains_v9_timeout_seconds,
+            max_memory_mb=settings.brains_v9_max_memory_mb,
+        )
     return service, raw_provider
 
 
@@ -188,6 +212,11 @@ def build_runtime(
     from campanario.utilities.integration import register_utilities
     register_utilities(tools)
     permissions.set_rule("utilities.read", PermissionMode.ALLOW_WHILE_SESSION)
+    permissions.set_rule("library:read", PermissionMode.ALLOW_WHILE_SESSION)
+    # R1: brains and platform capabilities share the same runtime policy.
+    # No authorization rule is imported from an AgentBuild or talent.
+    if service._brain_executor is not None:
+        service._brain_executor.bind_permissions(permissions)
     permissions.set_rule("utilities.write", PermissionMode.CONFIRM)
     presence = PresenceManager(event_bus)
     voice_media = build_voice_media(settings)

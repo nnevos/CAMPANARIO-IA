@@ -109,11 +109,30 @@ def build_turn_fact_sheet(turn_id: UUID, question: str, guard: object | None,
     must be forwarded unchanged to all speakers, including group follow-ups.
     """
     question = str(question)[:1000]
+    from campanario.chat.data_intent import DataAnalysisResult
+    if isinstance(guard, DataAnalysisResult):
+        if guard.status != 'grounded':
+            return TurnFactSheet(
+                turn_id, question, guard.subject, 'insufficient', 'library',
+                limitations=(guard.verified_answer,),
+            )
+        source = FactSource(
+            id=f'analysis:{guard.source_id}:{guard.digest[:16]}',
+            kind='computed_analysis', title=guard.source_name,
+            locator=guard.source_name, excerpt=guard.evidence_excerpt,
+            digest=guard.digest,
+        )
+        return TurnFactSheet(
+            turn_id, question, guard.subject, 'supported', 'library',
+            (source,), (FactClaim(guard.evidence_excerpt, (source.id,)),),
+            ('Dados tabulares importados; cálculo determinístico local, não gerado pelo modelo.',),
+            guard.verified_answer,
+        )
     if isinstance(guard, LocalFactSheet):
         quotes = (guard.quote,) + guard.conflicts
         sources = tuple(
             FactSource(
-                id=f'library:{q.document_id}:{q.sha256}', kind='imported_document',
+                id=q.evidence_id or f'library:{q.document_id}:{q.sha256}', kind='imported_document',
                 title=q.name, locator=q.locator, excerpt=q.excerpt, digest=q.sha256,
             ) for q in quotes
         )

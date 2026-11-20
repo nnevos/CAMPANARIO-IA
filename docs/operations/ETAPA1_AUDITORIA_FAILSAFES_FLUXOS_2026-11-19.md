@@ -80,3 +80,12 @@ Um teste exploratório separado de compatibilidade mais antiga (`test_neptune_mo
 ## 6. Critério para seguir a produção
 
 A Etapa 1 entrega código corrigido, novos testes e mapa dos caminhos de execução. **Não fecha a homologação integral do projeto.** Não há mudança de identidade da Morgana/Todd, novo runtime, novo banco nem alteração no formato das mensagens. Para implantar no PC principal, manter um backup do banco de dados e executar os testes e a validação de runtime/voz do próprio ambiente antes de substituir a versão em uso.
+
+
+---
+
+## Referência posterior — failsafes da trilha V9 (registro não retroativo)
+
+Este relatório documenta exclusivamente a **Etapa 1** e seus testes históricos. A arquitetura de cérebros V9/V9.1 foi adicionada **posteriormente** na cópia do IA; sua matriz de riscos, condições de rollback, política de falhas de execução e gates de homologação estão em [`FAILSAFE_V9_CEREBROS.md`](FAILSAFE_V9_CEREBROS.md). O planejamento por fases está em [`../current/ROADMAP_V9_CEREBROS_COMPLETO.md`](../current/ROADMAP_V9_CEREBROS_COMPLETO.md).
+
+**Novos riscos a acompanhar (não resolvidos pela Etapa 1):** `asyncio.wait_for` não interrompe a thread do cérebro; rotas de permissão de ferramentas ainda precisam de unificação; cérebros sem executor devem permanecer indisponíveis; validação semântica V9.1 é conservadora; banco real de 3 pastas e Ollama/Windows/mobile não foram homologados. Isso **não** modifica os resultados históricos reportados acima.

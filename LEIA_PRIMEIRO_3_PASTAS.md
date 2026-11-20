@@ -1,3 +1,5 @@
+> **P0/V9 atual:** o fluxo de migração via PowerShell abaixo é **histórico** e só deve ser usado para preparar/reparar ambiente ou mover dados quando necessário, não para cada atualização do código. Para o ZIP P0 de alterações, apenas copie pelo Explorador após backup, sem rodar scripts: [guia sem PowerShell](docs/current/P0_TRES_PASTAS_SEM_POWERSHELL.md).
+
 # ATENCAO: veja LEIA_PRIMEIRO_PYTHON_UNIFICADO.md antes de qualquer migracao.
 
 **A preparacao do Python externo com voz agora e obrigatoria.** O fluxo antigo de criar o Python durante ATIVAR_SEPARACAO foi substituido.

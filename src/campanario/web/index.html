@@ -3,11 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="theme-color" content="#080d12" />
+<meta name="theme-color" content="#090a0c" />
 <title>Campanário</title>
 <link rel="stylesheet" href="/static/shell.css?v=0.8.0">
 <link rel="stylesheet" href="/static/cyberdeck.css?v=1.0.0">
 <link rel="stylesheet" href="/static/intelligence-v5.css?v=5.0.0">
+<link rel="stylesheet" href="/static/dark-matter-v7.css?v=7.0.0">
+<link rel="stylesheet" href="/static/chat-polish-v7-1.css?v=7.1.0">
 </head>
 <body>
 <div class="app" id="campApp">
@@ -18,7 +20,7 @@
 <section class="presence-space" id="chatView"><div class="home-eyebrow">◈ &nbsp; AMBIENTE DE INTELIGÊNCIA PESSOAL <span class="eyebrow-line"></span> LOCAL FIRST</div>
 <div class="participants" id="participants" aria-hidden="true"></div>
 <div class="stage" id="stage"><div class="ambient" id="ambient"><div class="ambient-sigils" aria-hidden="true"><img class="background-sigil bg-campanario" id="coreSigil" src="/ui-assets/campanario_idle.svg" alt=""></div><div class="deck-telemetry" aria-hidden="true"><span>CORE / LOCAL NODE</span><span class="deck-telemetry-line"></span><span id="coreTelemetryState">01 // STANDBY</span></div><div class="system-status" id="systemStatus" role="status" aria-live="polite"><span class="status-led" id="statusLed"></span><span>Status do sistema: <strong id="statusValue">Carregando</strong></span></div><span class="hidden-control" id="stateTitle"></span><span class="hidden-control" id="stateCopy"></span><span class="hidden-control" id="core"></span></div><div class="conversation" id="conversation"></div></div>
-<button class="jump-latest" id="jumpLatest" type="button" hidden aria-label="Ir para mensagens recentes">↓ Mensagens recentes</button><div class="dock"><div class="tool-state" id="toolState"></div><div class="statusline" id="statusline" aria-live="polite"></div><div id="uploadFeedback" class="upload-feedback" role="status" aria-live="polite" hidden></div><form class="composer" id="form"><button class="round" type="button" id="mic" title="Voz — ainda não conectada" aria-label="Voz">◉</button><textarea id="prompt" rows="1" placeholder="Mensagem para o Campanário..."></textarea><input id="attachInput" type="file" accept=".txt,.md,.pdf,.csv,.json,.log" hidden aria-label="Selecionar arquivo"><button class="round attach" type="button" id="attachButton" title="Enviar arquivo para a pasta autorizada (até 200 MB)" aria-label="Adicionar arquivo">+</button><button class="round send" id="send" type="submit" aria-label="Enviar">↑</button></form></div>
+<button class="jump-latest" id="jumpLatest" type="button" hidden aria-label="Ir para mensagens recentes">↓ Mensagens recentes</button><div class="dock"><div class="tool-state" id="toolState"></div><button id="groundingDebugButton" class="v91-evidence-button" type="button" hidden title="Inspecionar evidências desta resposta">Evidências</button><div class="statusline" id="statusline" aria-live="polite"></div><div id="uploadFeedback" class="upload-feedback" role="status" aria-live="polite" hidden></div><form class="composer" id="form"><button class="round" type="button" id="mic" title="Voz — ainda não conectada" aria-label="Voz">◉</button><textarea id="prompt" rows="1" placeholder="Mensagem para o Campanário..."></textarea><input id="attachInput" type="file" accept=".txt,.md,.pdf,.csv,.json,.log" hidden aria-label="Selecionar arquivo"><button class="round attach" type="button" id="attachButton" title="Enviar arquivo para a pasta autorizada (até 200 MB)" aria-label="Adicionar arquivo">+</button><button class="round send" id="send" type="submit" aria-label="Enviar">↑</button></form></div>
 </section>
 
 <section class="workspace-view" id="databaseView" hidden></section>
@@ -27,6 +29,7 @@
 
 <aside class="system-panel" id="systemPanel"><div class="panel-head"><h2>Sistema</h2><button class="close" id="systemClose">×</button></div><div class="section"><h3>Campanário</h3><div class="kv"><span>Estado</span><strong>Presente</strong></div><div class="kv"><span>Modelo</span><strong id="model">—</strong></div><div class="kv"><span>Build</span><strong id="build">—</strong></div></div><div class="section"><h3>Habitantes</h3><div id="agentDetails"></div></div><div class="section"><h3>Conversas</h3><button class="new-session" type="button" id="newSessionPanel">+ Nova conversa</button><div class="future">O histórico está na barra lateral. Conversas antigas podem ser retomadas sem apagar as memórias aprendidas.</div></div><div class="section"><h3>Capacidades</h3><div class="future">Pesquisa web pelo chat (quando necessária) · memória · documentos · ferramentas · diagnóstico. Voz e wake word dependem de configuração.<br><br>Esta área é administrativa. Capacidades ainda não conectadas não são apresentadas como ativas.</div></div></aside>
 </main></div>
+<dialog id="groundingDebugDialog" class="v91-evidence-dialog" aria-labelledby="groundingDebugTitle"><h2 id="groundingDebugTitle">Evidências e validação</h2><p>Registro local de operações, fontes e resultados; não inclui raciocínio privado do modelo.</p><pre id="groundingDebugContent"></pre><button type="button" id="groundingDebugClose">Fechar</button></dialog>
 <div class="boot-splash" id="bootSplash" aria-hidden="true"><img src="/ui-assets/campanario_idle.svg" alt=""><strong>CAMPANÁRIO</strong><small>SISTEMA DE INTELIGÊNCIA PESSOAL</small></div>
 <dialog class="confirm-dialog" id="dangerDialog" aria-labelledby="dangerTitle"><h2 id="dangerTitle">Confirmar operação</h2><p id="dangerDescription"></p><label for="dangerPhrase">Digite a frase de confirmação:</label><input id="dangerPhrase" autocomplete="off" spellcheck="false"><div class="confirm-actions"><button id="dangerCancel" type="button">Cancelar</button><button id="dangerAccept" class="destructive" type="button" disabled>Confirmar</button></div></dialog>
 <script src="/static/chat.js?v=0.8.0"></script>

@@ -72,19 +72,23 @@ async def ask(agent='morgana', *, provider=None, source=None):
 
 @pytest.mark.asyncio
 async def test_source_first_then_personality_synthesis_then_audit():
+    # V9.1: unaudited new propositions must fail closed (not accepted merely by
+    # an affirmative LLM judge as in the V8 test fixture).
     for agent in ('todd', 'morgana'):
         answer, service, provider = await ask(agent)
-        assert answer.startswith('Cellbit é um criador brasileiro')
+        assert answer.startswith('Segundo a Wikipédia offline')
+        assert 'Cellbit é um escritor' in answer
         assert answer.count('Fonte:') == 1
         assert 'wikipedia_pt_all_nopic_2026-05.zim' in answer
         assert '127.0.0.1:8181' in answer
-        assert 'Segundo a Wikipédia offline, no artigo' not in answer
-        assert len(provider.requests) == 2
+        assert len(provider.requests) <= 2
         prompt = '\n'.join(m.content for m in provider.requests[0].messages)
-        assert 'TAREFA: RESPOSTA CONVERSACIONAL COM EVIDENCIA' in prompt
-        assert ARTICLE in prompt and 'FONT' not in answer.upper().split('FONTE:')[0]
-        assert 'Morgana' in prompt or 'Todd' in prompt or agent in prompt.lower()
-        assert provider.requests[1].response_format == 'json'
+        assert 'DADOS_CANONICOS_JSON' in prompt
+        assert ARTICLE in prompt
+        assert provider.requests[0].response_format is None
+        trace = service.get_factual_debug(service._sessions.list()[0].id)
+        assert trace['status'] == 'partially_verified'
+        assert trace['agents'][agent]['validation'] == 'fallback'
         assert service.get_messages(service._sessions.list()[0].id)[-1].content == answer
 
 
@@ -157,9 +161,11 @@ async def test_fact_turn_keeps_recent_user_context_without_prior_assistant_as_ev
     answer = ''.join(e.text for e in result if e.type == 'token')
     assert 'Fonte:' in answer
     synth = next(req for req in provider.requests if any(
-        'TAREFA: RESPOSTA CONVERSACIONAL COM EVIDENCIA' in m.content for m in req.messages
+        'DADOS_CANONICOS_JSON' in m.content for m in req.messages
     ))
     combined = '\n'.join(m.content for m in synth.messages)
-    assert 'Vou mestrar Ordem Paranormal para quatro jogadores.' in combined
-    # The response to a previous turn is not reused as a factual source.
+    assert ARTICLE in combined
+    # V9.1 isolates factual input to sources: earlier personal context is not
+    # treated as proof and no previous assistant message enters the prompt.
+    assert 'Vou mestrar Ordem Paranormal para quatro jogadores.' not in combined
     assert all(m.content != 'Cellbit é um criador brasileiro ligado a Ordem Paranormal' for m in synth.messages)

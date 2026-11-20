@@ -6,6 +6,10 @@ const modules = [
  ['arquivos','▤','Arquivos','Navegue, pesquise e organize com segurança'],
  ['pesquisa','◎','Pesquisa Web','Busque informações atuais e confira suas fontes'],
  ['biblioteca','▣','Biblioteca','Documentos pesquisáveis sem internet'],
+ ['documentos','▤','Documentos','Metadados, extração e originais preservados'],
+ ['analises','∑','Análises','Cálculos locais e evidências tabulares'],
+ ['cerebros','◈','Central de Cérebros','Capacidades instaladas, saúde e execuções reais'],
+ ['forja','⚒','Forja de Agentes','Arquétipos e talentos sem mudar personalidades'],
  ['notas','✎','Notas','Anotações que permanecem salvas'],
  ['tarefas','☑','Tarefas','Prioridades, prazos e andamento'],
  ['calculos','∑','Calculadoras','Resultados calculados, sem suposições da IA'],
@@ -18,6 +22,7 @@ const modules = [
  ['avancado','⌘','Avançado','Execução técnica para desenvolvedores']
 ];
 let active='inicio', roots=[], catalog=[], busy=false, currentPath='', editing={}, backupName='', latestResult=null;
+let v9Agent='morgana', v9Build=null, v9Imported=null;
 const $=sel=>document.querySelector(sel);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const bytes=n=>Number.isFinite(Number(n))?new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1}).format(Number(n)/1024/1024)+' MB':'—';
@@ -49,9 +54,49 @@ function nav(){ $('#modules').innerHTML=modules.map(([id,icon,name])=>`<button c
 async function go(id){if(!modules.some(m=>m[0]===id))return;active=id;clearMessage();nav();$('#view').innerHTML=empty('Carregando dados locais…');history.replaceState(null,'',`#${id}`);try{await views[id]()}catch(e){$('#view').innerHTML=box('Não foi possível carregar',empty(e.message));message(e.message,'error')}}
 const tile=(id,desc)=>{const m=modules.find(x=>x[0]===id);return `<button class="card tile" type="button" data-nav="${id}"><span class="symbol">${m[1]}</span><h2>${m[2]}</h2><p>${desc}</p><span class="badge">Abrir módulo</span></button>`};
 const views={};
-views.inicio=async()=>{const [notes,tasks,docs,diag]=await Promise.allSettled([read('notes.list'),read('tasks.list'),read('library.list'),read('diagnostics.system')]);const count=(x,key)=>x.status==='fulfilled'?(x.value[key]??x.value.items?.length??'—'):'Indisponível';$('#view').innerHTML=`<div class="hero"><div class="eyebrow">SEU ESPAÇO PESSOAL</div><h2>As coisas importantes, em um só lugar.</h2><p>Organize sua rotina, consulte seus documentos e cuide dos seus arquivos — mesmo sem um modelo de IA em execução.</p><div class="row">${btn('Abrir minhas notas','jump','notas','primary')}${btn('Explorar arquivos','jump','arquivos')}</div></div><div class="grid stat-grid">${[['Notas',count(notes,'count')],['Tarefas',count(tasks,'count')],['Documentos',count(docs,'count')],['CPU lógica',diag.status==='fulfilled'?diag.value.cpu_logical:'—']].map(([name,n])=>`<div class="card"><div class="metric">${esc(n)}</div><div class="metric-label">${esc(name)}</div></div>`).join('')}</div><div class="section-head"><h2>Explorar ferramentas</h2><span class="pill">Sem dependência da IA</span></div><div class="grid">${['pesquisa','arquivos','biblioteca','notas','tarefas','diagnostico','emergencia','backups','calculos','memoria'].map(id=>tile(id,modules.find(x=>x[0]===id)[3])).join('')}</div>`};
-views.arquivos=async()=>{if(!currentPath)currentPath=roots[0]||'';const data=await read('files.list',{path:currentPath});const parent=currentPath.replace(/[\\/][^\\/]+[\\/]?$/,'');const canUp=parent && roots.some(r=>parent===r||parent.startsWith(r+'/')||parent.startsWith(r+'\\'));$('#view').innerHTML=`<div class="grid"><div class="card full"><div class="section-head"><h2>Explorador de arquivos</h2><span class="badge">Pasta autorizada</span></div><div class="row breadcrumbs">${canUp?btn('↑ Voltar','folder',parent):''}<span class="path-label">${esc(currentPath)}</span>${btn('↻ Atualizar','refresh','')}</div><div class="row" style="margin-top:16px">${form('files.search',field('query','Pesquisar nomes de arquivos','search','','placeholder="Nome ou parte dele" required')+`<input type="hidden" name="path" value="${esc(currentPath)}">`,'Pesquisar')}<form id="upload-form"><label class="upload-label">Adicionar arquivo <input type="file" id="upload" accept=".txt,.md,.pdf,.csv,.json,.log" required></label><button class="secondary" type="submit">Enviar para pasta autorizada</button></form></div><div class="items" style="margin-top:16px">${data.items.length?data.items.sort((a,b)=>Number(b.directory)-Number(a.directory)||a.name.localeCompare(b.name)).map(x=>entry((x.directory?'📁 ':'📄 ')+x.name,(x.directory?'Pasta':bytes(x.bytes))+' · '+date(x.modified),x.directory?btn('Abrir','folder',x.path):`${btn('Ler','file-read',x.path)}${btn('Copiar','file-copy',x.path)}${btn('Mover','file-move',x.path)}${btn('Lixeira','file-delete',x.path,'danger small-btn')}`)).join(''):empty('Pasta vazia. Você pode adicionar arquivos acima.')}</div></div><div class="card"> <h2>Nova pasta</h2>${form('files.mkdir',field('name','Nome da pasta','text','','required maxlength="100"'),'Criar pasta',true)}</div><div class="card"><h2>Proteção de arquivos</h2><p>O explorador mostra somente o espaço autorizado. Exclusões são enviadas à lixeira interna, não apagadas definitivamente. Copiar e mover exigem confirmação.</p><p class="hint-block">Arquivos do seu computador fora dessa pasta não ficam acessíveis automaticamente.</p></div></div><div id="detail" class="detail-slot"></div>`};
-views.biblioteca=async()=>{const data=await read('library.list');$('#view').innerHTML=`<div class="split"><div class="stack">${box('Pesquisar no acervo',form('library.search',field('query','Busque no conteúdo dos documentos','search','','placeholder="Palavra ou assunto" required'),'Pesquisar trechos'))}${box('Importar documento',`<p>Primeiro envie um TXT, Markdown ou PDF à pasta autorizada. Depois importe-o para a biblioteca pesquisável.</p><form id="library-upload"><div class="field"><label for="lib-file">Selecionar documento</label><input type="file" id="lib-file" accept=".txt,.md,.pdf" required></div>${field('category','Categoria','text','geral','maxlength="100"')}<button type="submit" class="primary">Adicionar à biblioteca</button></form><p class="hint-block">PDF digitalizado sem texto poderá exigir OCR, que não está disponível aqui.</p>`)}</div>${box(`Minha biblioteca <span class="badge">${data.documents.length} documentos</span>`,data.documents.length?`<div class="items">${data.documents.map(d=>entry(d.name,d.category+' · '+date(d.created),btn('Excluir','lib-delete',d.id,'danger small-btn'),'Origem: '+d.source)).join('')}</div>`:empty('Sua biblioteca ainda está vazia. Importe um documento ao lado.'))}</div><div id="detail" class="detail-slot"></div>`};
+views.inicio=async()=>{const [notes,tasks,docs,diag]=await Promise.allSettled([read('notes.list'),read('tasks.list'),read('library.list'),read('diagnostics.system')]);const count=(x,key)=>x.status==='fulfilled'?(x.value[key]??x.value.items?.length??'—'):'Indisponível';$('#view').innerHTML=`<div class="hero"><div class="eyebrow">SEU ESPAÇO PESSOAL</div><h2>As coisas importantes, em um só lugar.</h2><p>Organize sua rotina, consulte seus documentos e cuide dos seus arquivos — mesmo sem um modelo de IA em execução.</p><div class="row">${btn('Abrir minhas notas','jump','notas','primary')}${btn('Explorar arquivos','jump','arquivos')}</div></div><div class="grid stat-grid">${[['Notas',count(notes,'count')],['Tarefas',count(tasks,'count')],['Documentos',count(docs,'count')],['CPU lógica',diag.status==='fulfilled'?diag.value.cpu_logical:'—']].map(([name,n])=>`<div class="card"><div class="metric">${esc(n)}</div><div class="metric-label">${esc(name)}</div></div>`).join('')}</div><div class="section-head"><h2>Explorar ferramentas</h2><span class="pill">Sem dependência da IA</span></div><div class="grid">${['pesquisa','arquivos','biblioteca','documentos','analises','cerebros','forja','notas','tarefas','diagnostico','emergencia','backups','calculos','memoria'].map(id=>tile(id,modules.find(x=>x[0]===id)[3])).join('')}</div>`};
+views.arquivos=async()=>{if(!currentPath)currentPath=roots[0]||'';const data=await read('files.list',{path:currentPath});const parent=currentPath.replace(/[\\/][^\\/]+[\\/]?$/,'');const canUp=parent && roots.some(r=>parent===r||parent.startsWith(r+'/')||parent.startsWith(r+'\\'));$('#view').innerHTML=`<div class="grid"><div class="card full"><div class="section-head"><h2>Explorador de arquivos</h2><span class="badge">Pasta autorizada</span></div><div class="row breadcrumbs">${canUp?btn('↑ Voltar','folder',parent):''}<span class="path-label">${esc(currentPath)}</span>${btn('↻ Atualizar','refresh','')}</div><div class="row" style="margin-top:16px">${form('files.search',field('query','Pesquisar nomes de arquivos','search','','placeholder="Nome ou parte dele" required')+`<input type="hidden" name="path" value="${esc(currentPath)}">`,'Pesquisar')}<form id="upload-form"><label class="upload-label">Adicionar arquivo <input type="file" id="upload" accept=".txt,.md,.pdf,.docx,.xlsx,.csv,.json,.log" required></label><button class="secondary" type="submit">Enviar para pasta autorizada</button></form></div><div class="items" style="margin-top:16px">${data.items.length?data.items.sort((a,b)=>Number(b.directory)-Number(a.directory)||a.name.localeCompare(b.name)).map(x=>entry((x.directory?'📁 ':'📄 ')+x.name,(x.directory?'Pasta':bytes(x.bytes))+' · '+date(x.modified),x.directory?btn('Abrir','folder',x.path):`${btn('Ler','file-read',x.path)}${btn('Copiar','file-copy',x.path)}${btn('Mover','file-move',x.path)}${btn('Lixeira','file-delete',x.path,'danger small-btn')}`)).join(''):empty('Pasta vazia. Você pode adicionar arquivos acima.')}</div></div><div class="card"> <h2>Nova pasta</h2>${form('files.mkdir',field('name','Nome da pasta','text','','required maxlength="100"'),'Criar pasta',true)}</div><div class="card"><h2>Proteção de arquivos</h2><p>O explorador mostra somente o espaço autorizado. Exclusões são enviadas à lixeira interna, não apagadas definitivamente. Copiar e mover exigem confirmação.</p><p class="hint-block">Arquivos do seu computador fora dessa pasta não ficam acessíveis automaticamente.</p></div></div><div id="detail" class="detail-slot"></div>`};
+views.biblioteca=async()=>{
+ const data=await read('library.list');
+ const hits=data.documents.map(d=>entry(d.name,
+  d.category+' · '+date(d.created)+' · '+(d.state||'available'),
+  btn('Detalhes','lib-details',d.id)+btn('Markdown','lib-markdown',d.id)+btn('Excluir','lib-delete',d.id,'danger small-btn'),
+  'Indexação: '+(d.method||'legacy'))).join('');
+ $('#view').innerHTML=`<div class="split"><div class="stack">
+ ${box('Buscar com evidências',form('library.retrieve',field('query','Consulta contextual','search','','placeholder="Ex.: Ocultista 20% NEX" required maxlength="500"'),'Recuperar trechos'))}
+ ${box('Busca literal',form('library.search',field('query','Palavras no documento ou no nome','search','','required'),'Pesquisar texto'))}
+ ${box('Importar documento',`<p>O original é copiado para a biblioteca local. TXT, Markdown, PDF, DOCX, CSV, XLSX e JSON; arquivos complexos podem ficar parcialmente processados.</p><form id="library-upload"><div class="field"><label for="lib-file">Selecionar documento</label><input type="file" id="lib-file" accept=".txt,.md,.pdf,.docx,.csv,.xlsx,.json" required></div>${field('category','Categoria','text','geral','maxlength="100"')}<button type="submit" class="primary">Adicionar à biblioteca</button></form><p class="hint-block">OCR somente se Tesseract e pdftoppm estiverem instalados no computador.</p>`)}
+ </div>${box('Biblioteca · '+data.documents.length+' documentos',hits||empty('Nenhum documento importado.'))}</div><div id="detail" class="detail-slot"></div>`;
+};
+views.documentos=async()=>{
+ const data=await read('library.list');
+ $('#view').innerHTML=box('Documentos originais e processamento',
+  data.documents.length?data.documents.map(d=>entry(d.name,
+   (d.state||'available')+' · '+(d.method||'legado')+' · '+bytes(d.bytes),
+   btn('Inspecionar','lib-details',d.id)+btn('Markdown','lib-markdown',d.id)+
+   `<a class="secondary small-btn" href="/api/v1/utilities/documents/${encodeURIComponent(d.id)}/original" target="_blank" rel="noopener noreferrer">Abrir original</a>`)).join('')
+   :empty('Nenhum documento disponível.'))+'<div id="detail" class="detail-slot"></div>';
+};
+views.analises=async()=>{
+ const data=await read('library.list');
+ const sheets=data.documents.filter(d=>/\.(csv|xlsx|json)$/i.test(d.name));
+ const choice=sheets.map(d=>[d.id,d.name]);
+ $('#view').innerHTML=`<div class="split"><div class="stack">
+ ${box('Inspecionar tabela',sheets.length?form('data.inspect',select('document_id','Arquivo importado',choice,choice[0]?.[0]),'Ver colunas e ausências'):empty('Importe CSV, XLSX ou JSON na biblioteca.'))}
+ ${box('Análise verificável',sheets.length?form('data.analyze',
+ select('document_id','Planilha',choice,choice[0]?.[0])+select('operation','Operação',[
+ ['describe','Estatísticas descritivas'],['missing','Valores ausentes'],
+ ['group','Agrupar e somar'],['trend','Tendência por período'],['growth','Crescimento por produto'],['filter','Filtrar']],'describe')+
+ field('column','Coluna numérica ou filtro','text','')+
+ field('group_by','Coluna de agrupamento','text','')+
+ field('period_column','Coluna de período','text','')+
+ select('aggregation','Agregação',[['sum','Soma'],['mean','Média'],['count','Contagem'],['min','Mínimo'],['max','Máximo']],'sum')+
+ select('operator','Comparação para filtro',[['eq','Igual'],['ne','Diferente'],['gt','Maior'],['gte','Maior ou igual'],['lt','Menor'],['lte','Menor ou igual']],'eq')+
+ field('value','Valor para filtro','text',''),'Executar cálculo'):empty('Importe uma planilha primeiro.'))}
+ </div>${box('Confiabilidade',`<p>A análise usa exclusivamente os dados do original importado e operações predefinidas de pandas. Não executa fórmulas das planilhas nem código gerado pelo modelo.</p><p>Escolha as colunas a partir da inspeção e confira tabelas e resultados. Os resultados não são memórias pessoais.</p>`)}
+ </div><div id="detail" class="detail-slot"></div>`;
+};
+
 const editor=(kind)=>{const item=editing[kind]||{};const isTask=kind==='tasks';return form(`${kind}.save`,`${item.id?`<input name="id" type="hidden" value="${esc(item.id)}">`:''}${field('title',isTask?'Nome da tarefa':'Título','text',item.title||'','required maxlength="200"')}${isTask?select('status','Estado',[['todo','A fazer'],['doing','Em andamento'],['done','Concluída'],['cancelled','Cancelada']],item.status||'todo')+select('priority','Prioridade',[['baixa','Baixa'],['normal','Normal'],['alta','Alta'],['urgente','Urgente']],item.priority||'normal')+field('due','Prazo','date',item.due||''):field('content','Conteúdo','textarea',item.content||'','rows="8"')}${field('tags','Etiquetas (separadas por vírgula)','text',item.tags||'')}`,item.id?'Salvar alterações':(isTask?'Criar tarefa':'Salvar nota'),true)};
 async function records(kind){const data=await read(`${kind}.list`);const isTask=kind==='tasks';$('#view').innerHTML=`<div class="split"><div class="card"><div class="section-head"><h2>${editing[kind]?.id?'Editar':'Criar'} ${isTask?'tarefa':'nota'}</h2>${editing[kind]?.id?btn('Nova','new-record',kind):''}</div>${editor(kind)}</div><div class="card"><div class="section-head"><h2>${isTask?'Minhas tarefas':'Minhas notas'}</h2><span class="badge">${data.items.length} registros</span></div><input class="searchbox" id="local-filter" type="search" placeholder="Filtrar registros..." aria-label="Filtrar registros"><div class="items" id="records-list" style="margin-top:15px">${data.items.length?data.items.map(item=>entry(item.title||'Sem título',(isTask?`${item.status||'todo'} · ${item.priority||'normal'} · `:'')+date(item.updated),btn('Editar','edit-'+kind,item.id)+btn('Excluir','delete-'+kind,item.id,'danger small-btn'),isTask?item.due?`Prazo: ${item.due}`:'':item.content||'')).join(''):empty('Nenhum registro. Crie o primeiro à esquerda.')}</div></div></div>`};
 views.notas=()=>records('notes');views.tarefas=()=>records('tasks');
@@ -82,8 +127,63 @@ function renderWebPage(page){
  el.innerHTML=`<section class="card web-reading"><div class="section-head"><div><div class="eyebrow">PÁGINA CONSULTADA E REGISTRADA</div><h2>${esc(page.title)}</h2></div><span class="badge">Leitura real</span></div><div class="web-url">${esc(page.url)}</div><div class="meta">Consultada em ${esc(date(page.read_at))}${page.truncated?' · conteúdo truncado pelo limite de segurança':''}</div><div class="row web-save-row"><button type="button" class="primary" data-action="web-save" data-value="${esc(page.source_id)}">＋ Salvar na biblioteca offline</button><a href="${esc(page.url)}" class="secondary" target="_blank" rel="noopener noreferrer">Ver original ↗</a></div><div class="web-excerpt">${esc(page.content)}</div><p class="muted">Texto extraído do site; não é verificação independente da veracidade do conteúdo. A origem foi registrada.</p></section>`;
  el.scrollIntoView({behavior:'smooth',block:'start'});
 }
+// V9: functional local-only brain and build controls, using actual backend state.
+function p0EnvironmentPanel(audit){
+ const checks=audit.checks.map(x=>entry(x.id,`${x.status.toUpperCase()} · ${x.message}`)).join('');
+ return box('P0 · Diagnóstico das três pastas (somente leitura)',
+ `<p><strong>Estado observado: ${esc(audit.status)}</strong>. Nenhum arquivo é copiado ou modificado nesta verificação.</p>
+ <p class="hint-block">${esc(audit.note)}</p>
+ <div class="meta">IA: ${esc(audit.folders.ia)}<br>Venv externa: ${esc(audit.folders.venv)}<br>Database: ${esc(audit.folders.database)}<br>Dados ativos: ${esc(audit.folders.data)}<br>SQLite esperado: ${esc(audit.folders.sqlite)}<br>Ambiente: ${esc(audit.memory_environment)}</div>
+ <div class="items">${checks}</div><p>${btn('Verificar novamente','refresh','')}</p>`,'wide');
+}
+views.cerebros=async()=>{
+ const [audit,data]=await Promise.all([api('/api/v1/brains/environment'),api('/api/v1/brains/catalog')]);
+ const preflight=p0EnvironmentPanel(audit);
+ if(!data.enabled){$('#view').innerHTML=preflight+box('V9 desativada', '<p>Habilite CAMPANARIO_BRAINS_V9_ENABLED=true e reinicie. O chat V9.1 existente permanece intacto.</p>');return;}
+ const logs=await api('/api/v1/brains/runs?limit=20');
+ $('#view').innerHTML=preflight+`<div class="grid">${data.brains.map(b=>box(esc(b.display_name),`<p><strong>${esc(b.status)}</strong> · ${esc(b.health)}</p><div class="meta">${esc(b.brain_id)} · ${esc((b.capabilities||[]).join(', ')||'sem executor')} · ${esc(b.version||'não instalado')}</div>`)).join('')}</div>
+ <div class="grid v9-panels" style="margin-top:16px">
+ ${box('Teste real de capacidade',`<form id="v9-test-form" class="tool-form">${select('brain_id','Cérebro',[['knowledge','Conhecimento — consulta à biblioteca'],['analysis','Análise — cálculo na planilha']],'knowledge')}${field('query','Pergunta','textarea','','required maxlength="1200" rows="3"')}${field('document_hint','Documento (opcional)','text','','maxlength="85"')}<button class="primary" type="submit">Executar consulta</button></form><p class="hint-block">Este teste realiza leitura real, sem calcular no LLM. Resultados sem fonte são marcados como indisponíveis.</p>`,'wide')}
+ ${box('Últimas execuções',logs.items.length?logs.items.map(r=>entry(r.brain_id,`${r.status} · ${r.latency_ms} ms · ${r.evidence_count} evidências · ${date(r.created_at)}`,'',`Operações: ${r.operations.join(', ')}`)).join(''):empty('Nenhuma execução registrada.'),'wide')}
+ </div><div id="detail" class="detail-slot"></div>`;
+};
+views.forja=async()=>{
+ const data=await api('/api/v1/brains/catalog');
+ if(!data.enabled){$('#view').innerHTML=box('V9 desativada','<p>Ative CAMPANARIO_BRAINS_V9_ENABLED=true para configurar fichas heroicas.</p>');return;}
+ if(!data.agents.some(a=>a.id===v9Agent))v9Agent='morgana';
+ v9Build=await api(`/api/v1/brains/builds/${encodeURIComponent(v9Agent)}`);
+ const archetypes=[['','Livre / sem arquétipo'],...Object.entries(data.archetypes).map(([id,name])=>[id,`${id} · ${name}`])];
+ const b=v9Build;
+ $('#view').innerHTML=`<div class="grid v9-panels">
+ ${box('Agente e ficha',`<div class="row">${data.agents.map(a=>btn(a.name,'v9-agent',a.id,a.id===v9Agent?'primary small-btn':'secondary small-btn')).join('')}</div><div class="meta">Ficha revisão ${b.revision} · ${esc(b.agent_id)} · Personalidade original preservada</div>
+ <form id="v9-build-form" class="tool-form">${select('primary','Arquétipo principal',archetypes,b.primary_archetype||'')}${select('secondary','Arquétipo secundário',[['','Nenhum'],...archetypes.slice(1)],b.secondary_archetype||'')}
+ <div class="field"><label>Talentos equipados (máximo 2 ativos por turno)</label><div class="v9-talent-list">${data.talents.map(t=>`<label><input type="checkbox" name="talent" value="${esc(t.id)}" ${b.talents.includes(t.id)?'checked':''}><span>${esc(t.title)} <small>· ${esc(t.trigger)} · ${esc(t.effect)}</small></span></label>`).join('')}</div></div>
+ <button class="primary" type="submit">Salvar ficha sem alterar memórias</button><a class="secondary" href="/api/v1/brains/builds/${encodeURIComponent(v9Agent)}/export" download="${esc(v9Agent)}.campagent">Exportar .campagent</a></form>`,'wide')}
+ ${box('Novo agente local',`<form id="v9-create-form" class="tool-form">${field('agent_id','Identificador único','text','','required pattern="[a-z0-9_-]+" maxlength="64"')}${field('display_name','Nome de exibição','text','','required maxlength="64"')}${field('identity_description','Descrição da nova identidade','textarea','','maxlength="400" rows="3"')}<button class="primary" type="submit">Criar agente com modelo compartilhado</button></form><p class="hint-block">Não copia Morgana, Todd, memórias nem permissões.</p>`)}
+ ${box('Importar .campagent',`<form id="v9-import-form" class="tool-form"><input type="file" name="package" accept=".campagent" required><button class="secondary" type="submit">Inspecionar pacote sem aplicar</button></form><p class="hint-block">A importação verifica o manifesto e rejeita scripts, executáveis e caminhos perigosos.</p>`)}
+ </div><div id="detail" class="detail-slot"></div>`;
+};
 views.avancado=async()=>{const allowed=catalog.map(x=>[x.id,x.id+' · '+x.description]);$('#view').innerHTML=`<div class="split">${box('Executor técnico',`<p>Para testes e manutenção. O uso normal do Campanario não exige JSON.</p>${form('advanced',select('tool','Ferramenta',allowed,allowed[0]?.[0])+field('json','Parâmetros JSON','textarea','{}','rows="9"'),'Executar ferramenta')}`)}${box('Registro de capacidades',`<p>${catalog.length} ferramentas registradas. Cada ação é executada no backend e retorna um resultado estruturado.</p><p>Este painel não realiza ações inventadas pela IA.</p>`)}</div><div id="detail" class="detail-slot"></div>`};
 function showDetail(content){let el=$('#detail');if(!el){el=document.createElement('div');el.id='detail';el.className='detail-slot';$('#view').appendChild(el)}el.innerHTML=box('Resultado da operação',content);el.scrollIntoView({behavior:'smooth',block:'nearest'})}
+function renderEvidence(res){
+ if(!res.evidence?.length)return empty('Nenhum trecho relevante encontrado. O sistema não confirmou a informação.');
+ return res.evidence.map(e=>entry(e.document,
+  (e.page?'Página '+e.page:'Sem página')+(e.section?' · '+e.section:'')+' · '+e.method,
+  btn('Ver documento','lib-details',e.document_id),
+  `Evidência ${e.evidence_id}\n${e.excerpt}`)).join('');
+}
+function renderAnalysis(res){
+ if(!Array.isArray(res.result))return `<pre class="result">${esc(JSON.stringify(res,null,2))}</pre>`;
+ const keys=Array.from(new Set(res.result.flatMap(row=>Object.keys(row)))).slice(0,15);
+ const table=`<div style="overflow:auto"><table class="result-table"><thead><tr>${keys.map(k=>`<th>${esc(k)}</th>`).join('')}</tr></thead><tbody>${res.result.map(row=>`<tr>${keys.map(k=>`<td>${esc(row[k]??'—')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+ const numericKey=keys.find(k=>res.result.some(row=>typeof row[k]==='number')&&!['change_percent','change_absolute'].includes(k));
+ const labelKey=keys.find(k=>k!==numericKey);
+ const points=res.result.slice(0,18);
+ const max=Math.max(0,...points.map(row=>Number(row[numericKey])||0));
+ const chart=(res.operation==='group'||res.operation==='trend')&&numericKey&&labelKey&&max>0?
+  `<div class="v8-bars">${points.map(row=>`<div class="v8-bar"><span>${esc(row[labelKey])}</span><div><i style="width:${Math.max(0,Math.min(100,100*Number(row[numericKey])/max))}%"></i></div><b>${esc(fmt(row[numericKey]))}</b></div>`).join('')}</div>`:'';
+ return `<div class="meta">Arquivo: ${esc(res.source?.filename||'—')} · ${esc(res.status||'computed')} · ${esc(res.operation)}</div>${table}${chart}`;
+}
 async function uploadFile(file){
  if(!file)throw Error('Selecione um arquivo');
  if(file.size>200_000_000)throw Error('Limite de envio: 200 MB. Copie PDFs maiores diretamente para a pasta autorizada e importe pela biblioteca (até 500 MB).');
@@ -96,14 +196,56 @@ async function uploadFile(file){
 }
 function values(formEl){const obj={};for(const [k,v] of new FormData(formEl)){if(k==='confirm')continue;obj[k]=v}for(const input of formEl.querySelectorAll('input[type="number"]')){if(input.name)obj[input.name]=Number(input.value)}return obj;}
 async function onSubmit(ev){const formEl=ev.target;if(!(formEl instanceof HTMLFormElement))return;ev.preventDefault();if(busy)return;busy=true;const submit=formEl.querySelector('[type="submit"]');if(submit)submit.disabled=true;try{
+ if(formEl.id==='v9-test-form'){
+  const args=values(formEl);args.agent_id=v9Agent;
+  const r=await api('/api/v1/brains/preview',{method:'POST',body:JSON.stringify(args)});
+  showDetail(result(r));message(r.evidence.length?'Consulta concluída com evidências.':'Nenhuma evidência recuperada.','info');return;
+ }
+ if(formEl.id==='v9-build-form'){
+  if(!v9Build)throw Error('Ficha não carregada');
+  const fd=new FormData(formEl);const primary=String(fd.get('primary')||'');const secondary=String(fd.get('secondary')||'');
+  const build={...v9Build,mode:primary?'archetype':'free',primary_archetype:primary||null,
+   secondary_archetype:primary?(secondary||null):null,talents:fd.getAll('talent')};
+  const saved=await api(`/api/v1/brains/builds/${encodeURIComponent(v9Agent)}`,
+   {method:'PUT',body:JSON.stringify({build,expected_revision:v9Build.revision})});
+  v9Build=saved;await views.forja();message('Ficha salva. Memórias, conversas e personalidade mantidas.','success');return;
+ }
+ if(formEl.id==='v9-create-form'){
+  if(!confirm('Criar novo agente local, sem copiar memórias nem permissões de Morgana ou Todd?'))return;
+  const x=values(formEl);const build={agent_id:String(x.agent_id).trim(),display_name:x.display_name,
+   identity_description:x.identity_description,mode:'free'};
+  const created=await api('/api/v1/brains/agents',{method:'POST',body:JSON.stringify(build)});
+  v9Agent=created.agent_id;await views.forja();message('Agente criado usando o modelo compartilhado.','success');return;
+ }
+ if(formEl.id==='v9-import-form'){
+  const blob=formEl.querySelector('input[type="file"]').files[0];if(!blob)throw Error('Selecione o arquivo');
+  if(blob.size>4_000_000)throw Error('Máximo 4 MB');
+  const response=await fetch('/api/v1/brains/package/inspect',{
+   method:'POST',headers:{'Content-Type':'application/octet-stream'},body:blob});
+  const parsed=await response.json();if(!response.ok)throw Error(parsed.detail||'Pacote inválido');
+  v9Imported=parsed.build;showDetail(`${result(parsed)}<div class="row">${btn('Aplicar ficha após confirmação','v9-import-apply',v9Imported.agent_id,'primary')}</div>`);
+  message('Pacote validado. Ainda não foi aplicado.','info');return;
+ }
  if(formEl.id==='web-form'){const data=await read(formEl.querySelector('[name="mode"]').value,{query:formEl.querySelector('[name="query"]').value,limit:Number(formEl.querySelector('[name="limit"]').value)});webSearchState=data;webPageState=null;await views.pesquisa();message(`${data.count} resultados de ${data.provider}. Abra páginas para verificar.`,data.count?'success':'info');return}
- if(formEl.id==='upload-form'||formEl.id==='library-upload'){const file=formEl.querySelector('input[type="file"]').files[0];const up=await uploadFile(file);if(formEl.id==='library-upload'){const cat=formEl.querySelector('[name="category"]').value;const res=await invoke('library.import',{path:up.path,category:cat});if(res?.requires_ocr)message('PDF sem texto extraível. Importação não concluída; OCR necessário.','info');else if(res?.duplicate_id)message('Este documento já está na biblioteca.','info');else message('Documento importado e indexado.','success')}else message('Arquivo enviado para a pasta autorizada.','success');await views[active]();return}
+ if(formEl.id==='upload-form'||formEl.id==='library-upload'){const file=formEl.querySelector('input[type="file"]').files[0];const up=await uploadFile(file);if(formEl.id==='library-upload'){const cat=formEl.querySelector('[name="category"]').value;const res=await invoke('library.import',{path:up.path,category:cat});if(res?.duplicate_id)message('Este documento já está na biblioteca.','info');else if(res?.state==='error')message('Original salvo, mas ocorreu um erro de processamento. Consulte detalhes.','error');else if(res?.state==='partial')message('Original salvo; processamento parcial. Consulte os avisos.','info');else message('Documento importado e indexado.','success')}else message('Arquivo enviado para a pasta autorizada.','success');await views[active]();return}
  const tool=formEl.dataset.tool;if(!tool)return;let args=values(formEl);if(tool==='files.mkdir'){args={path:currentPath.replace(/[\\/]$/,'')+'/'+args.name};}
  if(tool==='routines.save'){let step=args.template==='diag'?{tool:'diagnostics.system',arguments:{}}:args.template==='search'?{tool:'library.search',arguments:{query:args.text||' '}}:{tool:'notes.save',arguments:{title:args.text||args.title}};args={title:args.title,steps:[step]};}
  if(tool==='advanced'){try{args=JSON.parse(args.json)}catch{throw Error('JSON inválido. Confira a sintaxe.')}if(!args||Array.isArray(args)||typeof args!=='object')throw Error('Os parâmetros precisam ser um objeto JSON');const chosen=formEl.querySelector('[name="tool"]').value;const data=await invoke(chosen,args);if(data!==null)showDetail(result(data));return}
- const res=await invoke(tool,args);if(res===null)return;if(tool==='files.search')showDetail(res.items?.length?res.items.map(x=>entry(x,'Arquivo encontrado')).join(''):empty('Nenhum arquivo encontrado.'));else if(tool==='library.search')showDetail(res.documents?.length?res.documents.map(x=>entry(x.name,`Origem: ${x.source}`,'',x.matches?.map(hit=>`${hit.page?'Página '+hit.page+': ':''}${hit.excerpt}`).join('\n\n'))).join(''):empty('Nenhum trecho encontrado.'));else if(tool.startsWith('calc.'))showDetail(result(res));else{if(tool==='notes.save')editing.notes={};if(tool==='tasks.save')editing.tasks={};await views[active]();message('Operação realizada e registrada.','success')}
+ const res=await invoke(tool,args);if(res===null)return;if(tool==='files.search')showDetail(res.items?.length?res.items.map(x=>entry(x,'Arquivo encontrado')).join(''):empty('Nenhum arquivo encontrado.'));else if(tool==='library.search')showDetail(res.documents?.length?res.documents.map(x=>entry(x.name,`Origem: ${x.source}`,'',x.matches?.map(hit=>`${hit.page?'Página '+hit.page+': ':''}${hit.excerpt}`).join('\n\n'))).join(''):empty('Nenhum trecho encontrado.'));else if(tool==='library.retrieve')showDetail(renderEvidence(res));else if(tool==='data.inspect')showDetail(result(res));else if(tool==='data.analyze')showDetail(renderAnalysis(res));else if(tool.startsWith('calc.'))showDetail(result(res));else{if(tool==='notes.save')editing.notes={};if(tool==='tasks.save')editing.tasks={};await views[active]();message('Operação realizada e registrada.','success')}
  }catch(e){message(e.message,'error')}finally{busy=false;if(submit)submit.disabled=false}}
 async function onClick(ev){const el=ev.target.closest('[data-nav],[data-action]');if(!el)return;const id=el.dataset.nav;if(id){await go(id);return}const action=el.dataset.action,value=el.dataset.value;try{
+ if(action==='v9-agent'){v9Agent=value;return go('forja')}
+ if(action==='v9-import-apply'){
+  if(!v9Imported||v9Imported.agent_id!==value)throw Error('Inspecione o pacote primeiro');
+  if(!confirm(`Aplicar a ficha de ${value}? Não haverá transferência de memórias ou permissões.`))return;
+  const list=await api('/api/v1/brains/catalog');
+  if(list.agents.some(a=>a.id===value)){
+   const old=await api(`/api/v1/brains/builds/${encodeURIComponent(value)}`);
+   await api(`/api/v1/brains/builds/${encodeURIComponent(value)}`,{method:'PUT',
+    body:JSON.stringify({build:{...v9Imported,revision:old.revision},expected_revision:old.revision})});
+  }else{await api('/api/v1/brains/agents',{method:'POST',body:JSON.stringify(v9Imported)})}
+  v9Agent=value;v9Imported=null;await go('forja');message('Ficha importada. Permissões não alteradas.','success');return;
+ }
  if(action==='web-read'){message('Consultando página externa…','info');const data=await read('web.read',{url:value});renderWebPage(data);message('Página consultada; fonte e data registradas.','success');return}
  if(action==='web-save'){const r=await invoke('web.save',{source_id:value,category:'pesquisa-web'});if(r){message(r.saved?'Fonte salva na biblioteca offline.':'A biblioteca não importou a fonte. Confira o resultado.','success')}return}
  if(action==='jump')return go(value);if(action==='refresh')return go(active);if(action==='folder'){currentPath=value;return go('arquivos')}
@@ -113,6 +255,14 @@ async function onClick(ev){const el=ev.target.closest('[data-nav],[data-action]'
  if(action==='file-read'){const r=await read('files.read',{path:value});showDetail(`<div class="meta">${esc(value)}</div><pre class="result">${esc(r.content)}</pre>`);return}
  if(action==='file-copy'||action==='file-move'){const dest=prompt('Caminho completo do destino (dentro da pasta autorizada):',value);if(!dest)return;const r=await invoke(action==='file-copy'?'files.copy':'files.move',{source:value,destination:dest});if(r){await go('arquivos');message('Operação concluída.','success')}return}
  if(action==='file-delete'){const r=await invoke('files.delete',{path:value});if(r){await go('arquivos');message('Arquivo transferido para a lixeira interna.','success')}return}
+ if(action==='lib-details'){
+  const res=await read('library.document',{document_id:value});
+  showDetail(`<div class="meta">${esc(res.name)} · ${esc(res.state)} · ${esc(res.method)} · ${bytes(res.bytes)}</div><pre class="result">${esc(JSON.stringify({sha256:res.sha256,errors:res.errors,processor:res.version,category:res.category},null,2))}</pre><a class="secondary" href="/api/v1/utilities/documents/${encodeURIComponent(value)}/original" target="_blank" rel="noopener noreferrer">Abrir original</a>`);return;
+ }
+ if(action==='lib-markdown'){
+  const res=await read('library.document',{document_id:value,include_markdown:true});
+  showDetail(`<div class="meta">${esc(res.name)} · ${esc(res.state)}</div><pre class="result">${esc(res.markdown||'Sem texto extraído.')}</pre>`);return;
+ }
  if(action==='lib-delete'){const r=await invoke('library.delete',{id:value});if(r){await go('biblioteca');message('Documento removido.','success')}return}
  if(action==='create-backup'){const r=await invoke('backup.create');if(r){await go('backups');message(`Backup criado: ${r.path}`,'success')}return}
  if(action==='verify-backup'){const r=await read('backup.verify',{filename:value});showDetail(result(r));message('Integridade do backup verificada.','success');return}

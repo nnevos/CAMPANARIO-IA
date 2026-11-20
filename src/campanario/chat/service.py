@@ -30,8 +30,11 @@ from campanario.chat.knowledge import (
     sourced_definition_answer,
 )
 from campanario.chat.local_library import ReadOnlyLocalLibrary, LocalFactSheet
+from campanario.chat.data_intent import DataAnalysisResult
 from campanario.chat.zim_wikipedia import OfflineWikipediaZim
 from campanario.chat.fact_sheet import TurnFactSheet, build_turn_fact_sheet
+from campanario.chat.canonical_answer import CanonicalAnswer, AnswerMode, build_canonical, choose_mode
+from campanario.chat.grounded_expression import GroundedExpressionEngine
 from campanario.chat.grounded_conversation import (
     can_synthesize, grounded_synthesis_note, audit_view,
     acceptable_synthesis, citation_footer,
@@ -93,11 +96,15 @@ class ChatService:
         zim_library: OfflineWikipediaZim | None = None,
         research_priority: str = 'web_first',
         grounded_synthesis: bool = True,
+        grounded_expression_retries: int = 1,
     ) -> None:
         if research_priority not in {'web_first', 'local_first'}:
             raise ValueError('research_priority must be web_first or local_first')
         self._research_priority = research_priority
         self._grounded_synthesis = bool(grounded_synthesis)
+        if not 0 <= grounded_expression_retries <= 2:
+            raise ValueError('grounded_expression_retries must be between 0 and 2')
+        self._grounded_expression_retries = grounded_expression_retries
         self._web_auto_search = web_auto_search
         self._web_planner_provider = web_planner_provider
         self._local_library = local_library
@@ -121,8 +128,31 @@ class ChatService:
         self._event_bus = event_bus
         self._telemetry = telemetry
         self._experience = experience
+        # Process-local, bounded, per-session observable evidence audit, never CoT.
+        self._factual_debug: dict[UUID, dict] = {}
+        # V9 is opt-in. Separate capability router must never replace AgentRouter.
+        self._brain_executor = None
+        self._capability_router = None
+        self._build_store = None
+        self._brain_timeout = 8.0
+        self._brain_max_memory_mb = 1024
+
+    def configure_brains(self, executor, router, builds, *, timeout_seconds: float = 8.0,
+                         max_memory_mb: int = 1024) -> None:
+        self._brain_executor = executor
+        self._capability_router = router
+        self._build_store = builds
+        self._brain_timeout = timeout_seconds
+        self._brain_max_memory_mb = max_memory_mb
+
+
+    def get_factual_debug(self, session_id: UUID) -> dict | None:
+        if self._sessions.get(session_id) is None:
+            raise SessionNotFoundError(str(session_id))
+        return self._factual_debug.get(session_id)
 
     def delete_session(self, session_id: UUID) -> None:
+        self._factual_debug.pop(session_id, None)
         """Delete an episode and its chat text, never learned memories."""
         if not self._sessions.delete(session_id):
             raise SessionNotFoundError(str(session_id))
@@ -283,6 +313,7 @@ class ChatService:
         causation_id: UUID | None,
         research_guard=None,
         fact_sheet: TurnFactSheet | None = None,
+        canonical: CanonicalAnswer | None = None,
     ) -> AsyncIterator[AgentStreamEvent]:
         if research_guard is not None or (fact_sheet is not None and fact_sheet.status != 'not_required'):
             # Prior assistant answers are NOT factual evidence, but discarding
@@ -355,6 +386,28 @@ class ChatService:
                 "ou falta de qualificacao apenas porque alguem esta aprendendo. "
                 "Responda de forma curta e natural, sem sermoes nem citacoes mecanicas.")
         context = apply_agent_profile(base_context, profile, history, compact=self._low_latency_mode)
+        build_note = ''
+        if self._build_store is not None:
+            try:
+                from campanario.brains.builds import select_talents, render_build_note
+                build = await asyncio.to_thread(self._build_store.get, profile.id)
+                intent = canonical.intent if canonical is not None else 'conversation'
+                applied = select_talents(build, intent=intent, text=latest_user_for_memory)
+                build_note = render_build_note(build, applied)
+                if build_note:
+                    context = self._append_system_note(context, build_note)
+                trace = self._factual_debug.get(session_id)
+                if trace is not None and trace.get('request_id') == str(correlation_id):
+                    trace.setdefault('agent_builds', {})[profile.id] = {
+                        'revision': build.revision,
+                        'primary_archetype': build.primary_archetype,
+                        'secondary_archetype': build.secondary_archetype,
+                        'talents_applied': [vars(t) if hasattr(t, '__dict__') else {
+                            'id': t.id, 'trigger': t.trigger, 'effect': t.effect}
+                            for t in applied],
+                    }
+            except Exception as exc:
+                logger.warning('agent_build_unavailable error_type=%s', type(exc).__name__)
         # Reviewed development is a separate, contextual layer: it cannot change
         # core identity or the neutral factual sheet. No automatic persistence.
         if self._experience is not None:
@@ -449,17 +502,30 @@ class ChatService:
         sourced_answer = (fact_sheet.extractive_answer
                           if fact_sheet is not None and fact_sheet.extractive_answer is not None
                           else research_guard.verified_answer
-                          if isinstance(research_guard, LocalFactSheet)
+                          if isinstance(research_guard, (LocalFactSheet, DataAnalysisResult))
                           else sourced_definition_answer(profile.id, research_guard, latest_user)
                           if research_guard is not None else None)
+        if (canonical is not None and canonical.status.value == 'not_found'
+                and fact_sheet is not None and fact_sheet.status == 'supported'):
+            # A provider claimed success without recorded reads. Never emit the
+            # provider's extract as if a consultation had been completed.
+            sourced_answer = canonical.canonical_answer
         grounded_synthesized = False
         grounded_approved_text = None
-        if memory_recall_failed and personal_memory_question:
+        if (self._brain_executor is not None and canonical is not None
+                and canonical.mode != AnswerMode.CONVERSATIONAL
+                and canonical.status.value in {'not_found', 'tool_error', 'conflicting'}):
+            # V9: the absence/failure/conflict of a named source is final data,
+            # not a prompt for the LLM to invent a document answer.
+            assistant_text = canonical.canonical_answer
+        elif memory_recall_failed and personal_memory_question:
             # Personal recall must fail closed: unavailable evidence is not a
             # negative answer, and the model must not guess remembered facts.
             assistant_text = "Não consegui consultar minhas memórias agora, então não posso confirmar isso."
         elif (fact_sheet is not None and fact_sheet.origin == 'none' and
-              fact_sheet.status == 'insufficient' and self._local_library is not None):
+              fact_sheet.status == 'insufficient' and
+              (self._local_library is not None or 'document' in latest_user.casefold()
+               or 'database' in latest_user.casefold())):
             assistant_text = ('Não encontrei na biblioteca local um trecho que responda '
                               'à pergunta com segurança. Não vou inventar a informação.')
         elif research_guard is not None and research_guard.requires_abstention:
@@ -471,47 +537,54 @@ class ChatService:
             # *express* it in character, but never stream or persist unaudited
             # claims. On any model/audit failure, return the attributed extract.
             assistant_text = sourced_answer
-            if self._grounded_synthesis and can_synthesize(fact_sheet):
-                grounded_request = ModelRequest(
-                    model=self._default_model,
-                    messages=self._append_system_note(
-                        request.messages, grounded_synthesis_note(fact_sheet),
-                    ),
-                    temperature=0.35,
-                    max_output_tokens=420,
-                )
+            if (self._grounded_synthesis and canonical is not None
+                    and canonical.mode != AnswerMode.CONVERSATIONAL
+                    and canonical.facts):
                 try:
                     if self._telemetry is not None:
                         self._telemetry.mark(
-                            "model_call_started", correlation_id=correlation_id,
+                            'grounded_expression_started', correlation_id=correlation_id,
                             session_id=session_id, agent_id=profile.id,
-                            call_reason="grounded_conversational_synthesis",
+                            canonical_status=canonical.status.value,
                         )
-                    candidate = normalize_own_speaker_prefix(
-                        await self._collect_agent_response(grounded_request, on_first_token=on_model_token),
-                        profile,
-                    )
-                    if (acceptable_synthesis(candidate, fact_sheet)
-                            and not speaker_label_violations(candidate)):
-                        verdict = await audit_grounded_answer(
-                            self._web_planner_provider or self._model_provider,
-                            self._default_model, audit_view(fact_sheet), candidate,
-                        )
-                        if verdict == 'supported':
-                            assistant_text = candidate.strip() + '\n\n' + citation_footer(
-                                fact_sheet, research_guard,
-                            )
-                            grounded_synthesized = True
-                            grounded_approved_text = assistant_text
+                    outcome = await GroundedExpressionEngine(
+                        self._model_provider, model=self._default_model,
+                        max_retries=self._grounded_expression_retries,
+                    ).express(canonical, profile, on_first_token=on_model_token,
+                              expression_directives=build_note)
+                    if outcome.accepted and not speaker_label_violations(outcome.text):
+                        # Evidence reference is built by the runtime, never by Ollama.
+                        footer = (citation_footer(fact_sheet, research_guard)
+                                  if fact_sheet and fact_sheet.sources else '')
+                        assistant_text = outcome.text + ('\n\n' + footer if footer else '')
+                        grounded_synthesized = True
+                        grounded_approved_text = assistant_text
+                    else:
+                        assistant_text = sourced_answer
+                    trace = self._factual_debug.get(session_id)
+                    if trace is not None and trace.get('request_id') == str(correlation_id):
+                        trace['agents'][profile.id] = {
+                            'personalized_answer': outcome.text if outcome.accepted else None,
+                            'validation': 'accepted' if grounded_synthesized else 'fallback',
+                            'attempts': [
+                                {'violations': list(a.violations), 'candidate': a.text[:2000]}
+                                for a in outcome.attempts
+                            ],
+                            'latency_ms': outcome.elapsed_ms,
+                        }
                     if self._telemetry is not None:
                         self._telemetry.mark(
-                            "grounded_synthesis", correlation_id=correlation_id,
+                            'grounded_expression_validated', correlation_id=correlation_id,
                             session_id=session_id, agent_id=profile.id,
                             accepted=grounded_synthesized,
+                            attempts=len(outcome.attempts),
+                            latency_ms=outcome.elapsed_ms,
+                            fallback=not grounded_synthesized,
                         )
                 except Exception as exc:
-                    # Do not reveal unsupported text even when the model fails.
-                    logger.warning('grounded_synthesis_failed error_type=%s', type(exc).__name__)
+                    # Bad Ollama output or unavailable model must never change facts.
+                    logger.warning('grounded_expression_failed error_type=%s', type(exc).__name__)
+                    assistant_text = sourced_answer
         elif audited_stream:
             # In live mode token events travel to the SSE/UI as Ollama generates them.
             # The streaming leak guard checks held-back text before any chunk is published.
@@ -923,6 +996,14 @@ class ChatService:
         # subject.  Search settings decide whether a lookup is EXECUTED; they do
         # not authorize a model to claim that a lookup succeeded.
         offline_question = _NO_WEB.sub('', text).strip(' :-,;') if explicit_no_web else text
+        # V8: user-requested document lookup has precedence over general knowledge,
+        # web and Wikipedia. Conversation history is used only for USER references.
+        from campanario.chat.document_intent import document_request, search_document
+        previous_repository = getattr(self, '_messages', None)
+        prior_user_messages = (previous_repository.list_by_session(session_id)
+                               if previous_repository is not None else [])
+        document_intent = (None if wake_target or manual_search else
+                           document_request(text, prior_user_messages))
         # Subject recognition for local evidence is independent of web permission.
         local_decision = direct_decision(offline_question) if not (manual_search or wake_target) else None
         offline_decision = (local_decision if (not auto_search or explicit_no_web)
@@ -971,14 +1052,68 @@ class ChatService:
                                type(exc).__name__)
                 return None
 
-        if not prefer_online:
+        from campanario.chat.data_intent import is_data_request, run_data_question
+        data_request = (document_intent is None and not wake_target and
+                        is_data_request(text))
+        brain_plan = None
+        brain_results = ()
+        if self._brain_executor is not None and self._capability_router is not None:
+            from campanario.brains.contracts import BrainRequest, ResourceBudget, BrainStatus
+            correlation_id = correlation_id or uuid4()
+            brain_plan = self._capability_router.plan(
+                text, document_request=document_intent, data_request=data_request)
+            if brain_plan.brain_ids:
+                query = document_intent.question if document_intent is not None else text
+                req = BrainRequest(
+                    request_id=correlation_id, conversation_id=session_id,
+                    query=query, intent=brain_plan.intent,
+                    document_hint=document_intent.hint if document_intent else '',
+                    budget=ResourceBudget(timeout_seconds=self._brain_timeout,
+                                          max_memory_mb=self._brain_max_memory_mb),
+                    permission_scopes=frozenset({'library:read'}),
+                    trace_id=brain_plan.trace_id,
+                )
+                from campanario.runtime.permissions import AuthorizationContext
+                # Created by the trusted chat runtime, not by the LLM or documents.
+                brain_authorization = AuthorizationContext(
+                    principal_kind='local_user', principal_id='campanario-chat',
+                    session_id=session_id, session_active=True)
+                brain_results = await self._brain_executor.execute(
+                    brain_plan, req, authorization=brain_authorization)
+                if brain_results:
+                    result = brain_results[0]
+                    research_guard = result.guard
+                    if result.status == BrainStatus.FAILED or result.status == BrainStatus.UNAVAILABLE:
+                        logger.warning('brain_run_not_completed brain=%s status=%s',
+                                       result.brain_id, result.status)
+                if self._telemetry is not None:
+                    for result in brain_results:
+                        self._telemetry.mark(
+                            'brain_execution', correlation_id=correlation_id,
+                            session_id=session_id, brain_id=result.brain_id,
+                            status=result.status.value, elapsed_ms=result.elapsed_ms,
+                            evidence_count=len(result.evidence_refs),
+                        )
+        else:
+            if data_request:
+                if self._local_library is not None:
+                    research_guard = await asyncio.to_thread(
+                        run_data_question, self._local_library.database, text)
+                else:
+                    research_guard = DataAnalysisResult(
+                        text, 'insufficient', 'A biblioteca local de planilhas não está disponível.')
+            if document_intent is not None and self._local_library is not None:
+                # One verified read, shared by Morgana and Todd; no generated citation.
+                research_guard = await asyncio.to_thread(
+                    search_document, self._local_library.database, document_intent)
+        if not prefer_online and document_intent is None and not data_request:
             # Historical local-first behavior; especially important for private
             # installations with CAMPANARIO_WEB_AUTO_SEARCH=false.
             research_guard = await read_imported_document()
             if research_guard is None:
                 research_guard = await read_zim_article()
         web_note_pending = None
-        if (not wake_target and research_guard is None and
+        if (not wake_target and document_intent is None and not data_request and research_guard is None and
                 (manual_search or (auto_search and not explicit_no_web) or needs_offline_guard) and
                 (manual_search or not is_personal_question(offline_question))):
             previous = (self._messages.list_by_session(session_id)
@@ -1095,7 +1230,7 @@ class ChatService:
                 note='PESQUISA WEB SEM EVIDENCIAS LIDAS. Nao invente fontes.',
             )
             web_note_pending = None
-        if prefer_online and not manual_search and not wake_target:
+        if prefer_online and document_intent is None and not data_request and not manual_search and not wake_target:
             # An ambiguous result must remain ambiguous: the ZIM cannot pick a
             # single identity from competing online referents on the user's behalf.
             # Only an actual lack of usable evidence triggers offline fallback.
@@ -1128,8 +1263,43 @@ class ChatService:
         fact_sheet = build_turn_fact_sheet(
             correlation_id, offline_question, research_guard,
             fact_lookup_requested=(bool(local_decision and local_decision.search)
-                                   or manual_search or objective_local_question),
+                                   or manual_search or objective_local_question
+                                   or document_intent is not None or data_request),
         )
+        # Canonical evidence exists BEFORE any agent generation. Same frozen instance
+        # for Morgana, Todd and all later factual speakers in this turn.
+        canonical = None
+        if fact_sheet.status != 'not_required':
+            canonical = build_canonical(
+                fact_sheet, research_guard,
+                mode=choose_mode(offline_question, fact_sheet),
+                brain_ids=tuple(item.brain_id for item in brain_results),
+            )
+            self._factual_debug[session_id] = {
+                'request_id': str(correlation_id),
+                'mode': canonical.mode.value, 'status': canonical.status.value,
+                'intent': canonical.intent, 'brains_activated': list(canonical.brain_ids),
+                'tools_executed': [item.model_dump(mode='json') for item in canonical.tool_executions],
+                'sources': [item.model_dump(mode='json') for item in canonical.sources],
+                'canonical_answer': canonical.canonical_answer,
+                'limitations': list(canonical.limitations),
+                'brain_plan': None if brain_plan is None else {
+                    'intent': brain_plan.intent, 'selected': list(brain_plan.brain_ids),
+                    'reasons': list(brain_plan.reasons), 'trace_id': str(brain_plan.trace_id),
+                },
+                'brain_runs': [item.public() for item in brain_results],
+                'agents': {},
+            }
+            if len(self._factual_debug) > 100:
+                self._factual_debug.pop(next(iter(self._factual_debug)))
+            if self._telemetry is not None:
+                self._telemetry.mark(
+                    'canonical_answer_compiled', correlation_id=correlation_id,
+                    session_id=session_id, status=canonical.status.value,
+                    source_count=len(canonical.sources), mode=canonical.mode.value,
+                )
+        if fact_sheet.status == 'not_required':
+            self._factual_debug.pop(session_id, None)
         neutral_note = fact_sheet.render_agent_context()
         if neutral_note:
             turn_system_note = ((turn_system_note + '\n\n') if turn_system_note else '') + neutral_note
@@ -1160,6 +1330,7 @@ class ChatService:
                 independent_group_turn=independent_group_turn,
                 research_guard=research_guard,
                 fact_sheet=fact_sheet,
+                canonical=canonical,
             )) as turn_events:
                 async for event in turn_events:
                     yield event
@@ -1179,6 +1350,7 @@ class ChatService:
         independent_group_turn: bool = False,
         research_guard=None,
         fact_sheet: TurnFactSheet | None = None,
+        canonical: CanonicalAnswer | None = None,
     ) -> AsyncIterator[AgentStreamEvent]:
         session = self._sessions.get(session_id)
         if session is None:
@@ -1267,6 +1439,7 @@ class ChatService:
             causation_id=None if selected_event is None else selected_event.event_id,
             research_guard=research_guard,
             fact_sheet=fact_sheet,
+            canonical=canonical,
         )) as agent_events:
             async for event in agent_events:
                 if event.type == "token":
@@ -1338,6 +1511,7 @@ class ChatService:
             causation_id=None if secondary_selected is None else secondary_selected.event_id,
             research_guard=research_guard,
             fact_sheet=fact_sheet,
+            canonical=canonical,
         )) as agent_events:
             async for event in agent_events:
                 yield event
@@ -1387,6 +1561,7 @@ class ChatService:
                 causation_id=None if selected is None else selected.event_id,
                 research_guard=research_guard,
                 fact_sheet=fact_sheet,
+                canonical=canonical,
             )) as agent_events:
                 async for event in agent_events:
                     yield event

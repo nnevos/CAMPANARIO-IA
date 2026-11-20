@@ -98,3 +98,6 @@ class ExperienceMemoryRow(Base):
     last_confirmed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_recalled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     recall_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+# Additive V9 schema; imported so Base.metadata.create_all() includes these tables.
+from campanario.brains import models as brain_models  # noqa: E402,F401

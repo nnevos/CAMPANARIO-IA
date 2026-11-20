@@ -1,0 +1,42 @@
+{
+  "base": "CAMPANARIO_V9_V91_IA_INTEGRADO.zip",
+  "format": 1,
+  "scope": "documentation_only",
+  "files": [
+    {
+      "path": "README.md",
+      "baseline_sha256": "bd86445ef178dfa09907fada8d9ea6496f545a7bdfa317edb2d45212fa6db6ab",
+      "new_sha256": "a638ab41786da543bed51cb1c2bcad1ea353c9433eb68f170ed72ed0cb0f3459"
+    },
+    {
+      "path": "docs/current/ROADMAP.md",
+      "baseline_sha256": "b6c824a839aae7176d568ec5aba799fab941bf8c5ec4e579e0bc324b982b4850",
+      "new_sha256": "a42a59e829772b9261ce3d435ae242ca0a9a032b2c75d3a05cfb362893e0fae0"
+    },
+    {
+      "path": "docs/current/AGENT_PERSONALITY_ROADMAP.md",
+      "baseline_sha256": "0ab086478cae8663d710cafceb4bcb774688daba87f98501ce09fd34d6134345",
+      "new_sha256": "f9cf852a732c595ecb1f3a2003dfbb6bbea4387f9d0184e2a4c790c4c88cf61b"
+    },
+    {
+      "path": "docs/operations/ETAPA1_AUDITORIA_FAILSAFES_FLUXOS_2026-11-19.md",
+      "baseline_sha256": "16af01848d5bccd16ef271b6c66f9b53bd103d3da9d8213c8116687142976404",
+      "new_sha256": "42e5ab83be1606e37a2ca0e3ebbba385c19e48a7a6e00098a820adc1a6243c6d"
+    },
+    {
+      "path": "docs/operations/ETAPA2_ESTABILIZACAO_FAILSAFES_2026-11-19.md",
+      "baseline_sha256": "f88a4248751a5c078086fa651072d79d042c42ab3fcb8b05cf4cbc69206eb021",
+      "new_sha256": "087dd1cda7a861da674df109201d217e98c93e0792e71b106f9e194852243739"
+    },
+    {
+      "path": "docs/current/ROADMAP_V9_CEREBROS_COMPLETO.md",
+      "baseline_sha256": null,
+      "new_sha256": "ccc549dd8914558cf7257164e9db21a3f777f10039ce48b6069cc102af3fdf43"
+    },
+    {
+      "path": "docs/operations/FAILSAFE_V9_CEREBROS.md",
+      "baseline_sha256": null,
+      "new_sha256": "9823b74e05322ec9df6e3c22ba48d75b4f0b632df7df4d96c06a154c127b57ca"
+    }
+  ]
+}

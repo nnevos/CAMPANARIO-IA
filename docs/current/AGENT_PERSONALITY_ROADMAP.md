@@ -67,3 +67,15 @@ Somente depois de P1–P4 estaveis o projeto entra em aprendizado/evolucao persi
 Aprendizado nao sera retraining automatico do modelo. Sera uma camada de experiencia/memoria estruturada com proveniencia e limites claros.
 
 Ver `docs/current/AGENT_LEARNING_STRATEGY.md`.
+
+
+## Apêndice V9 — Fichas heroicas sem alterar a personalidade
+
+O roadmap completo dos cérebros é [`ROADMAP_V9_CEREBROS_COMPLETO.md`](ROADMAP_V9_CEREBROS_COMPLETO.md), com proteção operacional em [`../operations/FAILSAFE_V9_CEREBROS.md`](../operations/FAILSAFE_V9_CEREBROS.md). Este apêndice não substitui os gates P1–P5 históricos acima.
+
+- [x] MVP V9: `AgentBuild` por composição de `AgentProfile`, oito arquétipos declarativos e seis talentos, máximo dois ativos por turno; modo livre para Morgana/Todd sem sobrescrever suas identidades.
+- [ ] Validar semanticamente *preconditions*, conflitos e prioridades dos talentos; registrar motivos de ativação, sem dar autorização/permissão a arquétipos.
+- [ ] Testar a mesma evidência canônica em Morgana/Todd por muitos turnos, verificando números, fontes, condições, diferenças de estilo e preservação de memória ao trocar build.
+- [ ] Homologar Forja e prévia sem mutação de memórias, com pacote `.campagent` seguro e UX mobile real.
+
+**Limite de autoridade:** ficha orienta procedimento e comunicação; cérebro executa; política autoriza; V9.1 protege fatos. Nenhum teste de personalidade pode promover conjectura a evidência.

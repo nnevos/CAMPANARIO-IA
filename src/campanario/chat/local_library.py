@@ -72,10 +72,14 @@ class LibraryQuote:
     page: int | None
     excerpt: str
     score: float
+    section: str | None = None
+    method: str = 'legacy'
+    evidence_id: str = ''
 
     @property
     def locator(self) -> str:
-        return f"{self.name}, página {self.page}" if self.page is not None else self.name
+        locator = f'{self.name}, página {self.page}' if self.page is not None else self.name
+        return locator + f', seção {self.section}' if self.section else locator
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,10 +129,12 @@ class LocalFactSheet:
             return ('Encontrei informações divergentes na biblioteca local e não '
                     'posso escolher uma sem esclarecimento:\n' + options +
                     '\n\nQual documento devo usar como referência?')
+        ocr_note = ('\nAviso: trecho obtido por OCR local; confira a imagem original.'
+                    if self.quote.method == 'ocr_local' else '')
         return (f'Encontrei este trecho na biblioteca local:\n\n'
                 f'“{self.quote.excerpt}”\n\n'
                 f'Fonte: {self.quote.locator} '
-                f'(documento importado; SHA-256: {self.quote.sha256[:16]}…).')
+                f'(documento importado; SHA-256: {self.quote.sha256[:16]}…).' + ocr_note)
 
 
 class ReadOnlyLocalLibrary:

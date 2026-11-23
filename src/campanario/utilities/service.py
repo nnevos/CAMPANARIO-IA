@@ -15,11 +15,11 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-WRITE = {'notes.save','notes.delete','tasks.save','tasks.delete','library.import','library.delete','emergency.save','emergency.delete','memory.save','memory.delete','routines.save','routines.run','files.mkdir','files.copy','files.move','files.delete','backup.restore','planning.import','web.save'}
+WRITE = {'notes.save','notes.delete','tasks.save','tasks.delete','library.import','library.rename','library.reindex','library.delete','emergency.save','emergency.delete','memory.save','memory.delete','routines.save','routines.run','files.mkdir','files.copy','files.move','files.delete','backup.restore','planning.import','web.save'}
 OPERATIONS = {
  'web.search':'Pesquisar na web (acesso autorizado)','web.read':'Ler página pública e guardar fonte','web.research':'Pesquisa multirresultados com fontes','web.save':'Salvar página consultada na biblioteca offline','web.history':'Histórico de fontes lidas',
  'files.list':'Listar arquivos autorizados','files.search':'Buscar nomes de arquivos','files.read':'Ler arquivo textual','files.find_text':'Pesquisar texto em arquivos','files.duplicates':'Detectar duplicados por SHA-256','files.mkdir':'Criar pasta','files.copy':'Copiar arquivo','files.move':'Mover arquivo','files.delete':'Mover arquivo para lixeira interna',
- 'library.import':'Importar TXT, MD ou PDF','library.search':'Pesquisar biblioteca offline','library.list':'Listar documentos','library.delete':'Remover documento','library.export':'Exportar biblioteca em ZIP',
+ 'library.import':'Importar documentos suportados','library.rename':'Renomear documento da biblioteca','library.reindex':'Reprocessar documento original','library.search':'Pesquisar biblioteca offline','library.list':'Listar documentos','library.delete':'Remover documento','library.export':'Exportar biblioteca em ZIP',
  'library.retrieve':'Recuperar trechos documentais com evidências de página ou seção',
  'library.document':'Inspecionar metadados e Markdown de documento importado',
  'library.compare':'Comparar duas versões importadas sem inventar divergências',
@@ -157,7 +157,16 @@ class UtilityService:
     root=self.path(a.get('path',str(self.roots[0])),True)
     if not root.is_dir():raise ValueError('Diretório requerido')
     if op=='files.list':
-     return {'items':[{'name':p.name,'path':str(p),'directory':p.is_dir(),'bytes':p.stat().st_size,'modified':datetime.fromtimestamp(p.stat().st_mtime,timezone.utc).isoformat()} for p in list(root.iterdir())[:500] if not p.is_symlink()]}
+     offset=min(1_000_000,max(0,int(a.get('offset',0))))
+     entries=sorted((p for p in root.iterdir() if not p.is_symlink()),
+                    key=lambda p:(not p.is_dir(),p.name.casefold()))
+     total=len(entries)
+     return {'items':[{'name':p.name,'path':str(p),'directory':p.is_dir(),
+                      'bytes':p.stat().st_size,
+                      'modified':datetime.fromtimestamp(p.stat().st_mtime,timezone.utc).isoformat()}
+                      for p in entries[offset:offset+100]],
+             'total':total,'offset':offset,'page_size':100,
+             'has_more':offset+100<total}
     candidates=(p for p in root.rglob('*') if p.is_file() and not p.is_symlink())
     if op=='files.search':return {'items':[str(p) for p in candidates if str(a.get('query','')).casefold() in p.name.casefold() and (not a.get('extension') or p.suffix.lower()==str(a['extension']).lower())][:200]}
     if op=='files.duplicates':
@@ -200,18 +209,60 @@ class UtilityService:
     return import_file(self,a)
    if op in ('library.search','library.list'):
     found=[];term=required(a,'query',200).casefold() if op=='library.search' else ''
+    offset=min(1_000_000,max(0,int(a.get('offset',0))))
+    page_size=100
     with self.connect() as db:
-     for doc in db.execute('SELECT d.*, x.state, x.method, x.errors, x.byte_size FROM documents d LEFT JOIN document_details x ON d.id=x.document_id ORDER BY d.created DESC LIMIT 1000'):
-      item={'id':doc['id'],'name':doc['name'],'category':doc['category'],'source':doc['source'],'sha256':doc['sha256'],'created':doc['created'], 'state':doc['state'] or 'available', 'method':doc['method'] or 'legacy', 'bytes':doc['byte_size']}
+     # Count real indexed/imported records, not only the first 100 shown.
+     total=db.execute('SELECT count(*) FROM documents').fetchone()[0]
+     if term:
+      # Search is exhaustive across indexed records, rather than silently
+      # dropping matches because a file was not among the newest 1000.
+      docs=db.execute('SELECT d.*, x.state, x.method, x.errors, x.byte_size FROM documents d '
+                      'LEFT JOIN document_details x ON d.id=x.document_id ORDER BY d.created DESC').fetchall()
+     else:
+      docs=db.execute('SELECT d.*, x.state, x.method, x.errors, x.byte_size FROM documents d '
+                      'LEFT JOIN document_details x ON d.id=x.document_id ORDER BY d.created DESC LIMIT ? OFFSET ?',
+                      (page_size+1,offset)).fetchall()
+     for doc in docs:
+      item={'id':doc['id'],'name':doc['name'],'category':doc['category'],
+            'source':doc['source'],'sha256':doc['sha256'],'created':doc['created'],
+            'state':doc['state'] or 'legacy','method':doc['method'] or 'legacy',
+            'bytes':doc['byte_size'], 'errors':json.loads(doc['errors']) if doc['errors'] else []}
       if term:
        hits=[]
-       for page in json.loads(doc['pages']):
-        text=page['text'];loc=text.casefold().find(term)
-        if loc>=0:hits.append({'page':page['page'],'excerpt':text[max(0,loc-100):loc+len(term)+180]})
+       try: pages=json.loads(doc['pages'])
+       except (TypeError,ValueError):pages=[]
+       for page in pages:
+        text=str(page.get('text') or '');loc=text.casefold().find(term)
+        if loc>=0:hits.append({'page':page.get('page'),'excerpt':text[max(0,loc-100):loc+len(term)+180]})
+        if len(hits)>=10:break
        if not hits and term not in doc['name'].casefold():continue
-       item['matches']=hits[:10]
+       item['matches']=hits
       found.append(item)
-    return {'documents':found[:100],'count':len(found)}
+    if term:
+     matched=len(found)
+     result=found[offset:offset+page_size]
+    else:
+     matched=total
+     result=found[:page_size]
+    return {'documents':result,'count':matched,'total':total,'offset':offset,
+            'page_size':page_size,'has_more':offset+len(result)<matched}
+   if op=='library.rename':
+    uid=required(a,'id',100)
+    name=required(a,'name',200)
+    if (name in ('.','..') or '/' in name or '\\' in name or '\x00' in name
+        or name.strip(' .')!=name or any(ord(c)<32 for c in name)):
+     raise ValueError('Nome de documento inválido')
+    with self.connect() as db:
+     prior=db.execute('SELECT name FROM documents WHERE id=?',(uid,)).fetchone()
+     if not prior:raise ValueError('Documento não encontrado')
+     if Path(prior['name']).suffix.lower()!=Path(name).suffix.lower():
+      raise ValueError('Mantenha a extensão original; o arquivo preservado não será convertido')
+     db.execute('UPDATE documents SET name=? WHERE id=?',(name,uid))
+    return {'renamed':True,'id':uid,'name':name}
+   if op=='library.reindex':
+    from campanario.utilities.document_v8 import reindex_document
+    return reindex_document(self,required(a,'id',100))
    if op=='library.retrieve':
     from campanario.utilities.document_v8 import retrieve
     return retrieve(self,required(a,'query',500),

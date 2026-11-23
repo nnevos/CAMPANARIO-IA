@@ -4,7 +4,7 @@ let controller=null;
 function mount(){
  if(controller)controller.destroy();
  const frame=document.getElementById('gpsMap'),canvas=document.getElementById('gpsCanvas');if(!frame||!canvas)return;
- const ctx=canvas.getContext('2d');let lat=-25.4284,lon=-49.2733,z=12,marker=null,track=[],route=[],offline=false,alive=true,down=null;
+ const ctx=canvas.getContext('2d');let lat=0,lon=0,z=2,marker=null,track=[],route=[],offline=false,alive=true,down=null,locationWatch=null,manualOrigin=false,firstAutoFix=true;
  const cache=new Map();let width=1,height=1,redrawQueued=false,requested=0,loaded=0;
  let cartoKey=localStorage.getItem('campanario.map.cartoKey')||'';
  let mapStyle=localStorage.getItem('campanario.map.style')||'dark';
@@ -12,9 +12,12 @@ function mount(){
  const tileUrl=(zz,xx,yy)=>mapStyle==='carto'&&cartoKey?`https://basemaps.cartocdn.com/rastertiles/dark_all/${zz}/${xx}/${yy}.png?key=${encodeURIComponent(cartoKey)}`:`https://tile.openstreetmap.org/${zz}/${xx}/${yy}.png`;
  const mapAttribution=document.getElementById('mapAttribution');
  const mapStyleSelect=document.getElementById('mapStyleSelect');
+ const onlineCheckbox=document.getElementById('mapsOnlineTiles');
+ let allowOnline=localStorage.getItem('campanario.maps.onlineTiles')!=='false';
+ if(onlineCheckbox){onlineCheckbox.checked=allowOnline;onlineCheckbox.onchange=()=>{allowOnline=onlineCheckbox.checked;localStorage.setItem('campanario.maps.onlineTiles',String(allowOnline));cache.clear();requestDraw();}};
  const mapCartoKey=document.getElementById('mapCartoKey');
  const mapSource=document.getElementById('mapSource');
- function refreshMapStyle(){if(mapStyleSelect)mapStyleSelect.value=mapStyle;if(mapCartoKey)mapCartoKey.value=cartoKey;if(mapAttribution)mapAttribution.textContent='© OpenStreetMap contributors'+(!offline&&mapStyle==='carto'?' · © CARTO':'');if(mapSource&&!offline)mapSource.textContent=mapStyle==='carto'?'Mapa online: CARTO Dark Matter (chave configurada)':'Mapa online: OpenStreetMap em modo escuro (sem chave). Para Dark Matter original, informe uma chave CARTO.';cache.clear();requestDraw()}
+ function refreshMapStyle(){if(mapStyleSelect)mapStyleSelect.value=mapStyle;if(mapCartoKey)mapCartoKey.value=cartoKey;if(mapAttribution)mapAttribution.textContent='© OpenStreetMap contributors'+(!offline&&mapStyle==='carto'?' · © CARTO':'');if(mapSource&&!offline)mapSource.textContent=!allowOnline?'Mapa online desligado. Ative os tiles online ou instale MBTiles.':mapStyle==='carto'?'Mapa online: CARTO Dark Matter (chave configurada)':'Mapa online: OpenStreetMap em modo escuro (sem chave).';cache.clear();requestDraw()}
  if(mapStyleSelect)mapStyleSelect.onchange=()=>{mapStyle=mapStyleSelect.value;if(mapStyle==='carto'&&!cartoKey){mapStyle='dark';mapSource.textContent='Informe uma chave CARTO e clique em Aplicar para usar o Dark Matter original.';}localStorage.setItem('campanario.map.style',mapStyle);refreshMapStyle()};
  const applyKey=document.getElementById('mapApplyKey');if(applyKey)applyKey.onclick=()=>{cartoKey=(mapCartoKey?.value||'').trim();localStorage.setItem('campanario.map.cartoKey',cartoKey);mapStyle=cartoKey?'carto':'dark';localStorage.setItem('campanario.map.style',mapStyle);refreshMapStyle()};
  const rad=Math.PI/180;
@@ -30,7 +33,7 @@ function mount(){
    const tx=((x%count)+count)%count,key=`${offline?'offline':mapStyle}:${z}:${tx}:${y}`;let item=cache.get(key);
    if(item?.state==='ready'){if(!offline&&mapStyle==='dark')ctx.filter='invert(1) hue-rotate(180deg) brightness(0.75) contrast(0.9)';ctx.drawImage(item.img,px,py,256,256);ctx.filter='none';}else{
     missing++;ctx.strokeStyle='#343c42';ctx.strokeRect(px,py,256,256);
-    if(!item){const img=new Image();item={img,state:'loading'};cache.set(key,item);img.onload=()=>{item.state='ready';requestDraw()};img.onerror=()=>{item.state='error';requestDraw()};img.src=offline?`/api/app/maps/tiles/${z}/${tx}/${y}.png`:tileUrl(z,tx,y);
+    if(!item && (offline||allowOnline)){const img=new Image();item={img,state:'loading'};cache.set(key,item);img.onload=()=>{item.state='ready';requestDraw()};img.onerror=()=>{item.state='error';requestDraw()};img.src=offline?`/api/app/maps/tiles/${z}/${tx}/${y}.png`:tileUrl(z,tx,y);
     }
    }
   }
@@ -38,7 +41,7 @@ function mount(){
   if(track.length){ctx.strokeStyle='#efb648';ctx.lineWidth=3;ctx.beginPath();track.forEach((p,i)=>{const [x,y]=world(p.lat,p.lon);const px=x-cx+width/2,py=y-cy+height/2;if(i)ctx.lineTo(px,py);else ctx.moveTo(px,py)});ctx.stroke();dot(track[0].lat,track[0].lon,'#35c878',5);dot(track[track.length-1].lat,track[track.length-1].lon,'#e85b52',5)}
   if(route.length){ctx.strokeStyle='#48b8ff';ctx.lineWidth=5;ctx.lineJoin='round';ctx.beginPath();route.forEach((p,i)=>{const [x,y]=world(p.lat,p.lon);if(i)ctx.lineTo(x-cx+width/2,y-cy+height/2);else ctx.moveTo(x-cx+width/2,y-cy+height/2)});ctx.stroke();dot(route[route.length-1].lat,route[route.length-1].lon,'#4aa7ff',6)}
   if(marker)dot(marker.lat,marker.lon,'#dcb15b');
-  const msg=document.getElementById('mapMessage');if(msg)msg.textContent=missing?`${offline?'Pacote offline':'Mapa online'}: ${missing} blocos não disponíveis/carregando. ${offline?'Verifique a cobertura do MBTiles.':'Verifique a conexão com a internet.'}`:'Mapa carregado. Arraste para mover; +/− para zoom.';
+  const msg=document.getElementById('mapMessage');if(msg)msg.textContent=missing?`${offline?'Pacote offline':allowOnline?'Mapa online':'Mapa offline indisponível'}: ${missing} blocos ausentes/carregando. ${offline?'Verifique a cobertura do MBTiles.':allowOnline?'Verifique a conexão com a internet.':'Ative os tiles online explicitamente ou instale MBTiles.'}`:'Mapa carregado. Arraste para mover; +/− para zoom.';
  }
  function center(la,lo,zoom){if(!Number.isFinite(la)||!Number.isFinite(lo)||Math.abs(la)>85||Math.abs(lo)>180)return false;lat=la;lon=lo;if(zoom!=null)z=clamp(zoom,2,18);requestDraw();return true}
  function zoom(delta){const before=world(lat,lon);z=clamp(z+delta,2,18);cache.clear();requestDraw()}
@@ -48,8 +51,33 @@ function mount(){
  frame.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1:-1)},{passive:false});
  document.getElementById('gpsZoomIn').onclick=()=>zoom(1);document.getElementById('gpsZoomOut').onclick=()=>zoom(-1);
  const state=document.getElementById('gpsState'),info=document.getElementById('gpsInfo');
- document.getElementById('gpsManual').onclick=()=>{const la=Number(document.getElementById('gpsLat').value),lo=Number(document.getElementById('gpsLon').value);if(!document.getElementById('gpsLat').value||!document.getElementById('gpsLon').value||!center(la,lo,14)){info.textContent='Coordenadas inválidas.';return}marker={lat:la,lon:lo};state.textContent='Posição manual';info.textContent=`Coordenadas informadas manualmente: ${la.toFixed(5)}, ${lo.toFixed(5)} (não são GPS)`;requestDraw()};
- document.getElementById('gpsLocate').onclick=()=>{if(!navigator.geolocation){state.textContent='GPS indisponível';info.textContent='Este motor de janela não oferece geolocalização. Use coordenadas manuais ou trilhas do celular.';return}state.textContent='Solicitando permissão…';navigator.geolocation.getCurrentPosition(p=>{if(!alive)return;const la=p.coords.latitude,lo=p.coords.longitude;marker={lat:la,lon:lo};center(la,lo,15);state.textContent='Posição obtida';info.textContent=`${la.toFixed(6)}, ${lo.toFixed(6)} · precisão estimada ${Math.round(p.coords.accuracy)} m · ${new Date(p.timestamp).toLocaleString('pt-BR')}`},e=>{if(!alive)return;state.textContent='Localização indisponível';info.textContent=`Não foi possível obter localização (${e.code}). Verifique permissões do Windows ou use coordenadas manuais.`},{enableHighAccuracy:true,timeout:12000,maximumAge:0})};
+ document.getElementById('gpsManual').onclick=()=>{const la=Number(document.getElementById('gpsLat').value),lo=Number(document.getElementById('gpsLon').value);if(!document.getElementById('gpsLat').value||!document.getElementById('gpsLon').value||!center(la,lo,14)){info.textContent='Coordenadas inválidas.';return}marker={lat:la,lon:lo};manualOrigin=true;state.textContent='Posição manual';info.textContent=`Coordenadas informadas manualmente: ${la.toFixed(5)}, ${lo.toFixed(5)} (não são GPS)`;requestDraw()};
+ // Start positioning when Maps opens; the browser/OS handles the initial permission.
+ // Keep an approximate fix for search and do not send any location to the server here.
+ function startAutoLocation(){
+  if(locationWatch!==null||!navigator.geolocation){
+   if(!navigator.geolocation){state.textContent='Sem GPS';info.textContent='Este dispositivo não oferece localização; use origem manual.';}
+   return;
+  }
+  state.textContent='Obtendo localização automaticamente…';
+  locationWatch=navigator.geolocation.watchPosition(p=>{
+   if(!alive)return;
+   const la=Number(p.coords.latitude),lo=Number(p.coords.longitude),accuracy=Number(p.coords.accuracy);
+   if(!Number.isFinite(la)||!Number.isFinite(lo)||Math.abs(la)>85||Math.abs(lo)>180||!Number.isFinite(accuracy)||accuracy<=0||Date.now()-p.timestamp>120000)return;
+   const fix={lat:la,lon:lo,accuracy,timestamp:p.timestamp/1000};
+   window.dispatchEvent(new CustomEvent('campanario:location-fix',{detail:fix}));
+   if(!manualOrigin){marker={lat:la,lon:lo};if(firstAutoFix){center(la,lo,Math.min(14,accuracy>1500?11:14));firstAutoFix=false;}else requestDraw();}
+   state.textContent=accuracy>100?'Localização aproximada':'GPS localizado';
+   info.textContent=`Posição do dispositivo: ${la.toFixed(6)}, ${lo.toFixed(6)} · ±${Math.round(accuracy)} m · ${new Date(p.timestamp).toLocaleTimeString('pt-BR')}`;
+  },e=>{
+   if(!alive)return;
+   state.textContent='Localização indisponível';
+   info.textContent=`GPS indisponível (${e.code}). Se necessário, autorize uma vez nas configurações do sistema; buscas por endereço continuam funcionando.`;
+   if(e.code===1&&locationWatch!==null){navigator.geolocation.clearWatch(locationWatch);locationWatch=null;}
+  },{enableHighAccuracy:true,timeout:16000,maximumAge:30000});
+ }
+ document.getElementById('gpsLocate').onclick=()=>{manualOrigin=false;firstAutoFix=true;if(locationWatch!==null){navigator.geolocation.clearWatch(locationWatch);locationWatch=null;}startAutoLocation()};
+ startAutoLocation();
  document.getElementById('gpsTracks').onclick=async()=>{const list=document.getElementById('gpsTrackList');list.textContent='Consultando trilhas autorizadas…';try{const r=await fetch('/api/app/gps/tracks',{cache:'no-store'});if(!r.ok)throw Error(`HTTP ${r.status}`);const tracks=await r.json();list.replaceChildren();if(!tracks.length){list.textContent='Nenhuma trilha compartilhada pelo celular.';return}for(const t of tracks){const b=document.createElement('button');b.className='ui-btn';b.textContent=`${t.name||t.id||'Trilha'} · ${t.point_count||'?'} pontos`;b.onclick=()=>{const points=t.points||[];track=points.map(p=>({lat:Number(p.lat??p.latitude),lon:Number(p.lon??p.longitude)})).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&Math.abs(p.lat)<=85&&Math.abs(p.lon)<=180);if(track.length){center(track[0].lat,track[0].lon,14);info.textContent=`Trilha: ${track.length} pontos`}else info.textContent='Trilha sem coordenadas.'};list.append(b)}}catch(e){list.textContent=`Erro ao consultar trilhas: ${e.message}`}};
 
  // Route guidance: no simulated location; updates only from user-authorized geolocation.
@@ -90,7 +118,7 @@ function mount(){
   items.forEach(item=>{const b=document.createElement('button');b.className='ui-btn';b.style.margin='3px';b.textContent=item.name.slice(0,100);b.onclick=async()=>{choose(item);if(auto)await calculateRoute(true)};box.append(b)});
   return false;
  }
- document.getElementById('navSearch').onclick=async()=>{try{await findDestination(document.getElementById('navDestination').value.trim())}catch(e){document.getElementById('navResults').textContent=e.message}};
+ if(!window.CampanarioNavigationV2)document.getElementById('navSearch').onclick=async()=>{try{await findDestination(document.getElementById('navDestination').value.trim())}catch(e){document.getElementById('navResults').textContent=e.message}};
  async function calculateRoute(autoGuide=false,origin=null){
   const request=++routeRequest;
   if(!origin)stopGuide();route=[];navSteps=[];requestDraw();
@@ -105,7 +133,7 @@ function mount(){
    if(autoGuide)startGuide();return true;
   }catch(e){if(request===routeRequest){navSummary.textContent='Não foi possível calcular: '+e.message;window.dispatchEvent(new CustomEvent('campanario:navigation-status',{detail:{kind:'error',message:String(e.message||'Serviço indisponível')}}))}return false}
  }
- document.getElementById('navCalculate').onclick=()=>void calculateRoute(false);
+ if(!window.CampanarioNavigationV2)document.getElementById('navCalculate').onclick=()=>void calculateRoute(false);
  function segmentDistance(p,a,b){const k=Math.cos(p.lat*rad),ax=(a.lon-p.lon)*k*111320,ay=(a.lat-p.lat)*111320,bx=(b.lon-p.lon)*k*111320,by=(b.lat-p.lat)*111320;const dx=bx-ax,dy=by-ay,t=clamp(-(ax*dx+ay*dy)/(dx*dx+dy*dy||1),0,1);return Math.hypot(ax+t*dx,ay+t*dy)}
  function routeDeviation(p){let d=Infinity;for(let i=1;i<route.length;i++)d=Math.min(d,segmentDistance(p,route[i-1],route[i]));return d}
  function startGuide(){
@@ -122,8 +150,8 @@ function mount(){
    if(meters!==null&&meters<170&&stepIndex!==lastSpoken){speak(message);lastSpoken=stepIndex}requestDraw();
   },e=>{navSummary.textContent='Localização indisponível ('+e.code+'). Guia interrompido.';stopGuide()},{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
  }
- document.getElementById('navStart').onclick=startGuide;
- document.getElementById('navStop').onclick=()=>{stopGuide();navSummary.textContent='Guia interrompido; rota permanece visível.'};
+ if(!window.CampanarioNavigationV2)document.getElementById('navStart').onclick=startGuide;
+ if(!window.CampanarioNavigationV2)document.getElementById('navStop').onclick=()=>{stopGuide();navSummary.textContent='Guia interrompido; rota permanece visível.'};
  // An explicit chat request opens the map and searches a real place.
  // The user chooses among results; the route is never fabricated.
  const fromChat=async e=>{if(!alive)return;const destination=String(e.detail?.destination||'').slice(0,130);if(!destination)return;
@@ -145,11 +173,18 @@ function mount(){
    await calculateRoute(!!e.detail?.auto);
   }catch(err){navSummary.textContent='Navegação: '+(err.message||'localização não autorizada. Informe a origem manualmente.');window.dispatchEvent(new CustomEvent('campanario:navigation-status',{detail:{kind:'error',message:navSummary.textContent}}));}
  };
- window.addEventListener('campanario:navigation-request',fromChat);
+ if(!window.CampanarioNavigationV2)window.addEventListener('campanario:navigation-request',fromChat);
 
  const ro=new ResizeObserver(resize);ro.observe(frame);resize();refreshMapStyle();
  fetch('/api/app/maps/status',{cache:'no-store'}).then(r=>r.json()).then(s=>{if(!alive)return;offline=!!s.offline_available&&s.format==='png';document.getElementById('mapSource').textContent=offline?`Mapa offline: ${s.name||'MBTiles PNG'} (sem internet)`:'Carregando mapa online…';refreshMapStyle()}).catch(()=>{offline=false;refreshMapStyle()});
- controller={destroy(){window.removeEventListener('campanario:navigation-request',fromChat);stopGuide();alive=false;ro.disconnect();cache.clear()}};
+ const fromV2=e=>{if(!alive)return;const snap=e.detail||{};
+   if(snap.route?.points?.length){route=snap.route.points;navSteps=snap.route.steps||[];if(snap.position){marker=snap.position;center(marker.lat,marker.lon);}else if(route.length){center(route[0].lat,route[0].lon,13);}requestDraw();}
+   if(snap.state==='STOPPED'){route=[];requestDraw();}
+ };
+ window.addEventListener('campanario:navigation-v2-update',fromV2);
+ window.CampanarioNavigationV2?.bindUI();
+ const initial=window.CampanarioNavigationV2?.status();if(initial)fromV2({detail:initial});
+ controller={destroy(){window.removeEventListener('campanario:navigation-request',fromChat);window.removeEventListener('campanario:navigation-v2-update',fromV2);stopGuide();if(locationWatch!==null&&navigator.geolocation){navigator.geolocation.clearWatch(locationWatch);locationWatch=null;}alive=false;ro.disconnect();cache.clear()}};
  }
  window.CampanarioMap={mount};
 })();

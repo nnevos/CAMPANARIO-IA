@@ -218,7 +218,7 @@ def build_runtime(
     # No authorization rule is imported from an AgentBuild or talent.
     if service._brain_executor is not None:
         service._brain_executor.bind_permissions(permissions)
-    permissions.set_rule("utilities.write", PermissionMode.CONFIRM)
+    permissions.set_rule("utilities.write", PermissionMode.SCOPED_CONFIRM)
     presence = PresenceManager(event_bus)
     voice_media = build_voice_media(settings)
     runtime = CampanarioRuntime(

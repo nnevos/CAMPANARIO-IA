@@ -2,6 +2,8 @@
 from pathlib import Path
 from threading import RLock, Thread
 import socket
+import os
+import re
 import ssl
 import uvicorn
 from fastapi import FastAPI
@@ -39,11 +41,22 @@ class BodyLimit:
         await self.app(scope, replay, send)
 
 
+def _allowed_companion_origins():
+    """Exact opted-in Pages origin; browser Origin contains no repository path."""
+    origins = ["https://appassets.androidplatform.net"]
+    candidate = os.getenv("CAMPANARIO_FIELD_PAGES_ORIGIN", "").strip().rstrip("/")
+    if candidate:
+        if not re.fullmatch(r"https://[a-z0-9-]+\.github\.io", candidate, re.IGNORECASE):
+            raise ValueError("CAMPANARIO_FIELD_PAGES_ORIGIN deve ser https://usuario.github.io")
+        origins.append(candidate.lower())
+    return origins
+
+
 def create_companion_app():
     app = FastAPI(title="Campanario Companion", docs_url=None, redoc_url=None, openapi_url=None)
     app.include_router(router)
     app.add_middleware(BodyLimit)
-    app.add_middleware(CORSMiddleware, allow_origins=["https://appassets.androidplatform.net"], allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"])
+    app.add_middleware(CORSMiddleware, allow_origins=_allowed_companion_origins(), allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"])
     return app
 
 

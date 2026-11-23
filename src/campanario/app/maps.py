@@ -6,7 +6,8 @@ from pathlib import Path
 
 def package_path():
     # Only a local operator controls this path; never accept arbitrary file paths via HTTP.
-    configured = os.environ.get("CAMPANARIO_MBTILES", "").strip()
+    from campanario.config import Settings
+    configured = (os.environ.get("CAMPANARIO_MBTILES") or Settings().mbtiles).strip()
     return Path(configured).expanduser() if configured else Path.home() / "Campanario" / "maps" / "offline.mbtiles"
 
 

@@ -1,4 +1,15 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Campanário · Central de ferramentas</title><link rel="stylesheet" href="/ferramentas.css"></head><body><a href="/" style="display:block;padding:12px;color:#dfc48c;background:#101114;text-decoration:none">&larr; Voltar ao Campanario</a>
 <div class="shell"><aside class="sidebar"><a class="brand" href="/">◈ <span>CAMPANÁRIO<small>Central de ferramentas</small></span></a><div class="side-label">ESPAÇO DE TRABALHO</div><nav id="modules" aria-label="Módulos das ferramentas"></nav><div class="side-foot"><span class="pulse"></span> Ferramentas locais <small id="agent-status">Independentes da IA</small></div></aside>
-<div class="content"><header class="top"><div><div class="eyebrow">CAMPANÁRIO / UTILIDADES</div><h1 id="page-title">Visão geral</h1><p id="page-subtitle">Sua central pessoal, sem precisar escrever código.</p></div><div class="top-actions"><a href="/" class="secondary">← Conversas</a><button id="reload" class="secondary" type="button">↻ Atualizar</button></div></header><div id="notice" role="status" aria-live="polite"></div><main id="view" tabindex="-1"></main><footer><span id="workspace-label">Pasta de arquivos autorizada: carregando…</span><span>Execução local • ações sensíveis exigem confirmação</span></footer></div></div>
-<script src="/ferramentas.js" defer></script></body></html>
+<div class="content"><header class="top"><div><div class="eyebrow">CAMPANÁRIO / UTILIDADES</div><h1 id="page-title">Visão geral</h1><p id="page-subtitle">Sua central pessoal, sem precisar escrever código.</p></div><div class="top-actions"><a href="/" class="secondary">← Conversas</a><button id="pf6-logout" class="secondary" type="button" hidden>Encerrar sessão PF6</button><button id="reload" class="secondary" type="button">↻ Atualizar</button></div></header><div id="notice" role="status" aria-live="polite"></div><main id="view" tabindex="-1"></main><footer><span id="workspace-label">Pasta de arquivos autorizada: carregando…</span><span>Execução local • ações sensíveis exigem confirmação</span></footer></div></div>
+<dialog id="pf6-dialog" aria-labelledby="pf6-title" aria-describedby="pf6-description">
+ <form id="pf6-dialog-form" method="dialog">
+  <div class="pf6-heading"><span aria-hidden="true">◈</span><h2 id="pf6-title">Autorização local</h2></div>
+  <p id="pf6-description">Confira a ação antes de autorizar.</p>
+  <pre id="pf6-details" class="pf6-details" tabindex="0" hidden></pre>
+  <label id="pf6-username-label" class="field" for="pf6-username"><span>Usuário PF6 (opcional no modo proprietário)</span><input id="pf6-username" type="text" autocomplete="username" maxlength="32" pattern="[A-Za-z][A-Za-z0-9_-]{2,31}"></label>
+  <label id="pf6-credential-label" class="field" for="pf6-credential"><span>Senha local PF6</span><input id="pf6-credential" type="password" autocomplete="off" spellcheck="false" maxlength="512" required></label>
+  <label id="pf6-ack-label" class="pf6-ack" hidden><input id="pf6-ack" type="checkbox"> <span>Li os detalhes e autorizo somente esta operação.</span></label>
+  <div class="pf6-actions"><button type="button" class="secondary" id="pf6-cancel">Cancelar</button><button type="submit" class="primary" id="pf6-accept" disabled>Continuar</button></div>
+ </form>
+</dialog>
+<script src="/ferramentas.js?v=3.15.0" defer></script></body></html>

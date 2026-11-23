@@ -22,7 +22,48 @@ const modules = [
  ['avancado','⌘','Avançado','Execução técnica para desenvolvedores']
 ];
 let active='inicio', roots=[], catalog=[], busy=false, currentPath='', editing={}, backupName='', latestResult=null;
+let libraryOffset=0, fileOffset=0;
 let v9Agent='morgana', v9Build=null, v9Imported=null;
+let pf6SessionToken=null, pf6Mode=false; // memory only, never localStorage/sessionStorage
+function pf6UpdateLogout(){const b=$('#pf6-logout');if(b)b.hidden=!pf6SessionToken;}
+// Native modal keeps credentials out of prompts, URLs, storage and HTML strings.
+// Every approval must review the exact request; cancellations never call approve.
+function pf6Review({tool='',args=null,login=false}={}){
+ return new Promise(resolve=>{
+  const dlg=document.querySelector('#pf6-dialog');
+  if(!dlg || typeof dlg.showModal!=='function' || dlg.open){resolve(null);return;}
+  const form=document.querySelector('#pf6-dialog-form');
+  const input=document.querySelector('#pf6-credential');
+  const username=document.querySelector('#pf6-username');
+  const usernameLabel=document.querySelector('#pf6-username-label');
+  const credentialLabel=document.querySelector('#pf6-credential-label');
+  const checkbox=document.querySelector('#pf6-ack');
+  const ackLabel=document.querySelector('#pf6-ack-label');
+  const details=document.querySelector('#pf6-details');
+  const accept=document.querySelector('#pf6-accept');
+  document.querySelector('#pf6-title').textContent=login?'Entrar na sessão PF6':'Revisar operação PF6';
+  document.querySelector('#pf6-description').textContent=login?
+   'A credencial é usada apenas nesta requisição de login local. Não é armazenada na página.':
+   'Uma aprovação permite uma única execução com estes argumentos. Confira inclusive caminhos e destinos.';
+  details.hidden=login;
+  details.textContent=login?'':`Ferramenta: ${tool}\nArgumentos exatos:\n${JSON.stringify(args,null,2)}`;
+  credentialLabel.hidden=!login;usernameLabel.hidden=!login;input.required=login;input.value='';username.value='';
+  ackLabel.hidden=login;checkbox.checked=false;
+  accept.textContent=login?'Entrar':'Autorizar uma vez';accept.disabled=!login;
+  let completed=false;
+  const update=()=>{accept.disabled=!login&&!checkbox.checked;};
+  const cleanup=()=>{form.removeEventListener('submit',onSubmit);checkbox.removeEventListener('change',update);document.querySelector('#pf6-cancel').removeEventListener('click',onCancel);dlg.removeEventListener('close',onClose);input.value='';username.value='';checkbox.checked=false;details.textContent='';};
+  const finish=value=>{if(completed)return;completed=true;cleanup();if(dlg.open)dlg.close();resolve(value);};
+  const onSubmit=e=>{e.preventDefault();if(login){if(!input.value)return;finish({username:username.value.trim()||null,credential:input.value});}else if(checkbox.checked){finish(true);}};
+  const onCancel=()=>finish(null);
+  const onClose=()=>finish(null);
+  form.addEventListener('submit',onSubmit);checkbox.addEventListener('change',update);
+  document.querySelector('#pf6-cancel').addEventListener('click',onCancel);
+  dlg.addEventListener('close',onClose);
+  dlg.showModal();(login?input:details).focus();
+ });
+}
+
 const $=sel=>document.querySelector(sel);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const bytes=n=>Number.isFinite(Number(n))?new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1}).format(Number(n)/1024/1024)+' MB':'—';
@@ -42,10 +83,35 @@ async function api(url,options={}) {const res=await fetch(url,{...options,header
 async function invoke(tool,arguments_={},ask=true) {
  const spec=catalog.find(i=>i.id===tool);
  if(spec?.requires_confirmation){
-  if(ask&&!confirm(`Confirmar operação local: ${spec.description}?\n\nFerramenta: ${tool}\nAs alterações podem afetar os dados persistidos.`))return null;
+  // PF6 performs its own exact-argument consent. Legacy mode retains this confirm.
+  if(ask&&pf6Mode&&!confirm(`Confirmar operação local: ${spec.description}?\n\nFerramenta: ${tool}\nAs alterações podem afetar os dados persistidos.`))return null;
   arguments_.confirm=true;
  }
- const data=await api('/api/v1/utilities/invoke',{method:'POST',body:JSON.stringify({tool,arguments:arguments_})});latestResult=data;
+ let confirmation_token;
+ if(spec?.requires_confirmation && pf6Mode){
+  try{
+   if(!pf6SessionToken){
+    const credentials=await pf6Review({login:true});
+    if(!credentials)return null;
+    const login=await api('/api/v1/utilities/sessions/login',{
+     method:'POST',body:JSON.stringify(credentials)});
+    pf6SessionToken=login.session_token;pf6UpdateLogout();
+   }
+   const auth={Authorization:'Bearer '+pf6SessionToken};
+   const pending=await api('/api/v1/utilities/confirmations/request',{
+    method:'POST',headers:auth,body:JSON.stringify({tool,arguments:arguments_})});
+   if(!await pf6Review({tool:pending.tool,args:pending.arguments}))return null;
+   const approved=await api('/api/v1/utilities/confirmations/approve',{
+    method:'POST',headers:auth,
+    body:JSON.stringify({confirmation_id:pending.confirmation_id,tool,arguments:arguments_,acknowledged:true})});
+   confirmation_token=approved.confirmation_token;
+  }catch(e){
+   if(e.message.includes('Sessão PF6 inválida') || e.message.includes('Sessão PF6 necessária')){pf6SessionToken=null;pf6UpdateLogout();}
+   if(!e.message.includes('Sessões PF6 indisponíveis'))throw e;
+   // V9 remains denied without configured sessions; legacy approval still applies.
+  }
+ }
+ const data=await api('/api/v1/utilities/invoke',{method:'POST',headers:confirmation_token?{Authorization:'Bearer '+pf6SessionToken}:{},body:JSON.stringify({tool,arguments:arguments_,confirmation_token})});latestResult=data;
  if(data.status!=='success')throw Error(data.result?.error||'Operação não concluída');
  return data.result;
 }
@@ -55,27 +121,27 @@ async function go(id){if(!modules.some(m=>m[0]===id))return;active=id;clearMessa
 const tile=(id,desc)=>{const m=modules.find(x=>x[0]===id);return `<button class="card tile" type="button" data-nav="${id}"><span class="symbol">${m[1]}</span><h2>${m[2]}</h2><p>${desc}</p><span class="badge">Abrir módulo</span></button>`};
 const views={};
 views.inicio=async()=>{const [notes,tasks,docs,diag]=await Promise.allSettled([read('notes.list'),read('tasks.list'),read('library.list'),read('diagnostics.system')]);const count=(x,key)=>x.status==='fulfilled'?(x.value[key]??x.value.items?.length??'—'):'Indisponível';$('#view').innerHTML=`<div class="hero"><div class="eyebrow">SEU ESPAÇO PESSOAL</div><h2>As coisas importantes, em um só lugar.</h2><p>Organize sua rotina, consulte seus documentos e cuide dos seus arquivos — mesmo sem um modelo de IA em execução.</p><div class="row">${btn('Abrir minhas notas','jump','notas','primary')}${btn('Explorar arquivos','jump','arquivos')}</div></div><div class="grid stat-grid">${[['Notas',count(notes,'count')],['Tarefas',count(tasks,'count')],['Documentos',count(docs,'count')],['CPU lógica',diag.status==='fulfilled'?diag.value.cpu_logical:'—']].map(([name,n])=>`<div class="card"><div class="metric">${esc(n)}</div><div class="metric-label">${esc(name)}</div></div>`).join('')}</div><div class="section-head"><h2>Explorar ferramentas</h2><span class="pill">Sem dependência da IA</span></div><div class="grid">${['pesquisa','arquivos','biblioteca','documentos','analises','cerebros','forja','notas','tarefas','diagnostico','emergencia','backups','calculos','memoria'].map(id=>tile(id,modules.find(x=>x[0]===id)[3])).join('')}</div>`};
-views.arquivos=async()=>{if(!currentPath)currentPath=roots[0]||'';const data=await read('files.list',{path:currentPath});const parent=currentPath.replace(/[\\/][^\\/]+[\\/]?$/,'');const canUp=parent && roots.some(r=>parent===r||parent.startsWith(r+'/')||parent.startsWith(r+'\\'));$('#view').innerHTML=`<div class="grid"><div class="card full"><div class="section-head"><h2>Explorador de arquivos</h2><span class="badge">Pasta autorizada</span></div><div class="row breadcrumbs">${canUp?btn('↑ Voltar','folder',parent):''}<span class="path-label">${esc(currentPath)}</span>${btn('↻ Atualizar','refresh','')}</div><div class="row" style="margin-top:16px">${form('files.search',field('query','Pesquisar nomes de arquivos','search','','placeholder="Nome ou parte dele" required')+`<input type="hidden" name="path" value="${esc(currentPath)}">`,'Pesquisar')}<form id="upload-form"><label class="upload-label">Adicionar arquivo <input type="file" id="upload" accept=".txt,.md,.pdf,.docx,.xlsx,.csv,.json,.log" required></label><button class="secondary" type="submit">Enviar para pasta autorizada</button></form></div><div class="items" style="margin-top:16px">${data.items.length?data.items.sort((a,b)=>Number(b.directory)-Number(a.directory)||a.name.localeCompare(b.name)).map(x=>entry((x.directory?'📁 ':'📄 ')+x.name,(x.directory?'Pasta':bytes(x.bytes))+' · '+date(x.modified),x.directory?btn('Abrir','folder',x.path):`${btn('Ler','file-read',x.path)}${btn('Copiar','file-copy',x.path)}${btn('Mover','file-move',x.path)}${btn('Lixeira','file-delete',x.path,'danger small-btn')}`)).join(''):empty('Pasta vazia. Você pode adicionar arquivos acima.')}</div></div><div class="card"> <h2>Nova pasta</h2>${form('files.mkdir',field('name','Nome da pasta','text','','required maxlength="100"'),'Criar pasta',true)}</div><div class="card"><h2>Proteção de arquivos</h2><p>O explorador mostra somente o espaço autorizado. Exclusões são enviadas à lixeira interna, não apagadas definitivamente. Copiar e mover exigem confirmação.</p><p class="hint-block">Arquivos do seu computador fora dessa pasta não ficam acessíveis automaticamente.</p></div></div><div id="detail" class="detail-slot"></div>`};
+views.arquivos=async()=>{if(!currentPath)currentPath=roots[0]||'';const data=await read('files.list',{path:currentPath,offset:fileOffset});const parent=currentPath.replace(/[\\/][^\\/]+[\\/]?$/,'');const canUp=parent && roots.some(r=>parent===r||parent.startsWith(r+'/')||parent.startsWith(r+'\\'));$('#view').innerHTML=`<div class="grid"><div class="card full"><div class="section-head"><h2>Explorador de arquivos</h2><span class="badge">Pasta autorizada</span></div><div class="row breadcrumbs">${canUp?btn('↑ Voltar','folder',parent):''}<span class="path-label">${esc(currentPath)}</span>${btn('↻ Atualizar','refresh','')}<span class="meta">${data.total} itens · página ${Math.floor(fileOffset/100)+1}</span></div><div class="row" style="margin-top:16px">${form('files.search',field('query','Pesquisar nomes de arquivos','search','','placeholder="Nome ou parte dele" required')+`<input type="hidden" name="path" value="${esc(currentPath)}">`,'Pesquisar')}<form id="upload-form"><label class="upload-label">Adicionar arquivo <input type="file" id="upload" accept=".txt,.md,.pdf,.docx,.xlsx,.csv,.json,.log" required></label><button class="secondary" type="submit">Enviar para pasta autorizada</button></form></div><div class="items" style="margin-top:16px">${data.items.length?data.items.map(x=>entry((x.directory?'📁 ':'📄 ')+x.name,(x.directory?'Pasta':bytes(x.bytes))+' · '+date(x.modified),x.directory?btn('Abrir','folder',x.path):`${btn('Ler','file-read',x.path)}${btn('Indexar','file-index',x.path)}${btn('Renomear','file-rename',x.path)}${btn('Copiar','file-copy',x.path)}${btn('Mover','file-move',x.path)}${btn('Lixeira','file-delete',x.path,'danger small-btn')}`)).join(''):empty('Pasta vazia. Você pode adicionar arquivos acima.')}<div class="row">${fileOffset>0?btn('← Anteriores','file-page',String(Math.max(0,fileOffset-100))):''}${data.has_more?btn('Próximos →','file-page',String(fileOffset+100)):''}</div></div></div><div class="card"> <h2>Nova pasta</h2>${form('files.mkdir',field('name','Nome da pasta','text','','required maxlength="100"'),'Criar pasta',true)}</div><div class="card"><h2>Proteção de arquivos</h2><p>O explorador mostra somente o espaço autorizado. Exclusões são enviadas à lixeira interna, não apagadas definitivamente. Copiar e mover exigem confirmação.</p><p class="hint-block">Arquivos do seu computador fora dessa pasta não ficam acessíveis automaticamente.</p></div></div><div id="detail" class="detail-slot"></div>`};
 views.biblioteca=async()=>{
- const data=await read('library.list');
+ const data=await read('library.list',{offset:libraryOffset});
  const hits=data.documents.map(d=>entry(d.name,
   d.category+' · '+date(d.created)+' · '+(d.state||'available'),
-  btn('Detalhes','lib-details',d.id)+btn('Markdown','lib-markdown',d.id)+btn('Excluir','lib-delete',d.id,'danger small-btn'),
-  'Indexação: '+(d.method||'legacy'))).join('');
+  btn('Detalhes','lib-details',d.id)+btn('Markdown','lib-markdown',d.id)+btn('Renomear','lib-rename',d.id)+btn('Reindexar','lib-reindex',d.id)+btn('Excluir','lib-delete',d.id,'danger small-btn'),
+  'Indexação: '+(d.state||'legado')+' · '+(d.method||'legacy')+(d.errors?.length?' · '+d.errors.join('; ').slice(0,160):''))).join('');
  $('#view').innerHTML=`<div class="split"><div class="stack">
  ${box('Buscar com evidências',form('library.retrieve',field('query','Consulta contextual','search','','placeholder="Ex.: Ocultista 20% NEX" required maxlength="500"'),'Recuperar trechos'))}
  ${box('Busca literal',form('library.search',field('query','Palavras no documento ou no nome','search','','required'),'Pesquisar texto'))}
  ${box('Importar documento',`<p>O original é copiado para a biblioteca local. TXT, Markdown, PDF, DOCX, CSV, XLSX e JSON; arquivos complexos podem ficar parcialmente processados.</p><form id="library-upload"><div class="field"><label for="lib-file">Selecionar documento</label><input type="file" id="lib-file" accept=".txt,.md,.pdf,.docx,.csv,.xlsx,.json" required></div>${field('category','Categoria','text','geral','maxlength="100"')}<button type="submit" class="primary">Adicionar à biblioteca</button></form><p class="hint-block">OCR somente se Tesseract e pdftoppm estiverem instalados no computador.</p>`)}
- </div>${box('Biblioteca · '+data.documents.length+' documentos',hits||empty('Nenhum documento importado.'))}</div><div id="detail" class="detail-slot"></div>`;
+ </div>${box('Biblioteca · '+data.total+' documentos',(hits||empty('Nenhum documento nesta página.'))+`<div class="row">${libraryOffset>0?btn('← Anteriores','lib-page',String(Math.max(0,libraryOffset-100))):''}${data.has_more?btn('Próximos →','lib-page',String(libraryOffset+100)):''}</div>`)}</div><div id="detail" class="detail-slot"></div>`;
 };
 views.documentos=async()=>{
- const data=await read('library.list');
+ const data=await read('library.list',{offset:libraryOffset});
  $('#view').innerHTML=box('Documentos originais e processamento',
   data.documents.length?data.documents.map(d=>entry(d.name,
    (d.state||'available')+' · '+(d.method||'legado')+' · '+bytes(d.bytes),
-   btn('Inspecionar','lib-details',d.id)+btn('Markdown','lib-markdown',d.id)+
+   btn('Inspecionar','lib-details',d.id)+btn('Markdown','lib-markdown',d.id)+btn('Renomear','lib-rename',d.id)+btn('Reindexar','lib-reindex',d.id)+btn('Excluir','lib-delete',d.id,'danger small-btn')+
    `<a class="secondary small-btn" href="/api/v1/utilities/documents/${encodeURIComponent(d.id)}/original" target="_blank" rel="noopener noreferrer">Abrir original</a>`)).join('')
-   :empty('Nenhum documento disponível.'))+'<div id="detail" class="detail-slot"></div>';
+   :empty('Nenhum documento disponível.'))+`<div class="row">${libraryOffset>0?btn('← Anteriores','lib-page',String(Math.max(0,libraryOffset-100))):''}${data.has_more?btn('Próximos →','lib-page',String(libraryOffset+100)):''}</div>`+'<div id="detail" class="detail-slot"></div>';
 };
 views.analises=async()=>{
  const data=await read('library.list');
@@ -143,7 +209,7 @@ views.cerebros=async()=>{
  const logs=await api('/api/v1/brains/runs?limit=20');
  $('#view').innerHTML=preflight+`<div class="grid">${data.brains.map(b=>box(esc(b.display_name),`<p><strong>${esc(b.status)}</strong> · ${esc(b.health)}</p><div class="meta">${esc(b.brain_id)} · ${esc((b.capabilities||[]).join(', ')||'sem executor')} · ${esc(b.version||'não instalado')}</div>`)).join('')}</div>
  <div class="grid v9-panels" style="margin-top:16px">
- ${box('Teste real de capacidade',`<form id="v9-test-form" class="tool-form">${select('brain_id','Cérebro',[['knowledge','Conhecimento — consulta à biblioteca'],['analysis','Análise — cálculo na planilha']],'knowledge')}${field('query','Pergunta','textarea','','required maxlength="1200" rows="3"')}${field('document_hint','Documento (opcional)','text','','maxlength="85"')}<button class="primary" type="submit">Executar consulta</button></form><p class="hint-block">Este teste realiza leitura real, sem calcular no LLM. Resultados sem fonte são marcados como indisponíveis.</p>`,'wide')}
+ ${box('Teste real de capacidade',`<form id="v9-test-form" class="tool-form">${select('brain_id','Cérebro',[['knowledge','Conhecimento — consulta à biblioteca'],['analysis','Análise — cálculo na planilha'],['investigation','Investigação — evidências e lacunas'],['strategy','Estratégia — plano condicional']],'knowledge')}${field('query','Pergunta','textarea','','required maxlength="1200" rows="3"')}${field('document_hint','Documento (opcional)','text','','maxlength="85"')}<button class="primary" type="submit">Executar consulta</button></form><p class="hint-block">Este teste realiza leitura real, sem calcular no LLM. Resultados sem fonte são marcados como indisponíveis.</p>`,'wide')}
  ${box('Últimas execuções',logs.items.length?logs.items.map(r=>entry(r.brain_id,`${r.status} · ${r.latency_ms} ms · ${r.evidence_count} evidências · ${date(r.created_at)}`,'',`Operações: ${r.operations.join(', ')}`)).join(''):empty('Nenhuma execução registrada.'),'wide')}
  </div><div id="detail" class="detail-slot"></div>`;
 };
@@ -199,7 +265,9 @@ async function onSubmit(ev){const formEl=ev.target;if(!(formEl instanceof HTMLFo
  if(formEl.id==='v9-test-form'){
   const args=values(formEl);args.agent_id=v9Agent;
   const r=await api('/api/v1/brains/preview',{method:'POST',body:JSON.stringify(args)});
-  showDetail(result(r));message(r.evidence.length?'Consulta concluída com evidências.':'Nenhuma evidência recuperada.','info');return;
+  const reviews=(r.runs||[]).flatMap(run=>run.report||[]);
+  const summary=reviews.length?box('Revisão fundamentada',`<pre class="result">${esc(reviews.join('\n'))}</pre>`):'';
+  showDetail(summary+result(r));message(r.evidence.length?'Consulta concluída com evidências.':'Nenhuma evidência recuperada.','info');return;
  }
  if(formEl.id==='v9-build-form'){
   if(!v9Build)throw Error('Ficha não carregada');
@@ -248,10 +316,12 @@ async function onClick(ev){const el=ev.target.closest('[data-nav],[data-action]'
  }
  if(action==='web-read'){message('Consultando página externa…','info');const data=await read('web.read',{url:value});renderWebPage(data);message('Página consultada; fonte e data registradas.','success');return}
  if(action==='web-save'){const r=await invoke('web.save',{source_id:value,category:'pesquisa-web'});if(r){message(r.saved?'Fonte salva na biblioteca offline.':'A biblioteca não importou a fonte. Confira o resultado.','success')}return}
- if(action==='jump')return go(value);if(action==='refresh')return go(active);if(action==='folder'){currentPath=value;return go('arquivos')}
+ if(action==='jump')return go(value);if(action==='refresh')return go(active);if(action==='file-page'){fileOffset=Number(value)||0;return go('arquivos')}if(action==='folder'){currentPath=value;fileOffset=0;return go('arquivos')}
  if(action==='new-record'){editing[value]={};return go(value==='notes'?'notas':'tarefas')}
  if(action.startsWith('edit-')){const kind=action.slice(5);const all=await read(kind+'.list');editing[kind]=all.items.find(x=>x.id===value)||{};return go(kind==='notes'?'notas':'tarefas')}
  if(action.startsWith('delete-')){const kind=action.slice(7);const tool=kind==='emergency'?'emergency.delete':kind+'.delete';const res=await invoke(tool,{id:value});if(res){await go(active);message('Registro excluído.','success')}return}
+ if(action==='file-rename'){const oldName=value.split(/[\\/]/).pop();const name=prompt('Novo nome do arquivo:',oldName);if(!name||name===oldName)return;if(name.includes('/')||name.includes('\\')||name==='.'||name==='..')throw Error('Nome inválido');const dest=value.slice(0,value.length-oldName.length)+name;const r=await invoke('files.move',{source:value,destination:dest});if(r){await go('arquivos');message('Arquivo renomeado.','success')}return}
+ if(action==='file-index'){const r=await invoke('library.import',{path:value,category:'arquivos-locais'});if(r){if(r.state==='error')message('Arquivo preservado; falha de indexação: '+(r.warnings||[]).join('; '),'error');else message(r.duplicate_id?'Documento já indexado.':'Documento importado: '+r.indexed_sections+' trechos.','success')}return}
  if(action==='file-read'){const r=await read('files.read',{path:value});showDetail(`<div class="meta">${esc(value)}</div><pre class="result">${esc(r.content)}</pre>`);return}
  if(action==='file-copy'||action==='file-move'){const dest=prompt('Caminho completo do destino (dentro da pasta autorizada):',value);if(!dest)return;const r=await invoke(action==='file-copy'?'files.copy':'files.move',{source:value,destination:dest});if(r){await go('arquivos');message('Operação concluída.','success')}return}
  if(action==='file-delete'){const r=await invoke('files.delete',{path:value});if(r){await go('arquivos');message('Arquivo transferido para a lixeira interna.','success')}return}
@@ -263,13 +333,16 @@ async function onClick(ev){const el=ev.target.closest('[data-nav],[data-action]'
   const res=await read('library.document',{document_id:value,include_markdown:true});
   showDetail(`<div class="meta">${esc(res.name)} · ${esc(res.state)}</div><pre class="result">${esc(res.markdown||'Sem texto extraído.')}</pre>`);return;
  }
- if(action==='lib-delete'){const r=await invoke('library.delete',{id:value});if(r){await go('biblioteca');message('Documento removido.','success')}return}
+ if(action==='lib-page'){libraryOffset=Number(value)||0;await go(active==='documentos'?'documentos':'biblioteca');return}
+ if(action==='lib-rename'){const d=await read('library.document',{document_id:value});const name=prompt('Novo nome (mantenha a extensão):',d.name);if(!name||name===d.name)return;const r=await invoke('library.rename',{id:value,name});if(r){await go(active==='documentos'?'documentos':'biblioteca');message('Nome atualizado. Original preservado.','success')}return}
+ if(action==='lib-reindex'){const r=await invoke('library.reindex',{id:value});if(r){await go(active==='documentos'?'documentos':'biblioteca');message(`Reindexado: ${r.indexed_sections} trechos. Estado: ${r.state}.`,'success')}return}
+ if(action==='lib-delete'){const r=await invoke('library.delete',{id:value});if(r){await go(active==='documentos'?'documentos':'biblioteca');message('Documento removido.','success')}return}
  if(action==='create-backup'){const r=await invoke('backup.create');if(r){await go('backups');message(`Backup criado: ${r.path}`,'success')}return}
  if(action==='verify-backup'){const r=await read('backup.verify',{filename:value});showDetail(result(r));message('Integridade do backup verificada.','success');return}
  if(action==='restore-backup'){if(!confirm(`ATENÇÃO: restaurar ${value} substituirá os dados atuais das utilidades. Uma cópia de rollback será criada. Continuar?`))return;const r=await invoke('backup.restore',{filename:value},false);if(r){await go('backups');message(`Dados restaurados. Backup de segurança anterior: ${r.rollback_backup}`,'success')}return}
  if(action==='run-routine'){const r=await invoke('routines.run',{id:value});if(r)showDetail(result(r));return}
  if(action==='op-detail'){const op=window._ops?.find(x=>x.id===value);if(op)showDetail(result(JSON.parse(op.detail)));return}
  }catch(e){message(e.message,'error')}}
-async function boot(){try{const [cat,status]=await Promise.all([api('/api/v1/utilities/catalog'),api('/api/v1/utilities/status')]);catalog=cat;roots=status.authorized_roots||[];currentPath=roots[0]||'';$('#workspace-label').textContent='Pasta autorizada: '+(roots[0]||'não configurada');$('#agent-status').textContent=`${catalog.length} operações · IA não necessária`;document.addEventListener('submit',onSubmit);document.addEventListener('click',onClick);$('#reload').addEventListener('click',()=>go(active));await go(modules.some(m=>m[0]===location.hash.slice(1))?location.hash.slice(1):'inicio');}catch(e){message('Não foi possível conectar às ferramentas: '+e.message,'error');$('#view').innerHTML=empty('Confira se o servidor Campanario está em execução e recarregue a página.')}}
+async function boot(){try{const [cat,status]=await Promise.all([api('/api/v1/utilities/catalog'),api('/api/v1/utilities/status')]);catalog=cat;pf6Mode=!!status.pf6_mode;roots=status.authorized_roots||[];currentPath=roots[0]||'';$('#workspace-label').textContent='Pasta autorizada: '+(roots[0]||'não configurada');$('#agent-status').textContent=`${catalog.length} operações · IA não necessária`;document.addEventListener('submit',onSubmit);document.addEventListener('click',onClick);$('#reload').addEventListener('click',()=>go(active));$('#pf6-logout').addEventListener('click',async()=>{const token=pf6SessionToken;pf6SessionToken=null;pf6UpdateLogout();if(token){try{await api('/api/v1/utilities/sessions/logout',{method:'POST',headers:{Authorization:'Bearer '+token}});}catch(e){message('Sessão local encerrada; confirme revogação no servidor: '+e.message,'error');return;}}message('Sessão PF6 encerrada.','info');});await go(modules.some(m=>m[0]===location.hash.slice(1))?location.hash.slice(1):'inicio');}catch(e){message('Não foi possível conectar às ferramentas: '+e.message,'error');$('#view').innerHTML=empty('Confira se o servidor Campanario está em execução e recarregue a página.')}}
 boot();
 })();

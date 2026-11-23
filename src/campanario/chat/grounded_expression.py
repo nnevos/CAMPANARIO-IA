@@ -108,6 +108,29 @@ def validate_expression(answer: CanonicalAnswer, candidate: str) -> IntegrityRes
     return IntegrityResult(not errors, tuple(dict.fromkeys(errors)))
 
 
+def render_brain_answer(canonical: CanonicalAnswer, profile: AgentProfile) -> str:
+    """Extractive-only realization for completed brain results.
+
+    The factual payload is copied byte-for-byte from the validated canonical
+    compiler. The agent may contribute only a predefined, non-factual lead-in.
+    No LLM is called; this does not prove the source itself is true.
+    """
+    if not canonical.brain_ids or canonical.mode == 'conversational':
+        raise ValueError('render_brain_answer requires a brain-backed factual answer')
+    if canonical.status not in {VerificationStatus.VERIFIED, VerificationStatus.PARTIALLY_VERIFIED}:
+        return canonical.canonical_answer
+    if not canonical.facts or not canonical.sources or not any(
+        operation.status == 'success' and operation.read_count > 0
+        for operation in canonical.tool_executions
+    ):
+        return canonical.canonical_answer
+    preface = {
+        'morgana': 'Pelo que consta nas fontes consultadas:',
+        'todd': 'Direto ao ponto, conforme as fontes:',
+    }.get(profile.id, 'Resultado registrado nas fontes:')
+    return preface + '\n' + canonical.canonical_answer
+
+
 class GroundedExpressionEngine:
     def __init__(self, provider: ModelProvider, *, model: str, max_retries: int = 1,
                  max_output_tokens: int = 420) -> None:
@@ -119,6 +142,17 @@ class GroundedExpressionEngine:
     async def express(self, canonical: CanonicalAnswer, profile: AgentProfile,
                       *, on_first_token=None, expression_directives: str = '') -> ExpressionResult:
         started = perf_counter()
+        # Brain outputs are factual contracts, never open-ended model prompts.
+        # Prefixes are fixed and carry no substantive claims; facts remain exact.
+        if canonical.brain_ids and canonical.mode != 'conversational':
+            rendered = render_brain_answer(canonical, profile)
+            supported = (canonical.status in {VerificationStatus.VERIFIED,
+                                               VerificationStatus.PARTIALLY_VERIFIED}
+                         and bool(canonical.facts) and bool(canonical.sources)
+                         and any(op.status == 'success' and op.read_count > 0
+                                 for op in canonical.tool_executions))
+            return ExpressionResult(rendered, supported, (),
+                                    round((perf_counter()-started)*1000, 1), not supported)
         # Non-supported evidence or a contradictory source MUST NOT be stylistically embellished.
         if canonical.status not in {VerificationStatus.VERIFIED, VerificationStatus.PARTIALLY_VERIFIED}:
             return ExpressionResult(canonical.canonical_answer, False, (),

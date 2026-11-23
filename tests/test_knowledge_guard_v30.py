@@ -134,16 +134,15 @@ async def test_correction_starts_fresh_identification_and_passes_category(monkey
         passed.append(kwargs)
         if False:
             yield None
-    class Stub:
-        _web_auto_search=True
-        _web_planner_provider=None
-        _default_model=''
-        _telemetry=None
-        _experience=None
-        _messages=InMemoryMessages()
-        _stream_turn_impl=fake_turn
-    stub=Stub()
-    sess=uuid4()
+    # Use the real service/session contract: missing sessions must fail closed.
+    # Only the expensive turn generation is stubbed; the preflight guard stays live.
+    from types import MethodType
+    sessions = InMemorySessions()
+    messages = InMemoryMessages()
+    stub = ChatService(sessions, messages, FakeModelProvider('unused'),
+                       RecentMessagesContextManager(20), 'fake', web_auto_search=True)
+    sess = stub.create_session().id
+    stub._stream_turn_impl = MethodType(fake_turn, stub)
     stub._messages.append(Message(id=uuid4(),session_id=sess,role=MessageRole.USER,
         content='o que vocês acham de underscore?', created_at=datetime.now(UTC)))
     stub._messages.append(Message(id=uuid4(),session_id=sess,role=MessageRole.ASSISTANT,
@@ -253,14 +252,12 @@ async def test_casual_chat_keeps_conversational_prompt_lightweight():
     async def fake_turn(self, session, text, **kwargs):
         passed.append(kwargs['turn_system_note'])
         if False: yield None
-    class Stub:
-        _web_auto_search=True
-        _web_planner_provider=None
-        _default_model='fake'
-        _telemetry=None
-        _experience=None
-        _messages=InMemoryMessages()
-        _stream_turn_impl=fake_turn
-    async for _ in ChatService.stream_turn(Stub(),uuid4(),'oi'):
+    from types import MethodType
+    service = ChatService(InMemorySessions(), InMemoryMessages(),
+                          FakeModelProvider('unused'),
+                          RecentMessagesContextManager(20), 'fake', web_auto_search=True)
+    session_id = service.create_session().id
+    service._stream_turn_impl = MethodType(fake_turn, service)
+    async for _ in service.stream_turn(session_id, 'oi'):
         pass
     assert passed == [None]

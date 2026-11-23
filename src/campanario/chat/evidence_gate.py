@@ -124,3 +124,27 @@ def is_explicit_fact_question(question: str) -> bool:
                          'quantos', 'quantas', 'quanta', 'quanto'}
             or words[:2] == ['em', 'qual']
             or words[:3] == ['a', 'que', 'horas'])
+
+
+def is_subjective_turn(question: str) -> bool:
+    """Keep subjective conversation out of the forced factual-lookup path.
+
+    A question about a dated, numeric or verifiable property is not exempted
+    merely because it contains 'acha'. This is a conservative routing aid,
+    never authorization to state unverified facts about a named person.
+    """
+    import re
+    folded = _fold(question.strip()[:500])
+    folded = re.sub(r'^(?:morgana|todd|campanario)[,:!\s]+', '', folded)
+    if not re.match(
+        r'^(?:o que (?:voce|voces) acha(?:m)?|qual (?:e )?(?:a )?sua opiniao|'
+        r'qual (?:e )?a opiniao de voces|voce prefere|voces preferem|'
+        r'como voce se sente|o que voce prefere)\b', folded
+    ):
+        return False
+    # Requests for objective assertions still need evidence.
+    if re.search(r'\b(?:quem|quando|onde|quantos|quanto custa|verdade|confirmad[oa]|'
+                 r'aconteceu|ganhou|venceu|nasceu|morreu|hoje|ontem|atualmente|'
+                 r'preco|cotacao|data exata|numero exato)\b|\d', folded):
+        return False
+    return True

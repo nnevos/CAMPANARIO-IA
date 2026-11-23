@@ -99,6 +99,19 @@ class CapabilityRouter:
         # Do not launch a second brain just because the user mentions a 'table'
         # inside a document; mixed plans require an explicit spreadsheet source.
         explicit_spreadsheet = bool(re.search(r'\b(?:planilha|planilhas|csv|xlsx|excel)\b', _fold(text)))
+        folded = _fold(text)
+        investigative = bool(re.search(r'\b(?:investigue|investigar|investigacao|investigativo|apure|apurar)\b', folded))
+        strategic = bool(re.search(r'\b(?:estrategia|estrategico|planeje|planejamento|plano de acao|trace um plano)\b', folded))
+        if investigative or strategic:
+            selected = tuple(k for k, yes in (('analysis', data and explicit_spreadsheet),
+                                                ('investigation', investigative),
+                                                ('strategy', strategic)) if yes)
+            if not selected:
+                selected = ('strategy' if strategic else 'investigation',)
+            steps = tuple(BrainStep(k, 'Revisar evidências e estruturar resultado de leitura',
+                                    'explicit_user_intent') for k in selected)
+            return BrainPlan(uuid4(), 'read_only_investigation_strategy', selected,
+                             tuple('explicit_user_intent' for _ in selected), steps)
         if document_request is not None and data and explicit_spreadsheet:
             return BrainPlan(uuid4(), 'document_and_data', ('knowledge', 'analysis'),
                              ('explicit_document_source', 'deterministic_calculation'), (

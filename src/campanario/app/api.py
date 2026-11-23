@@ -158,6 +158,127 @@ def map_tile(z: int, x: int, y: int):
     return Response(payload, media_type="image/png", headers={"Cache-Control":"private, max-age=86400", "X-Content-Type-Options":"nosniff"})
 
 
+# Maps V2: explicit local OSRM/Nominatim integration and a shared in-process
+# navigation session. The browser/device owns GPS and only sends authorized fixes.
+from campanario.app.navigation_v2 import (
+    navigator as maps_v2_session, route_from_osrm, search_local, resolve_places,
+    local_provider_status, coords, nearby_places, category_for,
+)
+
+class MapsV2RouteRequest(BaseModel):
+    start_lat: float
+    start_lon: float
+    end_lat: float
+    end_lon: float
+    mode: str = "driving"
+    destination_name: str = Field(default="", max_length=250)
+
+class MapsV2Fix(BaseModel):
+    lat: float = Field(allow_inf_nan=False)
+    lon: float = Field(allow_inf_nan=False)
+    accuracy: float = Field(gt=0, le=100, allow_inf_nan=False)
+    timestamp: float = Field(allow_inf_nan=False)
+
+class MapsV2Resolve(BaseModel):
+    query: str = Field(min_length=3, max_length=140)
+    near_lat: float | None = None
+    near_lon: float | None = None
+    explicit_distant: bool = False
+
+@router.get("/navigation/v2/providers")
+def navigation_v2_providers():
+    try:
+        return local_provider_status()
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@router.post("/navigation/v2/resolve")
+async def navigation_v2_resolve(body: MapsV2Resolve):
+    try:
+        near = coords(body.near_lat, body.near_lon) if body.near_lat is not None and body.near_lon is not None else None
+        if (body.near_lat is None) != (body.near_lon is None):
+            raise ValueError("Origem incompleta")
+        generic_nearby = bool(near and not body.explicit_distant and category_for(body.query))
+        if generic_nearby:
+            try:
+                items = await nearby_places(body.query, near)
+            except (httpx.HTTPError, OSError):
+                items = []
+            if not items:
+                raise HTTPException(503, "Nenhum estabelecimento retornado pelo índice OSM local/público para esta categoria")
+            # Nearby category matches are already verified by OSM tags, not the
+            # literal name of the establishment.
+            items.sort(key=lambda v:v['air_distance_m'])
+            candidates=[]
+            for item in items[:6]:
+                try:
+                    r=await route_from_osrm(near,item,"driving")
+                    candidates.append({**item,"route_distance_m":round(r['distance']),"route_duration_s":round(r['duration'])})
+                except (httpx.HTTPError, ValueError, OSError):
+                    continue
+            if not candidates:
+                raise HTTPException(503, "Nenhum roteador disponível para comparar distâncias por rota")
+            candidates.sort(key=lambda v:v['route_distance_m'])
+            nearest=candidates[0]
+            clear=len(candidates)==1 or candidates[1]['route_distance_m']>=nearest['route_distance_m']*1.18+100
+            return {"candidates":candidates,"selected":nearest if clear else None,
+                    "ambiguous":not clear,"needs_confirmation":not clear,
+                    "ranking":"distância por rota real; sem trânsito ao vivo"}
+        items = await search_local(body.query, near)
+        return resolve_places(items, body.query, near, explicit_distant=body.explicit_distant)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except (httpx.HTTPError, OSError) as exc:
+        raise HTTPException(503, "Geocodificação indisponível (local e fallback público). Verifique conexão e configuração.") from exc
+
+@router.post("/navigation/v2/route")
+async def navigation_v2_route(body: MapsV2RouteRequest):
+    try:
+        origin, end = coords(body.start_lat,body.start_lon),coords(body.end_lat,body.end_lon)
+        result = await route_from_osrm(origin,end,body.mode)
+        maps_v2_session.ready(result,{**end,"name":body.destination_name[:250]})
+        return maps_v2_session.status()
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except (httpx.HTTPError, OSError) as exc:
+        raise HTTPException(503, "Roteamento indisponível (local e fallback público). Confira conexão ou instale OSRM local") from exc
+
+@router.get("/navigation/v2/status")
+def navigation_v2_status():
+    return maps_v2_session.status()
+
+@router.post("/navigation/v2/command/{action}")
+def navigation_v2_action(action: str):
+    if action not in ("start", "pause", "resume", "stop"):
+        raise HTTPException(404, "Comando inexistente")
+    try:
+        return maps_v2_session.command(action)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+@router.post("/navigation/v2/fix")
+def navigation_v2_fix(body: MapsV2Fix):
+    try:
+        return maps_v2_session.position_fix(body.lat,body.lon,body.accuracy,body.timestamp)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+@router.post("/navigation/v2/recalculate")
+async def navigation_v2_recalculate():
+    s = maps_v2_session.status()
+    if s["state"] != "RECALCULATING" or not s.get("position") or not s.get("target"):
+        raise HTTPException(409, "Recálculo não solicitado por desvio confirmado")
+    try:
+        result = await route_from_osrm(s["position"],s["target"],s["route"].get("mode","driving"))
+        # Protect against an old asynchronous reroute overwriting a newer session.
+        if maps_v2_session.status()["id"] != s["id"]:
+            raise HTTPException(409, "Sessão de navegação alterada")
+        return maps_v2_session.replace_route(result)
+    except (httpx.HTTPError, OSError, ValueError) as exc:
+        maps_v2_session.reroute_error()
+        raise HTTPException(503, "Recálculo local falhou; siga sinalização e pare em local seguro") from exc
+
+
 # Navigation v1.2: requests to fixed public providers, only after explicit user action.
 # Public demo services are best-effort and must not be used as a safety-critical navigator.
 @router.get("/navigation/search")

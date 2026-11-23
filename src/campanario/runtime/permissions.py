@@ -3,7 +3,8 @@ from __future__ import annotations
 import hashlib
 import secrets
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from threading import RLock
 from enum import StrEnum
 from typing import Protocol
 from uuid import UUID, uuid4
@@ -78,9 +79,17 @@ class _Confirmation:
     principal_id: str
     device_id: str | None
     scope: str | None
+    capability: str | None
+    session_id: UUID | None
+    created_at: datetime
     token_hash: str | None = None
     approved: bool = False
     consumed: bool = False
+
+
+# PF6 confirmations are ephemeral, never persisted or restored after restart.
+CONFIRMATION_TTL = timedelta(minutes=5)
+MAX_PENDING_CONFIRMATIONS = 256
 
 
 class TrustManager:
@@ -127,6 +136,7 @@ class PermissionPolicy:
         self._repository = repository
         self._rules: dict[str, PermissionMode] = {}
         self._confirmations: dict[UUID, _Confirmation] = {}
+        self._confirmation_lock = RLock()
 
     def set_rule(self, permission: str, mode: PermissionMode) -> None:
         self._rules[permission.strip().lower()] = mode
@@ -151,33 +161,59 @@ class PermissionPolicy:
         if mode == PermissionMode.ALLOW_WHILE_CALL and context.call_active:
             return self._record(permission, context, capability, PermissionDecision.ALLOW, "allowed while call is active")
         if mode in {PermissionMode.ASK, PermissionMode.CONFIRM, PermissionMode.SCOPED_CONFIRM}:
-            approved = self._consume_confirmation(permission, context, scope if mode == PermissionMode.SCOPED_CONFIRM else None)
-            if approved:
-                return self._record(permission, context, capability, PermissionDecision.ALLOW, "approved confirmation consumed")
-            confirmation = _Confirmation(id=uuid4(), permission=permission, principal_id=context.principal_id, device_id=context.device_id, scope=scope if mode == PermissionMode.SCOPED_CONFIRM else None)
-            self._confirmations[confirmation.id] = confirmation
-            check = self._record(permission, context, capability, PermissionDecision.CONFIRM, "explicit confirmation required")
-            return check.model_copy(update={"confirmation_id": confirmation.id})
+            with self._confirmation_lock:
+                now = datetime.now(UTC)
+                self._prune_confirmations(now)
+                approved = self._consume_confirmation(permission, context, scope if mode == PermissionMode.SCOPED_CONFIRM else None, capability)
+                if approved:
+                    return self._record(permission, context, capability, PermissionDecision.ALLOW, "approved confirmation consumed")
+                if len(self._confirmations) >= MAX_PENDING_CONFIRMATIONS:
+                    return self._record(permission, context, capability, PermissionDecision.DENY, "too many pending confirmations")
+                confirmation = _Confirmation(
+                    id=uuid4(), permission=permission, principal_id=context.principal_id,
+                    device_id=context.device_id,
+                    scope=scope if mode == PermissionMode.SCOPED_CONFIRM else None,
+                    capability=capability, session_id=context.session_id, created_at=now,
+                )
+                self._confirmations[confirmation.id] = confirmation
+                check = self._record(permission, context, capability, PermissionDecision.CONFIRM, "explicit confirmation required")
+                return check.model_copy(update={"confirmation_id": confirmation.id})
         reason = "required session/call is not active" if mode in {PermissionMode.ALLOW_WHILE_SESSION, PermissionMode.ALLOW_WHILE_CALL} else "policy denies or is undefined"
         return self._record(permission, context, capability, PermissionDecision.DENY, reason)
 
     def approve(self, confirmation_id: UUID, *, principal_id: str) -> str:
-        item = self._confirmations.get(confirmation_id)
-        if item is None or item.principal_id != principal_id or item.consumed:
-            raise KeyError(confirmation_id)
-        token = secrets.token_urlsafe(24)
-        item.token_hash = _hash(token)
-        item.approved = True
-        self._repository.append_audit(action="permission.confirmed", principal_id=principal_id, device_id=item.device_id, capability=None, permission=item.permission, decision="allow", detail=item.scope)
-        return token
+        """Low-level API. Caller MUST verify a human approval and principal identity.
 
-    def _consume_confirmation(self, permission: str, context: AuthorizationContext, scope: str | None) -> bool:
+        Do not expose this method through a browser endpoint without authentication.
+        """
+        with self._confirmation_lock:
+            self._prune_confirmations(datetime.now(UTC))
+            item = self._confirmations.get(confirmation_id)
+            if item is None or item.principal_id != principal_id or item.consumed or item.approved:
+                raise KeyError(confirmation_id)
+            token = secrets.token_urlsafe(32)
+            item.token_hash = _hash(token)
+            item.approved = True
+            self._repository.append_audit(action="permission.confirmed", principal_id=principal_id, device_id=item.device_id, capability=item.capability, permission=item.permission, decision="allow", detail=item.scope)
+            return token
+
+    def _prune_confirmations(self, now: datetime) -> None:
+        for key, item in list(self._confirmations.items()):
+            if item.consumed or now - item.created_at >= CONFIRMATION_TTL:
+                del self._confirmations[key]
+
+    def _consume_confirmation(self, permission: str, context: AuthorizationContext, scope: str | None, capability: str | None) -> bool:
         if not context.confirmation_token:
             return False
         digest = _hash(context.confirmation_token)
-        for item in self._confirmations.values():
-            if item.permission == permission and item.principal_id == context.principal_id and item.device_id == context.device_id and item.scope == scope and item.approved and not item.consumed and item.token_hash and secrets.compare_digest(item.token_hash, digest):
+        for key, item in list(self._confirmations.items()):
+            if (item.permission == permission and item.principal_id == context.principal_id
+                    and item.device_id == context.device_id and item.session_id == context.session_id
+                    and item.scope == scope and item.capability == capability
+                    and item.approved and not item.consumed and item.token_hash
+                    and secrets.compare_digest(item.token_hash, digest)):
                 item.consumed = True
+                del self._confirmations[key]
                 return True
         return False
 

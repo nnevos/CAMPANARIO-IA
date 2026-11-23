@@ -22,3 +22,17 @@
 .v9-talent-list label{display:flex;align-items:flex-start;gap:8px;background:#16191e;border:1px solid #333941;border-radius:8px;padding:9px;color:#dedede;font-size:12px}
 .v9-talent-list label input{accent-color:#66c6d0}.v9-talent-list small{color:#88929b;display:block;font-size:10px}
 @media(max-width:690px){.v9-talent-list{grid-template-columns:1fr}.v9-panels .tool-form>button{width:100%}}
+
+#pf6-logout[hidden]{display:none!important}
+
+/* R2.6 consent UI: native dialog, escaped via textContent, no inline secrets. */
+#pf6-dialog{background:#1a1c22;color:#f6f0e4;border:1px solid #8a7151;border-radius:16px;width:min(570px,calc(100vw - 24px));max-height:min(85vh,780px);padding:24px;box-shadow:0 25px 95px #000c}
+#pf6-dialog::backdrop{background:rgba(4,5,9,.84)}
+#pf6-dialog .pf6-heading{display:flex;align-items:center;gap:12px;margin-bottom:10px;color:#e2c186}
+#pf6-dialog .pf6-heading h2{margin:0;font-size:20px}
+#pf6-dialog p{color:#c8c4bc;font-size:14px;margin-bottom:16px}
+#pf6-dialog .pf6-details{white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;max-height:32vh;background:#101217;color:#e4e4e4;border:1px solid #414650;border-radius:8px;padding:14px;font-size:12px}
+#pf6-dialog .pf6-ack{display:flex;align-items:start;gap:12px;padding:14px 0;color:#e9d8b4;font-size:14px}
+#pf6-dialog .pf6-ack input{margin-top:3px;accent-color:#d0ac72}
+#pf6-dialog .pf6-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+#pf6-dialog .pf6-actions button{min-width:110px}

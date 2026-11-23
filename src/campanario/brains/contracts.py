@@ -69,6 +69,7 @@ class BrainResult:
     upstream_evidence_ids: tuple[str, ...] = ()
     # Internal adapter result; never accept this from the language model or client.
     guard: Any = field(default=None, repr=False, compare=False)
+    report: tuple[str, ...] = ()  # Deterministic first-party review; not model-generated
 
     def public(self) -> dict:
         return {'brain_id': self.brain_id, 'status': self.status.value,
@@ -76,6 +77,7 @@ class BrainResult:
                 'evidence_count': len(self.evidence_refs), 'operations': list(self.operations),
                 'upstream_evidence_ids': list(self.upstream_evidence_ids),
                 'warnings': list(self.warnings), 'error': self.error,
+                'report': list(self.report),
                 'evidence_refs': [
                     {'source_id': s.source_id, 'document_id': s.document_id,
                      'title': s.title, 'page': s.page, 'section': s.section}

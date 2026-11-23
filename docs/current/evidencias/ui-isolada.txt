@@ -1,4 +1,0 @@
-desktop errors []
-desktop settings errors []
-mobile errors []
-mobile offline draft preserved; errors []

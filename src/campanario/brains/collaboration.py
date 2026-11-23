@@ -131,3 +131,52 @@ def consolidate_read_only(request_id: UUID, question: str, plan: BrainPlan,
         canonical_answer=combined_answer, brain_ids=tuple(completed),
     )
     return CollaborationSnapshot(sheet, canonical, tuple(completed), tuple(incomplete))
+
+
+def consolidate_investigation_strategy(request_id: UUID, question: str, plan: BrainPlan,
+                                       outcomes: tuple[BrainResult, ...]) -> CollaborationSnapshot:
+    """Join reviews of an already-read source without double-counting shared citations.
+
+    Each first-party result was validated by BrainExecutor; recheck the guard's
+    canonical evidence before exposing review lines. This is not a model planner.
+    """
+    if len(outcomes) != len(plan.steps) or not outcomes or len(outcomes) > 3:
+        raise ValueError('invalid review plan')
+    if any(o.brain_id != step.brain_id or o.trace_id != plan.trace_id
+           for o, step in zip(outcomes, plan.steps)):
+        raise ValueError('review trace mismatch')
+    candidate = None
+    completed: list[str] = []
+    incomplete: list[str] = []
+    reviews: list[str] = []
+    for o in outcomes:
+        if o.status != BrainStatus.COMPLETED or o.guard is None or not o.evidence_refs:
+            incomplete.append(o.brain_id)
+            continue
+        ledger = build_turn_fact_sheet(request_id, question, o.guard, fact_lookup_requested=True)
+        record = build_canonical(ledger, o.guard, brain_ids=(o.brain_id,))
+        if (record.status not in {VerificationStatus.VERIFIED, VerificationStatus.PARTIALLY_VERIFIED,
+                                  VerificationStatus.CONFLICTING}
+                or not record.sources or not {s.source_id for s in record.sources}.issubset(
+                    {r.source_id for r in o.evidence_refs})):
+            incomplete.append(o.brain_id)
+            continue
+        if candidate is None:
+            candidate = (ledger, record)
+        completed.append(o.brain_id)
+        if o.report:
+            reviews.extend(o.report)
+    if candidate is None:
+        ledger = build_turn_fact_sheet(request_id, question, None, fact_lookup_requested=True)
+        canonical = build_canonical(ledger, None, brain_ids=tuple())
+    else:
+        ledger, canonical = candidate
+        # Canonical facts remain from the independently verified primary source.
+        # Review lines are deterministic navigation/conditional steps, not new facts.
+        canonical = canonical.model_copy(update={
+            'brain_ids': tuple(completed),
+            'canonical_answer': canonical.canonical_answer +
+                ('\n\n' + '\n'.join(reviews[:45]) if reviews else '') +
+                ('\n\nConsultas incompletas: ' + ', '.join(incomplete) if incomplete else ''),
+        })
+    return CollaborationSnapshot(ledger, canonical, tuple(completed), tuple(incomplete))

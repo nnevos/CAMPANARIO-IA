@@ -41,9 +41,38 @@ class Settings(BaseSettings):
     grounded_expression_enabled: bool = True
     grounded_expression_retries: int = Field(default=1, ge=0, le=2)
     # V9: disabled by default. Off = exact legacy routing and chat behavior.
+    # Optional local PF6 owner credential. Keep private in .env; never ship actual value.
+    # R3.14: default local single-user mode: PF6 and central approval are optional.
+    # Set false only to intentionally restore the prior multi-identity authorization.
+    local_personal_mode: bool = True
+    pf6_owner_token: str = ""
+    # Optional named offline operators: private JSON of PBKDF2 verifiers, no DB.
+    pf6_users_json: str = ""
+    # R3.3: optional per-user write ACL for the native case workspace (private .env).
+    casework_write_acl_json: str = ""
+    # R3.6 optional case investigation capabilities. The .env is read by
+    # pydantic-settings; do not require a process-wide exported environment.
+    case_ocr_enabled: bool = False
+    case_semantic_enabled: bool = False
+    case_embed_model: str = 'nomic-embed-text'
+    case_vision_enabled: bool = False
+    case_vision_model: str = 'llava'
+    # R3.10: optional local model used ONLY to propose unverified cross-source relations.
+    case_claims_semantic_enabled: bool = False
+    case_claims_semantic_model: str = '' 
     brains_v9_enabled: bool = False
     brains_v9_timeout_seconds: float = Field(default=8.0, ge=0.5, le=30.0)
     brains_v9_max_memory_mb: int = Field(default=1024, ge=128, le=4096)
+
+    # Maps V2 local-first OSRM, Nominatim and Overpass endpoints.
+    # They MUST resolve to loopback; navigation_v2 enforces the URL boundary.
+    mbtiles: str = ""
+    maps_router_url: str = "http://127.0.0.1:5000"
+    maps_walk_router_url: str = "http://127.0.0.1:5001"
+    maps_geocoder_url: str = "http://127.0.0.1:8088"
+    maps_overpass_url: str = "http://127.0.0.1:12345"
+    # Personal-use fallback on explicit map searches. Sends query/route points to OSM providers.
+    maps_public_fallback: bool = True
 
     # Legacy aliases kept for existing .env files. Generic values above take precedence when set.
     ollama_base_url: str = "http://127.0.0.1:11434"

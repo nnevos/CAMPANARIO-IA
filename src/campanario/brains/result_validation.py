@@ -9,6 +9,7 @@ from __future__ import annotations
 from campanario.brains.contracts import BrainResult, BrainStatus
 from campanario.chat.data_intent import DataAnalysisResult
 from campanario.chat.local_library import LocalFactSheet
+from campanario.brains.investigation import structured_report
 
 
 def validate_brain_result(result: BrainResult, *, brain_id: str, trace_id,
@@ -25,6 +26,10 @@ def validate_brain_result(result: BrainResult, *, brain_id: str, trace_id,
         return False
     if result.status in {BrainStatus.FAILED, BrainStatus.UNAVAILABLE} and result.evidence_refs:
         return False
+    if len(result.report) > 20 or any(not isinstance(line, str) or len(line) > 650 for line in result.report):
+        return False
+    if brain_id in {'investigation', 'strategy'} and result.status != BrainStatus.COMPLETED and result.report:
+        return False
     if result.status == BrainStatus.COMPLETED and not result.operations:
         return False
     if first_party:
@@ -33,6 +38,17 @@ def validate_brain_result(result: BrainResult, *, brain_id: str, trace_id,
         if result.status == BrainStatus.COMPLETED:
             if not result.evidence_refs or result.guard is None:
                 return False
+            if brain_id in {'investigation', 'strategy'}:
+                if not isinstance(result.guard, LocalFactSheet) or result.guard.read_count < 1:
+                    return False
+                quotes = (result.guard.quote, *result.guard.conflicts)
+                expected = {(q.evidence_id or f'{q.document_id}:{q.page or 0}',
+                             q.document_id, q.name, q.page, q.section, q.excerpt[:1800])
+                            for q in quotes[:max_evidence]}
+                return (result.operations == ('library.retrieve', f'{brain_id}.review')
+                        and {(ref.source_id, ref.document_id, ref.title, ref.page,
+                              ref.section, ref.excerpt) for ref in result.evidence_refs} == expected
+                        and result.report == structured_report(brain_id, result.evidence_refs))
             if brain_id == 'knowledge':
                 if not isinstance(result.guard, LocalFactSheet) or result.guard.read_count < 1:
                     return False
@@ -66,7 +82,7 @@ def trustworthy_upstream(result: BrainResult) -> tuple[str, ...]:
 
     Successful status/operation strings alone are not proof of a real read.
     """
-    if result.brain_id not in {'knowledge', 'analysis'}:
+    if result.brain_id not in {'knowledge', 'analysis', 'investigation', 'strategy'}:
         return ()
     if result.status != BrainStatus.COMPLETED or not result.evidence_refs or not result.guard:
         return ()

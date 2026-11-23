@@ -17,6 +17,7 @@ from pathlib import Path
 from campanario.brains.contracts import BrainRequest, BrainResult, BrainStatus, EvidenceRef
 from campanario.chat.data_intent import DataAnalysisResult
 from campanario.chat.local_library import LibraryQuote, LocalFactSheet
+from campanario.brains.investigation import InvestigationBrain, StrategyBrain
 
 _MAX_STDOUT = 256_000
 
@@ -49,7 +50,7 @@ def encode_result(result: BrainResult) -> bytes:
         'evidence_refs': [asdict(ref) for ref in result.evidence_refs],
         'operations': list(result.operations), 'warnings': list(result.warnings),
         'upstream_evidence_ids': list(result.upstream_evidence_ids),
-        'error': result.error, 'guard_kind': kind,
+        'error': result.error, 'report': list(result.report), 'guard_kind': kind,
         'guard': asdict(result.guard) if kind else None,
     }
     raw = json.dumps(data, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
@@ -72,10 +73,12 @@ def decode_result(raw: bytes) -> BrainResult:
             evidence_refs=tuple(EvidenceRef(**ref) for ref in obj['evidence_refs']),
             operations=tuple(obj['operations']), warnings=tuple(obj['warnings']),
             upstream_evidence_ids=tuple(obj.get('upstream_evidence_ids', ())),
-            error=obj.get('error'),
+            error=obj.get('error'), report=tuple(obj.get('report', ())),
             guard=_guard_from_json(obj.get('guard_kind'), obj.get('guard')),
         )
-        if (len(result.operations) > 8 or len(result.evidence_refs) > 25
+        if (len(result.report) > 20 or any(not isinstance(line, str) or len(line) > 650
+                                               for line in result.report)
+                or len(result.operations) > 8 or len(result.evidence_refs) > 25
                 or len(result.upstream_evidence_ids) > 25
                 or any(not isinstance(s, str) or not 1 <= len(s) <= 280
                        for s in result.upstream_evidence_ids)):
@@ -128,7 +131,7 @@ def _worker_environment(src: Path, inherited: dict[str, str] | None = None) -> d
 
 async def execute_local_worker(brain_id: str, database: Path | None, request: BrainRequest) -> BrainResult:
     """Execute only first-party read-only adapters; never accept executable input."""
-    if brain_id not in {'knowledge', 'analysis'} or database is None:
+    if brain_id not in {'knowledge', 'analysis', 'investigation', 'strategy'} or database is None:
         raise WorkerFailure('worker_not_supported')
     if getattr(sys, 'frozen', False):
         # Executables cannot safely be invoked as `python -m ...` without an

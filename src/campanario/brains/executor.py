@@ -12,6 +12,9 @@ from dataclasses import replace
 from time import monotonic, perf_counter
 
 from campanario.brains.adapters import AnalysisBrain, KnowledgeBrain
+from campanario.brains.investigation import InvestigationBrain, StrategyBrain
+
+_FIRST_PARTY = (KnowledgeBrain, AnalysisBrain, InvestigationBrain, StrategyBrain)
 from campanario.brains.contracts import BrainRequest, BrainResult, BrainStatus
 from campanario.brains.isolation import WorkerFailure, execute_local_worker
 from campanario.brains.registry import BrainRegistry
@@ -153,7 +156,7 @@ class BrainExecutor:
                     try:
                         bounded = replace(bounded_request, budget=replace(
                             request.budget, timeout_seconds=min(remaining, request.budget.timeout_seconds)))
-                        if isinstance(brain, (KnowledgeBrain, AnalysisBrain)):
+                        if isinstance(brain, _FIRST_PARTY):
                             result = await execute_local_worker(brain_id, brain.database, bounded)
                         else:
                             # Compatibility with trusted, in-process test adapters.
@@ -164,7 +167,7 @@ class BrainExecutor:
                                 result, brain_id=brain_id, trace_id=request.trace_id,
                                 max_evidence=request.budget.max_evidence,
                                 required_upstream=verified_upstream,
-                                first_party=isinstance(brain, (KnowledgeBrain, AnalysisBrain))):
+                                first_party=isinstance(brain, _FIRST_PARTY)):
                             result = BrainResult(brain_id, BrainStatus.FAILED, request.trace_id, 0,
                                                  error='invalid_brain_result')
                     except WorkerFailure as exc:
@@ -178,7 +181,7 @@ class BrainExecutor:
                                              error=type(exc).__name__)
             # Older trusted in-process adapters do not know the new R2 metadata.
             # Only immutable observed IDs are attached; this does not promote data.
-            if (brain is not None and not isinstance(brain, (KnowledgeBrain, AnalysisBrain))
+            if (brain is not None and not isinstance(brain, _FIRST_PARTY)
                     and result.status in {BrainStatus.COMPLETED, BrainStatus.PARTIAL}):
                 result = replace(result, upstream_evidence_ids=verified_upstream)
             result = replace(result, elapsed_ms=round((perf_counter() - start) * 1000, 2))

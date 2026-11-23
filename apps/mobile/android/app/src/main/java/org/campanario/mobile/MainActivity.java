@@ -2,6 +2,8 @@ package org.campanario.mobile;
 
 import android.app.Activity;
 import android.Manifest;
+import android.speech.tts.TextToSpeech;
+import java.util.Locale;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -31,6 +33,8 @@ import org.json.JSONObject;
 public final class MainActivity extends Activity {
     private static final String ORIGIN = "appassets.androidplatform.net";
     private WebView web;
+    private TextToSpeech navigationSpeech;
+    private boolean navigationSpeechReady = false;
     private SecureStore store;
     private static final int GPS_PERMISSION_REQUEST = 602;
     private boolean gpsPending = false;
@@ -40,6 +44,12 @@ public final class MainActivity extends Activity {
     private boolean allowed(Uri uri) { return "https".equals(uri.getScheme()) && ORIGIN.equals(uri.getHost()) && uri.getPath() != null && uri.getPath().startsWith("/assets/www/"); }
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved); store = new SecureStore(this);
+        navigationSpeech = new TextToSpeech(this, result -> {
+            if (result == TextToSpeech.SUCCESS && navigationSpeech != null) {
+                int language = navigationSpeech.setLanguage(new Locale("pt", "BR"));
+                navigationSpeechReady = language != TextToSpeech.LANG_MISSING_DATA && language != TextToSpeech.LANG_NOT_SUPPORTED;
+            }
+        });
         web = new WebView(this); web.setBackgroundColor(Color.rgb(14,15,18));
         web.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
         WebSettings settings = web.getSettings();
@@ -128,7 +138,30 @@ public final class MainActivity extends Activity {
         if (granted) requestGps(); else gpsResult("sem_permissao", null);
     }
     public final class LocalBridge {
+        @JavascriptInterface public void openEmergencyDialer() {
+            runOnUiThread(() -> {
+                try { startActivity(new Intent(Intent.ACTION_DIAL)); }
+                catch (Exception ignored) { }
+            });
+        }
+        @JavascriptInterface public void openNativeNavigation(String destination) {
+            String safe = destination == null ? "" : destination.trim();
+            if (safe.length() > 140) return;
+            runOnUiThread(() -> {
+                Intent intent = new Intent(MainActivity.this, NativeNavigationActivity.class);
+                if (!safe.isEmpty()) intent.putExtra("query", safe);
+                startActivity(intent);
+            });
+        }
         @JavascriptInterface public void requestGpsOnce() { runOnUiThread(() -> requestGps()); }
+        @JavascriptInterface public void speakInstruction(String instruction) {
+            if (instruction == null || instruction.length() > 250) return;
+            runOnUiThread(() -> { if (navigationSpeechReady && navigationSpeech != null)
+                navigationSpeech.speak(instruction, TextToSpeech.QUEUE_FLUSH, null, "campanario-nav-v2"); });
+        }
+        @JavascriptInterface public void stopInstruction() {
+            runOnUiThread(() -> { if (navigationSpeech != null) navigationSpeech.stop(); });
+        }
         @JavascriptInterface public void exportGpx(String xml) {
             if (xml == null || xml.length() > 500000 || !xml.startsWith("<?xml") || !xml.contains("<gpx")) return;
             runOnUiThread(() -> {
@@ -166,5 +199,8 @@ public final class MainActivity extends Activity {
     @Override public void onBackPressed() {
         web.evaluateJavascript("(function(){var d=document.querySelector('dialog[open]');if(d){d.close();return true;}return false;})()", result -> { if (!"true".equals(result)) MainActivity.super.onBackPressed(); });
     }
-    @Override protected void onDestroy() { web.removeJavascriptInterface("CampanarioNative"); web.destroy(); super.onDestroy(); }
+    @Override protected void onDestroy() {
+        if (navigationSpeech != null) { navigationSpeech.stop(); navigationSpeech.shutdown(); navigationSpeech = null; }
+        web.removeJavascriptInterface("CampanarioNative"); web.destroy(); super.onDestroy();
+    }
 }

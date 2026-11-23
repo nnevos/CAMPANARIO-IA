@@ -5,11 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from campanario.brains.adapters import KnowledgeBrain, AnalysisBrain
+from campanario.brains.investigation import InvestigationBrain, StrategyBrain
 from campanario.brains.contracts import Brain, BrainDefinition
 
 _FUTURE = (
-    ('investigation', 'Investigação'), ('programming', 'Programação'),
-    ('strategy', 'Estratégia'), ('perception', 'Percepção'),
+    ('programming', 'Programação'), ('perception', 'Percepção'),
     ('communication', 'Comunicação'), ('creation', 'Criação'),
 )
 
@@ -20,7 +20,9 @@ class BrainRegistry:
 
     @classmethod
     def local(cls, library_path: Path | None) -> 'BrainRegistry':
-        return cls({'knowledge': KnowledgeBrain(library_path), 'analysis': AnalysisBrain(library_path)})
+        return cls({'knowledge': KnowledgeBrain(library_path), 'analysis': AnalysisBrain(library_path),
+                    'investigation': InvestigationBrain(library_path),
+                    'strategy': StrategyBrain(library_path)})
 
     def get(self, brain_id: str) -> Brain | None:
         return self._brains.get(brain_id)

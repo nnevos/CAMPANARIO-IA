@@ -14,7 +14,8 @@ _REFERENCE = re.compile(
     r'procure|busque|segundo|veja|enviado|enviei)\s+(?:documento|arquivo|pdf|livro))\b', re.I)
 _DOCUMENT_COMMAND = re.compile(
     r'^\s*(?:(?:morgana|todd|campanario)[,:]?\s*)?(?:compare|comparar|analise|analisar|resuma|resumir|consulte|procure|verifique|verificar)\b', re.I)
-_HINT = re.compile(r'\b(?:documento|arquivo|pdf|livro)\s+(?:de|do|da|sobre|chamado|intitulado)\s+(.{3,85})', re.I)
+_QUESTION_WORD = re.compile(r'\b(?:qual|quais|quem|onde|como|quanto|quantos|quando|o\s+que)\b', re.I)
+_HINT = re.compile(r'\b(?:documento|arquivo|pdf|livro)\s+(?:(?:relacionad[oa]\s+)?(?:a|ao|à|de|do|da|sobre)|chamado|intitulado)\s+(.{3,85})', re.I)
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,7 +31,7 @@ def _hint(text: str) -> str:
     name = re.split(r'\b(?:com essas|com essas informacoes|que eu enviei|que enviei|'
                     r'com as informacoes|tem essas informacoes|que tem|na biblioteca|no database|'
                     r'com\s+(?:a|o)\s+(?:planilha|csv|xlsx|excel)|'
-                    r'e\s+(?:calcule|analise|compare))\b',
+                    r'e\s+(?:calcule|analise|compare|me\s+diga|me\s+responda|qual\s+e|quais\s+sao))\b',
                     match.group(1), maxsplit=1, flags=re.I)[0]
     return name.strip(' \n\r!?.,:;"\'')[:85]
 
@@ -43,7 +44,8 @@ def document_request(current: str, messages: list) -> DocumentRequest | None:
     if not current_ref and not recent_refs:
         return None
     prior_question = next((s for s in reversed(previous) if '?' in s), '')
-    if '?' in current or (current_ref and _DOCUMENT_COMMAND.search(_fold(current))):
+    if ('?' in current or (recent_refs and _QUESTION_WORD.search(_fold(current)))
+            or (current_ref and _DOCUMENT_COMMAND.search(_fold(current)))):
         question = current
     elif current_ref and prior_question:
         question = prior_question

@@ -1,4 +1,4 @@
-export const VERSION='0.8.0';
+export const VERSION='0.9.0';
 export function normalizeServer(value){
   const url=new URL(value);
   if(url.protocol!=='https:' || url.username || url.password || url.search || url.hash || !['','/'].includes(url.pathname))throw new Error('Use somente o endereco HTTPS do PC, com a porta. Sem usuario, senha ou caminho.');

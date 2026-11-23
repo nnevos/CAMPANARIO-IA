@@ -1,4 +1,4 @@
-"""MemoryLLM-style RAG answers do not pass through the former audit cascade."""
+"""Memory recall remains useful, but personal assertions require R2.11 audit."""
 from __future__ import annotations
 
 import pytest
@@ -33,10 +33,14 @@ async def test_answer_is_natural_and_memory_evidence_reaches_generation(monkeypa
     second = runtime.sessions.create_session()
     events = [x async for x in runtime.conversation.stream_turn(second.id, 'Qual instrumento estou aprendendo?')]
     output = ''.join(x.text for x in events if x.type == 'token')
-    assert output == 'Você está aprendendo violoncelo.'
+    # The provider does not return the signed JSON audit required since R2.11.
+    # The service must therefore give a literal, safely attributed fallback,
+    # not publish the unaudited model claim even if it happens to be correct.
+    assert 'Estou aprendendo a tocar violoncelo.' in output
+    assert 'Você me disse' in output
     assert any('Estou aprendendo a tocar violoncelo.' in msg.content
-               for req in provider.requests[-1:] for msg in req.messages)
-    assert len(provider.requests) == 2  # one generation per user turn
+               for req in provider.requests for msg in req.messages)
+    assert len(provider.requests) >= 2  # audit may require extra model requests
 
 
 def test_default_memoryllm_backend_and_isolation(tmp_path):

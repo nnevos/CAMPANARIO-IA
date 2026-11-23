@@ -14,6 +14,8 @@ jobs:
       CAMPANARIO_DATA_DIR: ${{ github.workspace }}/.ci-data
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -22,6 +24,15 @@ jobs:
           node-version: '22'
       - name: Instalar ambiente de teste
         run: python -m pip install -e . 'pytest>=8,<9' 'pytest-asyncio>=0.24,<2'
+      - name: Gate documental obrigatório ROADMAP FAILSAFE Manual Vivo
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            python scripts/check_documentation_gate.py --changed-since "$BASE_SHA"
+          else
+            python scripts/check_documentation_gate.py
+          fi
       - name: Gate da plataforma e contratos preservados
         run: >-
           python -m pytest -q tests/test_v08_platform.py tests/test_api_chat.py

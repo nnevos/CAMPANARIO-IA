@@ -182,8 +182,24 @@ def build_canonical(sheet: TurnFactSheet, guard: object | None, *,
             classification='computed' if computed else 'source_assertion',
         ) for i, claim in enumerate(sheet.claims, start=1)
     ) if status not in {VerificationStatus.NOT_FOUND, VerificationStatus.TOOL_ERROR} else ()
+    # R2.10: provenance for first-party brain source assertions must be
+    # literal, not merely a valid-looking source ID. This does not validate
+    # whether the underlying source is true. Guard-derived calculations are
+    # handled by their deterministic adapter, not by textual substring tests.
+    if brain_ids and not computed and status in {
+        VerificationStatus.VERIFIED, VerificationStatus.PARTIALLY_VERIFIED
+    }:
+        by_id = {source.source_id: source.excerpt for source in sources}
+        if not facts or any(
+            fact.classification != 'source_assertion'
+            or not any(fact.statement.strip() in by_id.get(source_id, '')
+                       for source_id in fact.source_ids)
+            for fact in facts
+        ):
+            status = VerificationStatus.NOT_FOUND
+            facts = ()
     if not sheet.sources:
-        tool_status = 'error' if status == VerificationStatus.TOOL_ERROR else 'not_found'
+        tool_status = 'error'  if status == VerificationStatus.TOOL_ERROR else 'not_found'
     else:
         tool_status = 'success'
     tool_executions = ()
@@ -195,7 +211,20 @@ def build_canonical(sheet: TurnFactSheet, guard: object | None, *,
             status=tool_status, source_ids=tuple(source.source_id for source in sources),
             read_count=observed_reads,
         ),)
-    if sheet.extractive_answer and status != VerificationStatus.NOT_FOUND:
+    # R3.0: review numeric disagreement between independently read sources.
+    # The reviewer never creates facts, retrieves data or invokes a model.
+    automatic_conflicts = ()
+    if brain_ids and not computed and len(sources) >= 2 and status in {
+        VerificationStatus.PARTIALLY_VERIFIED, VerificationStatus.CONFLICTING,
+    }:
+        from campanario.chat.evidence_reconciliation import reconcile_numeric_evidence
+        automatic_conflicts = reconcile_numeric_evidence(sources)
+        if automatic_conflicts:
+            status = VerificationStatus.CONFLICTING
+    if automatic_conflicts:
+        answer = ('As fontes apresentam valores numéricos divergentes para a mesma '
+                  'afirmação. Consulte os trechos e fontes; não vou escolher um valor.')
+    elif sheet.extractive_answer and status != VerificationStatus.NOT_FOUND:
         answer = sheet.extractive_answer
     elif status == VerificationStatus.NOT_FOUND:
         answer = 'Não encontrei evidências suficientes na fonte solicitada para responder com segurança.'
@@ -213,7 +242,11 @@ def build_canonical(sheet: TurnFactSheet, guard: object | None, *,
             'source_lookup' if sheet.origin in {'web', 'zim'} else 'general_chat'),
         mode=mode, status=status, facts=facts, sources=sources,
         tool_executions=tool_executions, limitations=sheet.limitations,
-        contradictions=tuple(f.statement for f in facts) if status == VerificationStatus.CONFLICTING else (),
+        contradictions=(tuple(
+            f'Fontes {c.source_ids[0]} / {c.source_ids[1]}: '
+            f'{c.values[0]} versus {c.values[1]}' for c in automatic_conflicts)
+            or (tuple(f.statement for f in facts)
+                if status == VerificationStatus.CONFLICTING else ())),
         missing=(sheet.question,) if status == VerificationStatus.NOT_FOUND else (),
         canonical_answer=answer, brain_ids=brain_ids,
     )

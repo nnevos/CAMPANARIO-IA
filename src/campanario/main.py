@@ -41,6 +41,8 @@ from campanario.utilities.api import router as utilities_router
 app.include_router(utilities_router)
 from campanario.brains.api import router as brains_router
 app.include_router(brains_router)
+from campanario.brains.casework_api import router as casework_router
+app.include_router(casework_router)
 app.include_router(router)
 app.include_router(v1_router)
 app.include_router(realtime_router)
@@ -87,7 +89,19 @@ def health() -> dict[str, str]:
 
 @app.get("/ferramentas")
 def utilities_page():
-    return FileResponse(Path(__file__).with_name("web") / "ferramentas.html")
+    # R2.6: isolate the sensitive utilities UI from inline script execution and framing.
+    # Styles remain inline-compatible because the existing Dark Matter UI uses style attrs.
+    headers = {
+        "Content-Security-Policy": (
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+            "connect-src 'self'; img-src 'self' data:; font-src 'self' data:; "
+            "base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'"
+        ),
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+    }
+    return FileResponse(Path(__file__).with_name("web") / "ferramentas.html", headers=headers)
 
 @app.get("/ferramentas.css", include_in_schema=False)
 def utilities_css():

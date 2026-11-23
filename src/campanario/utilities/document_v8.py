@@ -24,7 +24,7 @@ from uuid import uuid4
 from campanario.chat.local_library import _fold, _tokens
 
 VERSION = '8.0.1'
-SUPPORTED = frozenset({'.pdf', '.docx', '.txt', '.md', '.csv', '.xlsx', '.json'})
+SUPPORTED = frozenset({'.pdf', '.docx', '.txt', '.md', '.csv', '.xlsx', '.json', '.log'})
 DATA_TYPES = frozenset({'.csv', '.xlsx', '.json'})
 MAX_CHARS = 8_000_000
 MAX_PAGES = 3_000
@@ -326,6 +326,61 @@ def import_file(util: Any, args: dict[str, Any]) -> dict[str, Any]:
             'state': status, 'method': method, 'warnings': error,
             'indexed_sections': len(entries), 'requires_ocr': status == 'partial' and
             any('OCR' in value for value in error) and not any(p.get('text') for p in pages)}
+
+
+def reindex_document(util: Any, uid: str) -> dict[str, Any]:
+    """Retry failed or legacy extraction from the verified preserved original.
+
+    On a failed extraction the previous search index is kept intact. Reindexing
+    never runs code from the document and never modifies the original bytes.
+    """
+    from campanario.utilities.service import now
+    with util.connect() as db:
+        doc = db.execute('SELECT * FROM documents WHERE id=?', (uid,)).fetchone()
+    if doc is None:
+        raise ValueError('Documento não encontrado')
+    path = util.docs / (uid + Path(doc['name']).suffix.lower())
+    if not path.is_file() or not path.resolve().is_relative_to(util.docs.resolve()):
+        raise ValueError('Original preservado não encontrado; não foi possível reindexar')
+    digest = hashlib.sha256()
+    with path.open('rb') as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+            digest.update(chunk)
+    if digest.hexdigest() != doc['sha256']:
+        raise ValueError('Hash do original divergente; reindexação bloqueada')
+    extraction = extract_document(path, ocr=True)
+    entries = _sections(extraction.pages)
+    if not entries:
+        raise ValueError('Nenhum texto extraído; confira OCR/dependências e o arquivo original')
+    pages_text = '\n'.join(page['text'] for page in extraction.pages)
+    with util.connect() as db:
+        with db:
+            try:
+                db.execute('DELETE FROM document_fts WHERE document_id=?', (uid,))
+            except sqlite3.OperationalError:
+                pass
+            db.execute('DELETE FROM document_sections WHERE document_id=?', (uid,))
+            db.execute('UPDATE documents SET content=?, pages=? WHERE id=?',
+                       (pages_text, json.dumps(extraction.pages, ensure_ascii=False), uid))
+            db.execute('INSERT OR REPLACE INTO document_details VALUES (?,?,?,?,?,?,?,?,?,?)',
+                       (uid, path.stat().st_size,
+                        mimetypes.guess_type(doc['name'])[0] or 'application/octet-stream',
+                        extraction.method, extraction.state, 'concluída',
+                        json.dumps(extraction.warnings, ensure_ascii=False),
+                        extraction.markdown, VERSION, now()))
+            for ordinal, section in enumerate(entries):
+                evidence_id = f'library:{uid}:{ordinal}'
+                rowid = db.execute('INSERT INTO document_sections VALUES (?,?,?,?,?,?,?)',
+                                   (uid, ordinal, section['page'], section['heading'],
+                                    section['text'], section['method'], evidence_id)).lastrowid
+                try:
+                    db.execute('INSERT INTO document_fts '
+                               '(rowid,document_id,heading,body,evidence_id) VALUES (?,?,?,?,?)',
+                               (rowid, uid, section['heading'], section['text'], evidence_id))
+                except sqlite3.OperationalError:
+                    pass
+    return {'reindexed': True, 'id': uid, 'indexed_sections': len(entries),
+            'state': extraction.state, 'warnings': extraction.warnings}
 
 
 def _doc_row(db: sqlite3.Connection, uid: str):

@@ -385,6 +385,26 @@ def research_entity(query: str, *, subject: str, category: str = '') -> Research
                   or bool(_re.match(_re.escape(name) + r's?\s*[-\u2013\u2014|:]\s', normalized)))
         return titled and _mentions_subject(body[:450], subject)
     exact_subject_profile = any(has_subject_title(t, body) for t, _, body in reads)
+    # A single category-qualified page may establish a *cited identification* if
+    # the title begins with the exact subject followed by the requested kind,
+    # AND its first sentence independently states that subject/kind relation.
+    # This is narrower than accepting a search snippet, arbitrary name mention,
+    # or an off-topic page; third-party content remains untrusted data.
+    def category_qualified_profile(title: str, body: str) -> bool:
+        if not expected_kind:
+            return False
+        lead = _re.split(r'(?<=[.!?])\s+', body.strip(), maxsplit=1)[0][:450]
+        name = _fold(subject)
+        title_folded = _fold(title).strip()
+        if not _re.match(_re.escape(name) + r's?\s+', title_folded):
+            return False
+        title_suffix = title_folded[len(name):].strip()
+        if not title_suffix or expected_kind not in _kinds(title_suffix):
+            return False
+        return (_mentions_subject(lead, subject)
+                and expected_kind in _kinds(lead))
+
+    category_profile = any(category_qualified_profile(t, body) for t, _, body in reads)
     # Pessoa pedida pelo nome curto: "Marcos Vieira" -> artigo "Marcos Vieira de Souza".
     # Um unico artigo candidato sustenta a resposta; dois ou mais exigem perguntar.
     wiki_names = _wiki_candidates(reads, subject)
@@ -396,7 +416,7 @@ def research_entity(query: str, *, subject: str, category: str = '') -> Research
         status = 'ambiguous'
     elif not expected_kind and len(incompatible) > 1 and not (official_summary or extended_wiki):
         status = 'ambiguous'
-    elif official_summary or extended_wiki or exact_subject_profile or len(independent_hosts) >= 2:
+    elif official_summary or extended_wiki or exact_subject_profile or category_profile or len(independent_hosts) >= 2:
         status = 'grounded'
     elif relevant or cached_count:
         status = 'insufficient'

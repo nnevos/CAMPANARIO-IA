@@ -40,6 +40,13 @@ function renderChat(){
 }
 async function ensureChat(){if(currentChat)return;currentChat=crypto.randomUUID();const id=currentChat;await persist(s=>s.chats.push({id,remoteId:null,owner:'',title:'Nova conversa',created:Date.now(),messages:[],pending:[]}));}
 async function sendText(text){
+  const navCommand=/(?:\b(?:rota|caminho)\s+(?:para|até)|\bme leve (?:para|até))\s+(.+)/i.exec(text);
+  if(navCommand){
+    $('prompt').value='';
+    const query=navCommand[1].trim();
+    if(window.CampanarioNative?.openNativeNavigation){window.CampanarioNative.openNativeNavigation(query);return;}
+    setView('gps');mapsPendingQuery=query;$('mobileMapsDestination').value=query;gpsSample();return;
+  }
   if(sending)return;await ensureChat();const id=currentChat;
   const pending={id:crypto.randomUUID(),text,state:'draft'};
   await persist(s=>{const c=s.chats.find(c=>c.id===id);c.pending.push(pending);if(c.title==='Nova conversa')c.title=text.slice(0,55);});
@@ -131,6 +138,10 @@ function renderSettings(){
   $('eraseLocal').onclick=async()=>{if(sending||syncing){toast('Finalize a operacao atual primeiro.');return;}if(!await confirmAction('Apagar dados locais','Notas nao sincronizadas, rascunhos, credencial e pacote offline serao removidos deste aparelho. Esta acao nao afeta o PC.','APAGAR LOCAL'))return;await writeQueue.catch(()=>{});await eraseState();state=emptyState();storageReady=true;currentChat=null;connected=false;setView('chat');toast('Dados locais removidos.');};
 }
 $('composer').onsubmit=e=>{e.preventDefault();const text=$('prompt').value.trim();if(text)sendText(text).catch(e=>toast(e.message));};
+$('emergencyDial').onclick=()=>{
+  if(window.CampanarioNative?.openEmergencyDialer)window.CampanarioNative.openEmergencyDialer();
+  else toast('Discador de emergencia exige o aplicativo Android instalado. Nenhuma chamada foi feita.');
+};
 $('newChat').onclick=()=>{currentChat=null;setView('chat');};$('settingsOpen').onclick=()=>setView('settings');
 $('historyOpen').onclick=()=>{renderHistory();$('historyDialog').showModal();};
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
@@ -174,6 +185,11 @@ window.CampanarioGpsResult = function(raw){
     const accuracy=Number.isFinite(p.accuracy)?Math.round(p.accuracy)+' m':'não informada';
     $('gpsStatus').textContent='Posição recebida • '+new Date(p.timestamp).toLocaleTimeString()+(p.mock?' • localização simulada':'');
     $('gpsPosition').textContent=`Latitude: ${p.lat.toFixed(6)} | Longitude: ${p.lon.toFixed(6)} | Precisão: ${accuracy}`;
+    if(!p.mock && Number.isFinite(p.accuracy) && p.accuracy<=100){
+      mapsLastFix={lat:p.lat,lon:p.lon,accuracy:p.accuracy,timestamp:p.timestamp/1000};
+      if(mapsPendingQuery){const query=mapsPendingQuery;mapsPendingQuery='';void mobileMapsFind(query);}
+      if(mapsActive)void mobileMapsFix(mapsLastFix);
+    }
     if(gpsTimer && !p.mock && (!gpsTrack.length || p.timestamp>gpsTrack[gpsTrack.length-1].timestamp)) {
       gpsTrack.push({lat:p.lat,lon:p.lon,accuracy:p.accuracy,timestamp:p.timestamp});
       if(gpsTrack.length>=1000){stopGps();toast('Limite de 1000 pontos atingido. Exporte a trilha.');}
@@ -182,6 +198,56 @@ window.CampanarioGpsResult = function(raw){
   }catch(e){$('gpsStatus').textContent='Erro ao ler localização: '+e.message;}
 };
 function gpsSample(){if(gpsBusy)return;if(!window.CampanarioNative?.requestGpsOnce){$('gpsStatus').textContent='GPS requer o aplicativo Android instalado; indisponível nesta prévia.';return;}gpsBusy=true;$('gpsStatus').textContent='Aguardando posição do Android...';window.CampanarioNative.requestGpsOnce();setTimeout(()=>{if(gpsBusy){gpsBusy=false;$('gpsStatus').textContent='Sem resposta do GPS; verifique permissões e sinal.';}},20000);}
+// Maps V2 foreground navigation via the authenticated companion channel.
+let mapsLastFix=null,mapsActive=false,mapsTimer=null,mapsSelected=null,mapsPendingQuery='',mapsStatus=null,mapsVoiceSeq=-1;
+let mapsVoiceEnabled=false;
+const mapsInfo=text=>{if($('mobileMapsStatus'))$('mobileMapsStatus').textContent=text;};
+function mapsDiagram(points){const svg=$('mobileMapsPlot');if(!svg)return;svg.replaceChildren();if(!points?.length)return;
+ const lats=points.map(p=>p.lat),lons=points.map(p=>p.lon),la0=(Math.min(...lats)+Math.max(...lats))/2*Math.PI/180;
+ const xy=points.map(p=>[p.lon*Math.cos(la0),p.lat]);const xs=xy.map(p=>p[0]),ys=xy.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),scale=Math.max(x1-x0,y1-y0,0.00001);
+ const item=document.createElementNS('http://www.w3.org/2000/svg','polyline');item.setAttribute('points',xy.map(([x,y])=>`${160+(x-(x0+x1)/2)*260/scale},${90-(y-(y0+y1)/2)*150/scale}`).join(' '));item.setAttribute('fill','none');item.setAttribute('stroke','#47b7ff');item.setAttribute('stroke-width','3');svg.append(item);
+}
+function mapsAnnouncement(step){const m=step.maneuver||{},dir=m.modifier||'',name=m.name?` na ${m.name}`:'';
+ const verb=m.type==='arrive'?'Você chegou':dir.includes('right')?'Vire à direita':dir.includes('left')?'Vire à esquerda':'Continue';
+ return step.stage==='now'?verb+name: `Em aproximadamente ${step.meters} metros, ${verb.toLowerCase()}${name}.`;
+}
+function mapsDisplay(value){mapsStatus=value;if(!value)return;const active=['NAVIGATING','OFF_ROUTE','RECALCULATING'].includes(value.state);
+ mapsInfo(`Estado ${value.state}${value.reason?' · '+value.reason:''}`);
+ const msg=value.instructions?.at(-1);if(msg){$('mobileMapsInstruction').textContent=mapsAnnouncement(msg);
+  if(mapsVoiceEnabled&&value.voice_event_seq!==mapsVoiceSeq&&active&&window.CampanarioNative?.speakInstruction){window.CampanarioNative.speakInstruction(mapsAnnouncement(msg));}}
+ mapsVoiceSeq=value.voice_event_seq;
+ if(value.route)mapsDiagram(value.route.points);
+ if(['ARRIVED','STOPPED'].includes(value.state)){mapsActive=false;mapsStopTimer();}
+}
+function mapsStopTimer(){if(mapsTimer){clearInterval(mapsTimer);mapsTimer=null;}}
+function mapsLoop(){if(!mapsActive||document.hidden)return;gpsSample();}
+async function mobileMapsFind(query){if(!mapsLastFix||Date.now()-mapsLastFix.timestamp*1000>20000){mapsPendingQuery=query;gpsSample();mapsInfo('Obtendo GPS recente do Android antes da busca…');return;}
+ if(!state.connection?.token){mapsInfo('Pareie o aplicativo com o PC por HTTPS primeiro.');return;}
+ mapsInfo('Consultando índice OSM local do PC…');
+ try{const result=await request(state.connection,'maps/v2/resolve',{query,lat:mapsLastFix.lat,lon:mapsLastFix.lon},25000);mapsSelected=result.selected||null;
+  const box=$('mobileMapsCandidates');box.replaceChildren();
+  if(result.ambiguous)mapsInfo('Destinos próximos ambíguos; selecione a unidade correta.');
+  if(!result.candidates?.length)mapsInfo('Não foram encontrados destinos no índice local.');
+  for(const p of (result.candidates||[])){const b=document.createElement('button');b.textContent=p.name+(p.route_distance_m!=null?' · '+(p.route_distance_m/1000).toFixed(1)+' km por rota':'');b.onclick=()=>{mapsSelected=p;mapsInfo('Destino selecionado: '+p.name);};box.append(b)}
+  if(mapsSelected)mapsInfo('Destino identificado: '+mapsSelected.name+'. Calcule a rota.');
+ }catch(e){mapsInfo('Busca: '+e.message)}
+}
+async function mobileMapsFix(fix){if(!mapsActive||!fix)return;
+ try{let status=await request(state.connection,'maps/v2/fix',fix,15000);mapsDisplay(status);
+  if(status.state==='RECALCULATING'){mapsInfo('Desvio confirmado. Recalculando no PC…');status=await request(state.connection,'maps/v2/recalculate',{},22000);mapsDisplay(status)}
+ }catch(e){mapsInfo('GPS ou recálculo: '+e.message)}
+}
+$('openNativeMaps').onclick=()=>{if(!window.CampanarioNative?.openNativeNavigation){mapsInfo('Requer APK Android da versão Field V1.');return;}window.CampanarioNative.openNativeNavigation('');};
+$('mobileMapsSearch').onclick=()=>{mapsPendingQuery=$('mobileMapsDestination').value.trim();if(!mapsPendingQuery)return;gpsSample();};
+$('mobileMapsCalculate').onclick=async()=>{if(!mapsSelected||!mapsLastFix||Date.now()-mapsLastFix.timestamp*1000>20000){mapsInfo('Primeiro selecione destino e obtenha GPS recente.');gpsSample();return;}
+ try{mapsDisplay(await request(state.connection,'maps/v2/route',{start_lat:mapsLastFix.lat,start_lon:mapsLastFix.lon,end_lat:mapsSelected.lat,end_lon:mapsSelected.lon,mode:$('mobileMapsMode').value,name:mapsSelected.name},22000));mapsInfo('Rota real calculada. Para navegar, toque Iniciar.');}catch(e){mapsInfo('Rota: '+e.message)}
+};
+$('mobileMapsStart').onclick=async()=>{try{if(!mapsLastFix||Date.now()-mapsLastFix.timestamp*1000>20000){mapsInfo('GPS antigo; obtenha nova posição antes de iniciar.');gpsSample();return;}const action=mapsStatus?.state==='PAUSED'?'resume':'start';mapsDisplay(await request(state.connection,'maps/v2/command/'+action,{},12000));mapsActive=true;mapsStopTimer();mapsTimer=setInterval(mapsLoop,5000);mapsLoop();}catch(e){mapsInfo('Início: '+e.message)}};
+$('mobileMapsPause').onclick=async()=>{try{mapsDisplay(await request(state.connection,'maps/v2/command/pause',{}));mapsActive=false;mapsStopTimer();window.CampanarioNative?.stopInstruction?.();}catch(e){mapsInfo(e.message)}};
+$('mobileMapsStop').onclick=async()=>{try{mapsDisplay(await request(state.connection,'maps/v2/command/stop',{}));mapsActive=false;mapsStopTimer();mapsSelected=null;window.CampanarioNative?.stopInstruction?.();}catch(e){mapsInfo(e.message)}};
+$('mobileMapsVoice').onchange=e=>{mapsVoiceEnabled=e.target.checked;if(!mapsVoiceEnabled)window.CampanarioNative?.stopInstruction?.();};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&mapsActive){mapsStopTimer();window.CampanarioNative?.stopInstruction?.();mapsInfo('Aplicativo em segundo plano: atualização GPS e voz suspensas.');}else if(!document.hidden&&mapsActive&&!mapsTimer){mapsTimer=setInterval(mapsLoop,5000);mapsLoop();}});
+
 $('gpsGet').onclick=gpsSample;
 $('gpsStart').onclick=()=>{if(gpsTimer)return;gpsTimer=setInterval(()=>{if(view==='gps' && !document.hidden)gpsSample();},10000);gpsSample();renderGps();};
 $('gpsStop').onclick=()=>{stopGps();renderGps();};

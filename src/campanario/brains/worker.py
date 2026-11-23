@@ -9,6 +9,7 @@ from pathlib import Path
 from uuid import UUID
 
 from campanario.brains.adapters import AnalysisBrain, KnowledgeBrain
+from campanario.brains.investigation import InvestigationBrain, StrategyBrain
 from campanario.brains.contracts import BrainRequest, ResourceBudget
 from campanario.brains.isolation import encode_result
 from campanario.brains.network_guard import deny_worker_network
@@ -20,7 +21,7 @@ def main() -> int:
         if not raw.endswith(b'\n') or len(raw) > 24_000:
             return 2
         item = json.loads(raw)
-        if item.get('brain_id') not in ('knowledge', 'analysis'):
+        if item.get('brain_id') not in ('knowledge', 'analysis', 'investigation', 'strategy'):
             return 3
         db = Path(item['database']).resolve(strict=True)
         if not db.is_file() or db.suffix.lower() not in {'.sqlite', '.sqlite3', '.db'}:
@@ -44,7 +45,8 @@ def main() -> int:
                 resource.setrlimit(resource.RLIMIT_CPU, (ceiling, ceiling + 1))
             except (ImportError, ValueError, OSError):
                 pass
-        adapter = KnowledgeBrain(db) if item['brain_id'] == 'knowledge' else AnalysisBrain(db)
+        adapter = {'knowledge': KnowledgeBrain, 'analysis': AnalysisBrain,
+                   'investigation': InvestigationBrain, 'strategy': StrategyBrain}[item['brain_id']](db)
         with deny_worker_network():
             outcome = adapter.execute(request)
         sys.stdout.buffer.write(encode_result(replace(

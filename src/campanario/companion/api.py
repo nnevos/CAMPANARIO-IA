@@ -187,3 +187,125 @@ def receive_gps_track(body: GpsTrack, who=Depends(device)):
         raise HTTPException(409, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(413, str(exc)) from exc
+
+# Maps V2 mobile foreground integration. This API is reachable only via
+# existing HTTPS + paired device token, never via unauthenticated local API.
+# Navigation sessions are volatile and keyed by device ID (no track history).
+from threading import RLock
+from campanario.app.navigation_v2 import (
+    NavigationService, coords as maps_coords, route_from_osrm as maps_route,
+    search_local as maps_search_local, nearby_places as maps_nearby_places,
+    category_for as maps_category_for, resolve_places as maps_resolve_places,
+)
+import httpx
+
+_mobile_maps_lock = RLock()
+_mobile_maps_sessions: dict[str, NavigationService] = {}
+
+
+def _mobile_maps(who):
+    with _mobile_maps_lock:
+        key=str(who['id'])
+        if key not in _mobile_maps_sessions:
+            if len(_mobile_maps_sessions)>=64:
+                raise HTTPException(503, "Limite de sessões de navegação mobile neste processo")
+            _mobile_maps_sessions[key]=NavigationService()
+        return _mobile_maps_sessions[key]
+
+
+class MobileMapsRoute(BaseModel):
+    start_lat: float
+    start_lon: float
+    end_lat: float
+    end_lon: float
+    mode: str = 'driving'
+    name: str = Field(default='',max_length=250)
+
+
+class MobileMapsResolve(BaseModel):
+    query: str = Field(min_length=3,max_length=140)
+    lat: float
+    lon: float
+    explicit_distant: bool = False
+
+
+class MobileMapsFix(BaseModel):
+    lat: float = Field(allow_inf_nan=False)
+    lon: float = Field(allow_inf_nan=False)
+    accuracy: float = Field(gt=0, le=100, allow_inf_nan=False)
+    timestamp: float = Field(allow_inf_nan=False)
+
+
+@router.post('/maps/v2/resolve')
+async def mobile_maps_resolve(body: MobileMapsResolve, who=Depends(device)):
+    try:
+        near=maps_coords(body.lat,body.lon)
+        if maps_category_for(body.query) and not body.explicit_distant:
+            items=await maps_nearby_places(body.query,near)
+            candidates=[]
+            for item in sorted(items,key=lambda t:t['air_distance_m'])[:5]:
+                try:
+                    route=await maps_route(near,item)
+                    candidates.append({**item,'route_distance_m':route['distance']})
+                except (ValueError,httpx.HTTPError,OSError):
+                    continue
+            if not candidates:
+                raise HTTPException(503, 'Nenhum estabelecimento ou roteador disponível (local/público)')
+            candidates.sort(key=lambda p:p['route_distance_m'])
+            clear=len(candidates)==1 or candidates[1]['route_distance_m']>=candidates[0]['route_distance_m']*1.18+100
+            return {'candidates':candidates,'selected':candidates[0] if clear else None,'ambiguous':not clear}
+        results=await maps_search_local(body.query,near)
+        return maps_resolve_places(results,body.query,near,explicit_distant=body.explicit_distant)
+    except ValueError as exc:
+        raise HTTPException(422,str(exc)) from exc
+    except (httpx.HTTPError,OSError) as exc:
+        raise HTTPException(503,'Busca geográfica indisponível (local/público)') from exc
+
+
+@router.post('/maps/v2/route')
+async def mobile_maps_route(body: MobileMapsRoute,who=Depends(device)):
+    try:
+        origin,end=maps_coords(body.start_lat,body.start_lon),maps_coords(body.end_lat,body.end_lon)
+        result=await maps_route(origin,end,body.mode)
+        return _mobile_maps(who).ready(result,{**end,'name':body.name})
+    except ValueError as exc:
+        raise HTTPException(422,str(exc)) from exc
+    except (httpx.HTTPError,OSError) as exc:
+        raise HTTPException(503,'Roteador indisponível no PC (local/público)') from exc
+
+
+@router.get('/maps/v2/status')
+def mobile_maps_status(who=Depends(device)):
+    return _mobile_maps(who).status()
+
+
+@router.post('/maps/v2/command/{action}')
+def mobile_maps_command(action:str,who=Depends(device)):
+    try:
+        return _mobile_maps(who).command(action)
+    except ValueError as exc:
+        raise HTTPException(409,str(exc)) from exc
+
+
+@router.post('/maps/v2/fix')
+def mobile_maps_fix(body:MobileMapsFix,who=Depends(device)):
+    try:
+        return _mobile_maps(who).position_fix(body.lat,body.lon,body.accuracy,body.timestamp)
+    except ValueError as exc:
+        raise HTTPException(422,str(exc)) from exc
+
+
+@router.post('/maps/v2/recalculate')
+async def mobile_maps_recalculate(who=Depends(device)):
+    service=_mobile_maps(who)
+    before=service.status()
+    if before['state']!='RECALCULATING' or not before.get('position') or not before.get('target'):
+        raise HTTPException(409,'Recálculo não solicitado')
+    try:
+        new=await maps_route(before['position'],before['target'],before['route'].get('mode','driving'))
+        if service.status()['id']!=before['id']:
+            raise HTTPException(409,'Sessão alterada')
+        return service.replace_route(new)
+    except (httpx.HTTPError,OSError,ValueError) as exc:
+        service.reroute_error()
+        raise HTTPException(503,'Recálculo indisponível') from exc

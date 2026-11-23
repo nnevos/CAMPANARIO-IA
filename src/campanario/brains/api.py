@@ -123,7 +123,7 @@ class PreviewRequest(BaseModel):
 async def preview(body: PreviewRequest):
     service = _service()
     _known_agent(service, body.agent_id)
-    if body.brain_id not in (None, 'knowledge', 'analysis'):
+    if body.brain_id not in (None, 'knowledge', 'analysis', 'investigation', 'strategy'):
         raise HTTPException(422, 'Somente cérebros realmente instalados podem ser testados')
     # No arbitrary code, no direct filesystem paths, no externally supplied tools.
     plan = service._capability_router.plan(
@@ -132,6 +132,10 @@ async def preview(body: PreviewRequest):
                           if body.brain_id == 'knowledge' else
                           document_request(body.query, []) if body.brain_id is None else None),
         data_request=True if body.brain_id == 'analysis' else None)
+    if body.brain_id in {'investigation', 'strategy'}:
+        from campanario.brains.router import BrainPlan, BrainStep
+        plan = BrainPlan(uuid4(), 'read_only_preview', (body.brain_id,), ('explicit_user_intent',),
+                         (BrainStep(body.brain_id, 'Consultar e revisar fontes locais', 'explicit_user_intent'),))
     request = BrainRequest(request_id=uuid4(), conversation_id=None,
                            query=body.query, intent=plan.intent,
                            document_hint=body.document_hint,
@@ -147,9 +151,12 @@ async def preview(body: PreviewRequest):
     active = select_talents(build, intent=plan.intent, text=body.query)
     collaboration = None
     if len(plan.steps) > 1:
-        from campanario.brains.collaboration import consolidate_read_only
+        from campanario.brains.collaboration import consolidate_read_only, consolidate_investigation_strategy
         try:
-            snapshot = consolidate_read_only(request.request_id, body.query, plan, outcomes)
+            consolidate = (consolidate_investigation_strategy if any(
+                s.brain_id in {'investigation', 'strategy'} for s in plan.steps)
+                else consolidate_read_only)
+            snapshot = consolidate(request.request_id, body.query, plan, outcomes)
             collaboration = {
                 'canonical_answer': snapshot.canonical.canonical_answer,
                 'status': snapshot.canonical.status.value,

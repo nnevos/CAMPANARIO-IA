@@ -137,7 +137,13 @@ $('form').addEventListener('submit',async e=>{e.preventDefault();const text=$('p
   }
   $('prompt').value='';resizeComposerPrompt();addTurn('user',text);addError('Navegação: solicitando origem autorizada e calculando rota real para “'+destination+'”.');window.CampanarioNavigation?.open(destination,{auto:true,voice:localStorage.getItem('campanario.nav.voice')==='true',agent:/\btodd\b/i.test(text)?'todd':/\bmorgana\b/i.test(text)?'morgana':'todd'});return;}
  if(/\brota\s+no\s+mapa\b/i.test(text)){addError('Para abrir uma rota real, informe o destino. Exemplo: “Todd, rota para a Prefeitura de Maringá”. Também será necessária uma origem confirmada.');return;}
-try{setBusy(true);if(!sessionId)await createSession();followingLatest=true;addTurn('user',text);goLatest();$('prompt').value='';resizeComposerPrompt();await stream(text)}catch(err){addError(`Falha: ${err.message}`)}finally{setBusy(false);$('prompt').focus()}});// Crescimento automático do campo de escrita, sem rolagem interna enquanto houver espaço.
+try{setBusy(true);
+  // Explicit case queries use the PF6-authenticated case workspace and never send evidence to Ollama.
+  // This read-only exchange is intentionally not persisted as a normal chat message.
+  const caseAnswer=await window.CampanarioCases?.tryChat(text);
+  if(caseAnswer){followingLatest=true;addTurn('user',text);addTurn('assistant',caseAnswer.answer,caseAnswer.agent_id);goLatest();$('prompt').value='';resizeComposerPrompt();}
+  else{if(!sessionId)await createSession();followingLatest=true;addTurn('user',text);goLatest();$('prompt').value='';resizeComposerPrompt();await stream(text)}
+ }catch(err){addError(`Falha: ${err.message}`)}finally{setBusy(false);$('prompt').focus()}});// Crescimento automático do campo de escrita, sem rolagem interna enquanto houver espaço.
 function resizeComposerPrompt(){
  const field=$('prompt');if(!field)return;
  field.style.height='auto';
@@ -159,15 +165,15 @@ $('attachInput').addEventListener('change',async(e)=>{
  const file=e.target.files?.[0];if(!file)return;
  const feedback=$('uploadFeedback');feedback.hidden=false;
  if(file.size>200_000_000){feedback.textContent='Arquivo acima do limite de 200 MB. Para arquivos maiores, use Ferramentas → Biblioteca e importe da pasta autorizada.';e.target.value='';return;}
- if(!/\.(txt|md|pdf|csv|json|log)$/i.test(file.name)){feedback.textContent='Formato não permitido. Use TXT, MD, PDF, CSV, JSON ou LOG.';e.target.value='';return;}
+ if(!/\.(txt|md|pdf|csv|json|log|docx|xlsx)$/i.test(file.name)){feedback.textContent='Formato não permitido. Use TXT, MD, PDF, CSV, JSON, LOG, DOCX ou XLSX.';e.target.value='';return;}
  feedback.textContent=`Enviando ${file.name} (${(file.size/1e6).toFixed(1)} MB)…`;
  try{
   // O browser transmite o File diretamente, sem file.arrayBuffer()/Base64.
-  const url='/api/v1/utilities/upload-stream?filename='+encodeURIComponent(file.name);
+  const url='/api/v1/utilities/upload-stream?filename='+encodeURIComponent(file.name)+'&index=true';
   const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file});
   const data=await res.json();
   if(!res.ok)throw Error(data.detail||`HTTP ${res.status}`);
-  feedback.textContent=`${file.name} salvo na pasta autorizada (${(data.bytes/1e6).toFixed(1)} MB). Para usar no acervo, abra Ferramentas → Biblioteca e importe o arquivo existente.`;
+  feedback.textContent=data.indexed?`${file.name} salvo e indexado na Biblioteca (${data.index_state||'disponível'}). Agora pode pesquisar o documento no chat.`:`${file.name} salvo, mas NÃO ficou pesquisável: ${data.index_error||'indexação indisponível'}. Veja Ferramentas → Biblioteca.`;
  }catch(err){feedback.textContent=`Não foi possível enviar: ${err.message}`}
  finally{e.target.value=''}
 });
